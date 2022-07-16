@@ -3,7 +3,8 @@
 #endif
 
 #include <windows.h>
-#pragma comment(lib,"user32.lib");
+#pragma comment(lib,"user32.lib")
+#pragma comment(lib,"gdi32.lib")
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -63,6 +64,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+    case WM_CLOSE:
+        if (MessageBox(hwnd, L"Really quit?", L"My application", MB_OKCANCEL) == IDOK)
+        {
+            DestroyWindow(hwnd);
+        }
+        // Else: User canceled. Do nothing.
+        return 0;
+
 
     case WM_PAINT:
         {
@@ -71,7 +80,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
             // All painting occurs here, between BeginPaint and EndPaint.
 
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
+            FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(255, 0, 0)));
 
             EndPaint(hwnd, &ps);
         }
