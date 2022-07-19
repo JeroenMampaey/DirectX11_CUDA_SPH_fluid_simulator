@@ -35,8 +35,9 @@ boolean rightgrav = false;
 float boundary_stride = smooth/16;
 float boundary_height = smooth;
 
-//float m_b = 4*rest*smooth*smooth/4;
 float m_p = rest*right*300.0/numpoints;
+
+boolean falling_box_is_falling = false;
 
 class Vector {
   float x, y, z;
@@ -108,36 +109,42 @@ class Particle {
     grabbed = false;
   }
   
-  void drawParticle() {
-    float red = 50;
-    float green = 50;
-    float blue = 255;
-    float diff = pressred - pressblue;
-    float quad = diff / 4;
-    if (press < pressblue) {
-    } else if (press < pressblue + quad) {
-      float segdiff = press - pressblue;
-      green = segdiff / quad * 255;
-    } else if (press < pressblue + 2 * quad) {
-      float segdiff = press - pressblue - quad;
-      green = 255;
-      blue = 255 - (segdiff / quad * 255);
-    } else if (press < pressblue + 3 * quad) {
-      float segdiff = press - pressblue - 2 * quad;
-      green = 255;
-      blue = 50;
-      red = segdiff / quad * 255;
-    } else if (press < pressred) {
-      float segdiff = press - pressblue - 3 * quad;
-      red = 255;
-      blue = 50;
-      green = 255 - (segdiff / quad * 255);
-    } else {
-      red = 255;
-      blue = 50;
+  void drawParticle(int kind) {
+    if(kind==0){
+      float red = 50;
+      float green = 50;
+      float blue = 255;
+      float diff = pressred - pressblue;
+      float quad = diff / 4;
+      if (press < pressblue) {
+      } else if (press < pressblue + quad) {
+        float segdiff = press - pressblue;
+        green = segdiff / quad * 255;
+      } else if (press < pressblue + 2 * quad) {
+        float segdiff = press - pressblue - quad;
+        green = 255;
+        blue = 255 - (segdiff / quad * 255);
+      } else if (press < pressblue + 3 * quad) {
+        float segdiff = press - pressblue - 2 * quad;
+        green = 255;
+        blue = 50;
+        red = segdiff / quad * 255;
+      } else if (press < pressred) {
+        float segdiff = press - pressblue - 3 * quad;
+        red = 255;
+        blue = 50;
+        green = 255 - (segdiff / quad * 255);
+      } else {
+        red = 255;
+        blue = 50;
+      }
+      stroke(red, green, blue);
+      point(x, y);
     }
-    stroke(red, green, blue);
-    point(x, y);
+    else if(kind==1){
+      stroke(255, 255, 0);
+      point(x, y);
+    }
   }
 }
 
@@ -159,6 +166,12 @@ class Pair {
 class SphFluid {
   ArrayList<Particle> particles;
   ArrayList<Particle> boundary_particles;
+  ArrayList<Particle> falling_box_particles;
+  
+  float falling_box_bottom;
+  float falling_box_top;
+  float falling_box_left;
+  float falling_box_right;
   
   int num;
   float ksmooth, kstiff, kstiffN, krest;
@@ -173,6 +186,7 @@ class SphFluid {
     this.reach = reach;
     particles = new ArrayList<Particle>();
     boundary_particles = new ArrayList<Particle>();
+    falling_box_particles = new ArrayList<Particle>();
     
     float interval = pointsize * 1.5;
     float initx = interval;
@@ -211,6 +225,19 @@ class SphFluid {
        boundary_particles.add(new Particle(right+2*boundary_stride, floor-i));
        boundary_particles.add(new Particle(right+3*boundary_stride, floor-i));*/
      }
+     
+     float i=200;
+     float j=500;
+     for(; i<300; i+=boundary_stride){
+       j = 500;
+       for(; j<600; j+=boundary_stride){
+         falling_box_particles.add(new Particle(j, i));
+       }
+     }
+     falling_box_bottom = i;
+     falling_box_left = 500;
+     falling_box_top = 200;
+     falling_box_right = j;
   }
   
   
@@ -231,12 +258,50 @@ class SphFluid {
     }
   }
   
+  boolean checkAllBoundaries(Particle p){
+    float vector_x = -(p.x - p.oldx);
+    float vector_y = -(p.y - p.oldy);
+    // regular bounds
+    boolean retval = true;
+    if (p.x < left+boundary_height/2 || p.x > right-boundary_height/2) {
+      p.x += vector_x;
+      p.y += vector_y;
+      retval = false;
+    }
+    if (p.y > floor-boundary_height/2) {
+      p.x += vector_x;
+      p.y += vector_y;
+      retval = false;
+    }
+    if(p.x > falling_box_left-boundary_stride/2 && p.x < falling_box_right+boundary_stride/2 && p.y > falling_box_top-boundary_stride/2 && p.y < falling_box_bottom+boundary_stride/2){
+      p.x += vector_x;
+      p.y += vector_y;
+      retval = false;
+    }
+    return retval;
+  }
+  
   
   void updateParticles(float dt) {
     for (int z = 0; z < 2; z++) {
       float max_dens = 0;
       ArrayList<Pair> pairs = new ArrayList<Pair>();
       ArrayList<Pair> boundary_pairs = new ArrayList<Pair>();
+      ArrayList<Pair> falling_box_pairs = new ArrayList<Pair>();
+      
+      if(falling_box_is_falling && falling_box_bottom < floor){
+        float fall = 0;
+        for(int i=0; i<falling_box_particles.size(); i++){
+          Particle p = falling_box_particles.get(i);
+          p.vely = (p.y - p.oldy) / dt;
+          p.vely += gravity;
+          p.oldy = p.y;
+          fall = p.vely * dt;
+          p.y += fall;
+        }
+        falling_box_bottom += fall;
+        falling_box_top += fall;
+      }
     
       for (int i = 0; i < num; i++) {
         Particle p = particles.get(i);
@@ -269,20 +334,6 @@ class SphFluid {
           p.vely += pull * vy;
         }
         
-        // bounds
-        if (p.x < left || p.x > right) {
-          if (p.x < left) {
-            p.x = left+boundary_height/2;
-          } else {
-            p.x = right-boundary_height/2;
-          }
-          p.velx *= 0.0;
-        }
-        if (p.y > floor) {
-          p.y = floor-boundary_height/2;
-          p.vely *= 0.0;
-        }
-        
         
         p.oldx = p.x;
         p.oldy = p.y;
@@ -309,11 +360,22 @@ class SphFluid {
         for (int j = 0; j < boundary_particles.size(); j++) {
           Particle p1 = particles.get(i);
           Particle p2 = boundary_particles.get(j);
-          p2.dens = 0;
-          p2.densN = 1000;
+          p2.dens = rest;
           float dist = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
           if (dist < ksmooth) {
             boundary_pairs.add(new Pair(p1, p2));
+          }
+        }
+      }
+      
+      for (int i = 0; i < num; i++) {
+        for (int j = 0; j < falling_box_particles.size(); j++) {
+          Particle p1 = particles.get(i);
+          Particle p2 = falling_box_particles.get(j);
+          p2.dens = rest;
+          float dist = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+          if (dist < ksmooth) {
+            falling_box_pairs.add(new Pair(p1, p2));
           }
         }
       }
@@ -336,6 +398,14 @@ class SphFluid {
           p.b.dens = multiplier*p.a.dens;
         }
       }
+      
+      for (int i = 0; i < falling_box_pairs.size(); i++) {
+        Pair p = falling_box_pairs.get(i);
+        float multiplier = 3.0;
+        if(p.b.dens < multiplier*p.a.dens){
+          p.b.dens = multiplier*p.a.dens;
+        }
+      }
 
       for (int i = 0; i < boundary_pairs.size(); i++) {
         Pair p = boundary_pairs.get(i);
@@ -345,6 +415,16 @@ class SphFluid {
         //p.q2 = pow(1 - dist / ksmooth, 2)/641.409;
         p.q2 = (float)(Math.pow(1.0 / ((smooth/2)*Math.sqrt(Math.PI)), 2) * Math.exp( -dist*dist / (smooth*smooth/4)));
         p.a.dens += (boundary_stride*boundary_height*p.b.dens)*p.q2;
+      }
+      
+      for (int i = 0; i < falling_box_pairs.size(); i++) {
+        Pair p = falling_box_pairs.get(i);
+        float dist = sqrt(pow(p.a.x - p.b.x, 2) + pow(p.a.y - p.b.y, 2));
+        //p.q = 2*(1 - dist / ksmooth)/641.409;
+        p.q = (float)(2 * Math.exp( -dist*dist / (smooth*smooth/4)) / Math.pow(smooth/2, 4) / Math.PI);
+        //p.q2 = pow(1 - dist / ksmooth, 2)/641.409;
+        p.q2 = (float)(Math.pow(1.0 / ((smooth/2)*Math.sqrt(Math.PI)), 2) * Math.exp( -dist*dist / (smooth*smooth/4)));
+        p.a.dens += (boundary_stride*boundary_stride*p.b.dens)*p.q2;
       }
       
       for (int i = 0; i < num; i++) {
@@ -376,12 +456,30 @@ class SphFluid {
         p.a.vely += displace * aby;
       }
       
+      for (int i = 0; i < falling_box_pairs.size(); i++) {
+        Pair p = falling_box_pairs.get(i);
+        float press = (boundary_stride*boundary_stride*p.b.dens)*(p.a.press/(p.a.dens*p.a.dens));
+        float displace = (press * p.q) * dt;
+        //float dist = sqrt(pow(p.a.x - p.b.x, 2) + pow(p.a.y - p.b.y, 2));
+        float abx = (p.a.x - p.b.x);
+        float aby = (p.a.y - p.b.y);
+        p.a.velx += displace * abx;
+        p.a.vely += displace * aby;
+      }
+      
       for (int i = 0; i < num; i++) {
         Particle p = particles.get(i);
         p.x += p.velx * dt;
         p.y += p.vely * dt;
+        checkAllBoundaries(p);
       }
-      surface.setTitle("Test "+max_dens+" "+rest);
+      
+      int whats_going_on = 0;
+      for (int i = 0; i < num; i++) {
+        Particle p = particles.get(i);
+        if(!checkAllBoundaries(p)) whats_going_on++;
+      }
+      surface.setTitle("Test "+max_dens+" "+rest+" "+whats_going_on);
     }
   }
   
@@ -389,7 +487,15 @@ class SphFluid {
     strokeWeight(pointsize);
     for (int i = 0; i < num; i++) {
       Particle p = particles.get(i);
-      p.drawParticle();
+      p.drawParticle(0);
+    }
+    for(int i=0; i<boundary_particles.size();i++){
+      Particle p = boundary_particles.get(i);
+      p.drawParticle(1);
+    }
+    for(int i=0; i<falling_box_particles.size(); i++){
+      Particle p = falling_box_particles.get(i);
+      p.drawParticle(1);
     }
     noStroke();
   }
@@ -445,7 +551,8 @@ void keyPressed() {
     upgrav = true;
   }
   if (key == 'a') {
-    leftgrav = true;
+    //leftgrav = true;
+    falling_box_is_falling = true;
   }
   if (key == 'd') {
     rightgrav = true;
@@ -460,7 +567,7 @@ void keyReleased() {
     upgrav = false;
   }
   if (key == 'a') {
-    leftgrav = false;
+    //leftgrav = false;
   }
   if (key == 'd') {
     rightgrav = false;
