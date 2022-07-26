@@ -1,7 +1,7 @@
 all: run.exe
 
-run.exe: main.cpp basewin.h
-	nvcc main.cpp -o run.exe
+run.exe: main.cpp physics.cpp basewin.h physics.h
+	nvcc main.cpp physics.cpp -o run.exe
 
 clean:
 	powershell "(Remove-Item -ErrorAction Ignore run.exe)"

@@ -1,0 +1,7 @@
+make.exe --dry-run --keep-going --print-directory
+make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project' wordt binnengegaan
+ 
+make.exe: *** Geen doelen opgegeven en geen makefile gevonden.  Gestopt.
+
+make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project' wordt verlaten
+ 
