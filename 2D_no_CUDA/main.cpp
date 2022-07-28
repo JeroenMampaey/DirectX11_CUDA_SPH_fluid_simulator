@@ -12,6 +12,8 @@
 
 #define TIMER_ID 0
 
+// safely release the COM interface pointers as recommended here:
+// https://docs.microsoft.com/en-us/windows/win32/medfound/saferelease
 template <class T> void SafeRelease(T **ppT)
 {
     if (*ppT)
@@ -33,7 +35,10 @@ class MainWindow : public BaseWindow<MainWindow>
     std::atomic<bool> exit = false;
     std::atomic<bool> updateRequired = false;
 
+    std::atomic<int> drawingIndex = 0;
+
     Boundary boundaries[NUMBOUNDARIES];
+    Particle particles[NUMPOINTS];
 
     HRESULT CreateGraphicsResources();
     void    DiscardGraphicsResources();
@@ -44,9 +49,27 @@ public:
 
     MainWindow() : pFactory(NULL), pRenderTarget(NULL), pBrush(NULL)
     {
+        // Initialize the boundaries
+        // Point1 and point2 must be specified in the specific order so that the normal is pointing to the outside (a.k.a NOT towards 
+        // the particles)
         boundaries[0] = Boundary(LEFT, FLOOR, LEFT, CEILING);
         boundaries[1] = Boundary(RIGHT, FLOOR, LEFT, FLOOR);
         boundaries[2] = Boundary(RIGHT, CEILING, RIGHT, FLOOR);
+
+        // Initialize the particles
+        float start_x = LEFT + 2*RADIUS;
+        float end_x = RIGHT - 2*RADIUS;
+        float start_y = CEILING + 2*RADIUS;
+        float end_y = (FLOOR-CEILING)/2;
+        float interval = sqrt((end_x-start_x)*(end_y-start_y)/NUMPOINTS);
+        float x = start_x;
+        float y = start_y;
+        for(int i=0; i<NUMPOINTS; i++)
+        {
+            particles[i] = Particle(x, y, 0, 0, 0);
+            y = (x+interval > end_x) ? y+interval : y;
+            x = (x+interval > end_x) ? start_x : x+interval;
+        }
     }
 
     PCWSTR  ClassName() const { return L"Circle Window Class"; }
@@ -55,6 +78,7 @@ public:
 
 HRESULT MainWindow::CreateGraphicsResources()
 {
+    // Make sure that the graphics resources have been created
     HRESULT hr = S_OK;
     if (pRenderTarget == NULL)
     {
@@ -85,6 +109,7 @@ void MainWindow::DiscardGraphicsResources()
 
 void MainWindow::OnPaint()
 {
+    // first make sure graphics resources are created already
     HRESULT hr = CreateGraphicsResources();
     if (SUCCEEDED(hr))
     {
@@ -95,11 +120,16 @@ void MainWindow::OnPaint()
 
         pRenderTarget->Clear( D2D1::ColorF(D2D1::ColorF::SkyBlue) );
         
+        // Draw the boundaries
         for(int i = 0; i < NUMBOUNDARIES; i++){
             pRenderTarget->DrawLine(D2D1::Point2F(boundaries[i].x1, boundaries[i].y1), D2D1::Point2F(boundaries[i].x2, boundaries[i].y2), pBrush);
         }
 
-        pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(RIGHT/2, height), RADIUS, RADIUS), pBrush);
+        // Draw the particles
+        for(int i = 0; i < NUMPOINTS; i++){
+            pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(particles[i].x, particles[i].y), RADIUS, RADIUS), pBrush);
+            drawingIndex.store(i+1);
+        }
 
         hr = pRenderTarget->EndDraw();
         if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
@@ -143,10 +173,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             return -1;
         }
 
-        // Setup the background thread
-        physicsThread = std::thread(physicsBackgroundThread, std::ref(exit), std::ref(updateRequired), &height, m_hwnd);
+        // Setup the background thread for all caclulations concerning the physics
+        physicsThread = std::thread(physicsBackgroundThread, std::ref(exit), std::ref(updateRequired), std::ref(drawingIndex), boundaries, particles, m_hwnd);
 
-        // Setup the timer
+        // Setup the timer to notify the physics thread to update everything
         SetTimer(m_hwnd,
                 TIMER_ID,
                 INTERVAL_MILI,
@@ -165,6 +195,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_PAINT:
+        // Repaint the screen
         OnPaint();
         return 0;
 
@@ -173,6 +204,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         switch (wParam) 
         { 
             case TIMER_ID:
+                // Notify the physics thread to request an update
                 updateRequired.store(true);
                 return 0;
         }

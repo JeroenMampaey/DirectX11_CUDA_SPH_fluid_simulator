@@ -13,11 +13,17 @@
 #define NUMPOINTS 1000
 #define NUMBOUNDARIES 3
 
+#define DAMPING 0.1
+
+#define SMOOTH 35
+
 #include <d2d1.h>
 #include <atomic>
 #include "boundary.h"
 #include "particle.h"
+#include "pair.h"
+#include <vector>
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, int* height, HWND m_hwnd);
+void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, Particle* particles, HWND m_hwnd);
 
 #endif

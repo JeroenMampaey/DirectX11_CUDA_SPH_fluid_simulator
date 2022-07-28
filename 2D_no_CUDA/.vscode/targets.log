@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Tue Jul 26 20:16:02 2022
+# Make-gegevensbank, weergegeven op Thu Jul 28 16:11:56 2022
 
 # Variabelen
 
@@ -47,6 +47,8 @@ PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
 # makefile (van 'makefile', regel 1)
 MAKEFILE_LIST :=  makefile
 # omgeving
+FPS_BROWSER_USER_PROFILE_STRING = Default
+# omgeving
 TMP = C:\Users\jrmam\AppData\Local\Temp
 # omgeving
 PROGRAMW6432 = C:\Program Files
@@ -77,7 +79,7 @@ NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_16420_DCRRXMZXSLRAQOJU
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_27448_HGYLLYKKCRCHFADF
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -199,11 +201,13 @@ LANG = C
 # omgeving
 PROCESSOR_LEVEL = 25
 # omgeving
-VSCODE_PID = 16420
+FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
+# omgeving
+VSCODE_PID = 27448
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=95/1024=9%, Rehash=0, Botsingen=12/117=10%
+# Belasting=97/1024=9%, Rehash=0, Botsingen=12/117=10%
 
 # Patroonspecifieke variabelewaarden
 
@@ -243,30 +247,14 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 
 # Bestanden
 
-run.exe: main.cpp physics.cpp basewin.h physics.h
+run.exe: main.cpp physics.cpp basewin 
+.h physics.h boundary.h particle.h
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
-#  Impliciete/statische patroonstam: ''
-#  Laatst gewijzigd 2022-07-26 20:13:58
+#  Laatst gewijzigd 2022-07-26 20:16:47
 #  Bestand is bijgewerkt.
-#  Moet worden bijgewerkt (-q is ingesteld).
-# automatisch
-# @ := run.exe
-# automatisch
-# % := 
-# automatisch
-# * := 
-# automatisch
-# + := main.cpp physics.cpp basewin.h physics.h
-# automatisch
-# | := 
-# automatisch
-# < := main.cpp
-# automatisch
-# ^ := main.cpp physics.cpp basewin.h physics.h
-# automatisch
-# ? := main.cpp
+#  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=8/32=25%, Rehash=0, Botsingen=1/10=10%
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 #  uit te voeren opdrachten (van 'makefile', regel 4):
 	nvcc main.cpp physics.cpp -o run.exe
 	
@@ -276,9 +264,18 @@ all: run.exe
 #  Impliciete regel-zoekopdracht is uitgevoerd.
 #  Bestand bestaat niet.
 #  Bestand is bijgewerkt.
-#  Moet worden bijgewerkt (-q is ingesteld).
+#  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/2=0%
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+
+# Geen doel:
+particle.h:
+#  Impliciete regel-zoekopdracht is uitgevoerd.
+#  Laatst gewijzigd 2022-07-26 19:43:04
+#  Bestand is bijgewerkt.
+#  Succesvol bijgewerkt.
+# variabele verzameling van hashtabel-statistieken:
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 
 # Geen doel:
 .DEFAULT:
@@ -298,7 +295,16 @@ basewin.h:
 # Geen doel:
 makefile:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-26 15:56:15
+#  Laatst gewijzigd 2022-07-26 20:16:40
+#  Bestand is bijgewerkt.
+#  Succesvol bijgewerkt.
+# variabele verzameling van hashtabel-statistieken:
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+
+# Geen doel:
+boundary.h:
+#  Impliciete regel-zoekopdracht is uitgevoerd.
+#  Laatst gewijzigd 2022-07-26 19:43:32
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -346,7 +352,7 @@ physics.cpp:
 # Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 
 # hashtabel-statistieken van bestanden:
-# Belasting=10/1024=1%, Rehash=0, Botsingen=0/28=0%
+# Belasting=12/1024=1%, Rehash=0, Botsingen=0/31=0%
 # VPATH-zoekpaden
 
 # Geen 'vpath'-zoekpaden.
@@ -358,6 +364,6 @@ physics.cpp:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Make-gegevensbank voltooid op Tue Jul 26 20:16:02 2022
+# Make-gegevensbank voltooid op Thu Jul 28 16:11:56 2022
 
  

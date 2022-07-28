@@ -12,8 +12,6 @@ class Boundary{
         float nx;
         float ny;
         float length;
-        float velx;
-        float vely;
         float px;
         float py;
 
@@ -25,8 +23,6 @@ class Boundary{
             this->length = sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
             this->nx = (y2-y1)/this->length;
             this->ny = (x1-x2)/this->length;
-            this->velx = 0;
-            this->vely = 0;
             this->px = (x2-x1)/this->length;
             this->py = (y2-y1)/this->length;
         }
