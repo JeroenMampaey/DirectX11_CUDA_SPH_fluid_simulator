@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Thu Jul 28 17:01:41 2022
+# Make-gegevensbank, weergegeven op Fri Jul 29 02:15:38 2022
 
 # Variabelen
 
@@ -23,7 +23,7 @@ MAKEFLAGS = Rrqp
 # automatisch
 ?D = $(patsubst %/,%,$(dir $?))
 # omgeving
-PLATFORMIO_IDE = 2.5.0
+PLATFORMIO_IDE = 2.5.1
 # automatisch
 @D = $(patsubst %/,%,$(dir $@))
 # omgeving
@@ -55,7 +55,7 @@ PROGRAMW6432 = C:\Program Files
 # omgeving
 PROGRAMDATA = C:\ProgramData
 # omgeving
-VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project\2D_no_CUDA
+VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project
 # omgeving
 NO_PROXY = 127.0.0.1
 # omgeving
@@ -79,7 +79,7 @@ NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_24564_OWGPDWLFUHMRZLKL
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_29872_FDHHRVOSACLZPBEA
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -203,7 +203,7 @@ PROCESSOR_LEVEL = 25
 # omgeving
 FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
 # omgeving
-VSCODE_PID = 24564
+VSCODE_PID = 29872
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
@@ -220,7 +220,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin (sleutel C:/Program Files/Eclipse Adoptium/jdk-11.0.14.101-hotspot/bin, wijzigingstijd 1645897040): 126 bestanden, geen onmogelijkheden.
 # C:\windows\System32\WindowsPowerShell\v1.0\ (sleutel C:/windows/System32/WindowsPowerShell/v1.0/, wijzigingstijd 1644881062): 29 bestanden, geen onmogelijkheden.
 # C:\windows\System32\Wbem (sleutel C:/windows/System32/Wbem, wijzigingstijd 1652495833): 155 bestanden, geen onmogelijkheden.
-# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project, wijzigingstijd 1658842556): 6 bestanden, geen onmogelijkheden.
+# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project, wijzigingstijd 1659053726): 7 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/libnvvp, wijzigingstijd 1656728263): 14 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common (sleutel C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common, wijzigingstijd 1632727558): 10 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64 (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/extras/CUPTI/lib64, wijzigingstijd 1656728260): 12 bestanden, geen onmogelijkheden.
@@ -236,10 +236,13 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
 # C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1658793455): 45 bestanden, geen onmogelijkheden.
-# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
+# C:\Program Files\NVIDIA Corporation 
+make.exe: *** Er is geen regel om doel 'all' te maken.  Gestopt.
+
+\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
-# 3755 bestanden, geen onmogelijkheden in 23 mappen.
+# 3756 bestanden, geen onmogelijkheden in 23 mappen.
 
 # Impliciete regels
 
@@ -285,10 +288,7 @@ GNUmakefile:
 #  Bestand bestaat niet.
 #  Bestand is bijgewerkt.
 #  Bijwerken is mislukt.
-# variabele verzameling van hashtabel 
-make.exe: *** Er is geen regel om doel 'all' te maken.  Gestopt.
-
--statistieken:
+# variabele verzameling van hashtabel-statistieken:
 # Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 
 # hashtabel-statistieken van bestanden:
@@ -304,6 +304,6 @@ make.exe: *** Er is geen regel om doel 'all' te maken.  Gestopt.
 # strcache size: total = 0 / max = 0 / min = 4096 / avg = 0
 # strcache free: total = 0 / max = 0 / min = 4096 / avg = 0
 
-# Make-gegevensbank voltooid op Thu Jul 28 17:01:41 2022
+# Make-gegevensbank voltooid op Fri Jul 29 02:15:38 2022
 
  

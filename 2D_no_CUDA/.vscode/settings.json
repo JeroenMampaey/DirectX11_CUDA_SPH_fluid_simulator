@@ -1,3 +1,9 @@
 {
-    "makefile.extensionOutputFolder": "./.vscode"
+    "makefile.extensionOutputFolder": "./.vscode",
+    "files.associations": {
+        "cmath": "cpp",
+        "vector": "cpp",
+        "xstring": "cpp",
+        "atomic": "cpp"
+    }
 }

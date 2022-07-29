@@ -6,11 +6,15 @@
 #include <d2d1.h>
 #include <thread>
 #include <atomic>
+#include <string>
 
 #include "basewin.h"
 #include "physics.h"
 
-#define TIMER_ID 0
+#define TIMER_ID1 0
+#define TIMER_ID2 1
+
+#define FPS_UPDATE_INTERVAL_MILI 300.0
 
 // safely release the COM interface pointers as recommended here:
 // https://docs.microsoft.com/en-us/windows/win32/medfound/saferelease
@@ -30,7 +34,6 @@ class MainWindow : public BaseWindow<MainWindow>
     ID2D1SolidColorBrush    *pBrush;
     D2D1_ELLIPSE            ellipse;
     std::thread            physicsThread;
-    int height = 0;
 
     std::atomic<bool> exit = false;
     std::atomic<bool> updateRequired = false;
@@ -39,6 +42,9 @@ class MainWindow : public BaseWindow<MainWindow>
 
     Boundary boundaries[NUMBOUNDARIES];
     Particle particles[NUMPOINTS];
+
+    int last_ms = 0;
+    int passed_ms = 0;
 
     HRESULT CreateGraphicsResources();
     void    DiscardGraphicsResources();
@@ -58,9 +64,9 @@ public:
 
         // Initialize the particles
         float start_x = LEFT + 2*RADIUS;
-        float end_x = RIGHT - 2*RADIUS;
+        float end_x = LEFT + (RIGHT-LEFT)/3;
         float start_y = CEILING + 2*RADIUS;
-        float end_y = (FLOOR-CEILING)/2;
+        float end_y = CEILING + (FLOOR-CEILING)/2;
         float interval = sqrt((end_x-start_x)*(end_y-start_y)/NUMPOINTS);
         float x = start_x;
         float y = start_y;
@@ -72,7 +78,7 @@ public:
         }
     }
 
-    PCWSTR  ClassName() const { return L"Circle Window Class"; }
+    PCWSTR  ClassName() const { return L"SPH Window Class"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };
 
@@ -144,7 +150,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow)
 {
     MainWindow win;
 
-    if (!win.Create(L"Circle", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, CW_USEDEFAULT, CW_USEDEFAULT, RIGHT-LEFT, FLOOR-CEILING))
+    if (!win.Create(L"SPH", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, CW_USEDEFAULT, CW_USEDEFAULT, RIGHT-LEFT, FLOOR-CEILING))
     {
         return 0;
     }
@@ -178,9 +184,16 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         // Setup the timer to notify the physics thread to update everything
         SetTimer(m_hwnd,
-                TIMER_ID,
-                INTERVAL_MILI,
+                TIMER_ID1,
+                UPDATES_PER_RENDER*INTERVAL_MILI,
                 (TIMERPROC) NULL);
+
+        // Setup the timer show ms per frame in the title bar
+        SetTimer(m_hwnd,
+                TIMER_ID2,
+                FPS_UPDATE_INTERVAL_MILI,
+                (TIMERPROC) NULL);
+        
         return 0;
 
     case WM_DESTROY:
@@ -190,11 +203,20 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         // Stop the background thread
         exit.store(true);
+        drawingIndex.store(NUMPOINTS);
         physicsThread.join();
 
         return 0;
 
     case WM_PAINT:
+        {
+            // Estimate the number of ms per frame
+            SYSTEMTIME st;
+            GetSystemTime(&st);
+            passed_ms = st.wMilliseconds+1000*st.wSecond-last_ms+1000*st.wMinute*60;
+            last_ms = st.wMilliseconds+1000*st.wSecond+1000*st.wMinute*60;
+        }
+
         // Repaint the screen
         OnPaint();
         return 0;
@@ -203,9 +225,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
  
         switch (wParam) 
         { 
-            case TIMER_ID:
+            case TIMER_ID1:
                 // Notify the physics thread to request an update
                 updateRequired.store(true);
+                return 0;
+            
+            case TIMER_ID2:
+                // Update the title bar with number of ms per frame
+                SetWindowTextA(m_hwnd, (LPCSTR)std::to_string(passed_ms).c_str());
                 return 0;
         }
     }
