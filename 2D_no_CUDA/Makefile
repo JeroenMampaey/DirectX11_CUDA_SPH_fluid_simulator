@@ -1,6 +1,6 @@
 all: run.exe
 
-run.exe: main.cpp physics.cpp basewin.h physics.h boundary.h particle.h pair.h
+run.exe: main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h pair.h
 	nvcc main.cpp physics.cpp -o run.exe
 
 clean:

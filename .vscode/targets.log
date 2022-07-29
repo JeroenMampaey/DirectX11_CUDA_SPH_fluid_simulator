@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Fri Jul 29 02:15:38 2022
+# Make-gegevensbank, weergegeven op Fri Jul 29 18:04:41 2022
 
 # Variabelen
 
@@ -47,8 +47,6 @@ PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
 # makefile
 MAKEFILE_LIST := 
 # omgeving
-FPS_BROWSER_USER_PROFILE_STRING = Default
-# omgeving
 TMP = C:\Users\jrmam\AppData\Local\Temp
 # omgeving
 PROGRAMW6432 = C:\Program Files
@@ -75,11 +73,12 @@ ELECTRON_RUN_AS_NODE = 1
 # standaard
 .FEATURES := target-specific order-only second-expansion else-if archives
 # omgeving
-NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
+NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvTools 
+Ext\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_29872_FDHHRVOSACLZPBEA
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_29620_EUAZYKMRHZMAGCEJ
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -99,7 +98,7 @@ VSCODE_CLI = 1
 # omgeving
 VSCODE_CODE_CACHE_PATH = C:\Users\jrmam\AppData\Roaming\Code\CachedData\3b889b090b5ad5793f524b5d1d39fda662b96a2a
 # omgeving
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # omgeving
 COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # omgeving
@@ -111,7 +110,7 @@ VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # omgeving
 USERDOMAIN = LAPTOP-4OCTM8L7
 # omgeving
-PLATFORMIO_PATH = C:\Users\jrmam\.platformio\python3;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin
+PLATFORMIO_PATH = C:\Users\jrmam\.platformio\penv\Scripts;C:\Users\jrmam\.platformio\penv;C:\Users\jrmam\.platformio\python3;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin
 # standaard
 MAKE = $(MAKE_COMMAND)
 # standaard
@@ -201,13 +200,11 @@ LANG = C
 # omgeving
 PROCESSOR_LEVEL = 25
 # omgeving
-FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
-# omgeving
-VSCODE_PID = 29872
+VSCODE_PID = 29620
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=97/1024=9%, Rehash=0, Botsingen=12/114=11%
+# Belasting=95/1024=9%, Rehash=0, Botsingen=12/112=11%
 
 # Patroonspecifieke variabelewaarden
 
@@ -220,7 +217,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin (sleutel C:/Program Files/Eclipse Adoptium/jdk-11.0.14.101-hotspot/bin, wijzigingstijd 1645897040): 126 bestanden, geen onmogelijkheden.
 # C:\windows\System32\WindowsPowerShell\v1.0\ (sleutel C:/windows/System32/WindowsPowerShell/v1.0/, wijzigingstijd 1644881062): 29 bestanden, geen onmogelijkheden.
 # C:\windows\System32\Wbem (sleutel C:/windows/System32/Wbem, wijzigingstijd 1652495833): 155 bestanden, geen onmogelijkheden.
-# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project, wijzigingstijd 1659053726): 7 bestanden, geen onmogelijkheden.
+# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project, wijzigingstijd 1659099224): 9 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/libnvvp, wijzigingstijd 1656728263): 14 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common (sleutel C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common, wijzigingstijd 1632727558): 10 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64 (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/extras/CUPTI/lib64, wijzigingstijd 1656728260): 12 bestanden, geen onmogelijkheden.
@@ -236,13 +233,10 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
 # C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1658793455): 45 bestanden, geen onmogelijkheden.
-# C:\Program Files\NVIDIA Corporation 
-make.exe: *** Er is geen regel om doel 'all' te maken.  Gestopt.
-
-\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
+# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
-# 3756 bestanden, geen onmogelijkheden in 23 mappen.
+# 3758 bestanden, geen onmogelijkheden in 23 mappen.
 
 # Impliciete regels
 
@@ -289,7 +283,10 @@ GNUmakefile:
 #  Bestand is bijgewerkt.
 #  Bijwerken is mislukt.
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+# Belasting=0/32=0%, Rehash=0, Botsingen=0 
+make.exe: *** Er is geen regel om doel 'all' te maken.  Gestopt.
+
+/0=0%
 
 # hashtabel-statistieken van bestanden:
 # Belasting=5/1024=0%, Rehash=0, Botsingen=0/16=0%
@@ -304,6 +301,6 @@ GNUmakefile:
 # strcache size: total = 0 / max = 0 / min = 4096 / avg = 0
 # strcache free: total = 0 / max = 0 / min = 4096 / avg = 0
 
-# Make-gegevensbank voltooid op Fri Jul 29 02:15:38 2022
+# Make-gegevensbank voltooid op Fri Jul 29 18:04:41 2022
 
  

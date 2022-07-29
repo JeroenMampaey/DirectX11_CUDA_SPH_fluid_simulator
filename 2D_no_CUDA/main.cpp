@@ -8,7 +8,7 @@
 #include <atomic>
 #include <string>
 
-#include "basewin.h"
+#include "../basewin.h"
 #include "physics.h"
 
 #define TIMER_ID1 0
@@ -32,7 +32,6 @@ class MainWindow : public BaseWindow<MainWindow>
     ID2D1Factory            *pFactory;
     ID2D1HwndRenderTarget   *pRenderTarget;
     ID2D1SolidColorBrush    *pBrush;
-    D2D1_ELLIPSE            ellipse;
     std::thread            physicsThread;
 
     std::atomic<bool> exit = false;
