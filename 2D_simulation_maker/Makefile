@@ -5,4 +5,3 @@ run.exe: main.cpp simulation_builder.cpp ../basewin.h
 
 clean:
 	powershell "(Remove-Item -ErrorAction Ignore run.exe)"
-	powershell "(Remove-Item -ErrorAction Ignore simulation.txt)"

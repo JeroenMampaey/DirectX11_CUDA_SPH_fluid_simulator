@@ -24,10 +24,7 @@ class MainWindow : public BaseWindow<MainWindow>
 
 public:
 
-    MainWindow() : pFactory(NULL), pRenderTarget(NULL), pBrush(NULL), simulation_builder(NULL)
-    {
-    }
-
+    MainWindow() : pFactory(NULL), pRenderTarget(NULL), pBrush(NULL), simulation_builder(NULL){}
     PCWSTR  ClassName() const { return L"SPH Window Class"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
 };

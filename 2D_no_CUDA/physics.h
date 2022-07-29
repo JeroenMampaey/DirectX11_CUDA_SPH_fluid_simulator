@@ -11,26 +11,23 @@
 #define GRAVITY 9.8
 #define PIXEL_PER_METER 100.0
 
-#define NUMPOINTS 1000
-#define NUMBOUNDARIES 3
-
 #define DAMPING 0.1
 
 #define SMOOTH 35.0
 #define REST 0.2
 #define MULTIPLIER 6.0
-#define STIFF 100000.0
+#define STIFF 130000.0
 
 #define PI 3.141592
 #define SQRT_PI 1.772453
 
-#define M_P REST*RIGHT*500.0/NUMPOINTS
+#define M_P REST*RADIUS*RADIUS*4*3
 
 #include <d2d1.h>
 #include <atomic>
 #include "boundary.h"
 #include "particle.h"
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, Particle* particles, HWND m_hwnd);
+void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, HWND m_hwnd);
 
 #endif

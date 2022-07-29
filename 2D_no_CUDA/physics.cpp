@@ -40,8 +40,8 @@ void addBoundaryParticles(float crossing_x, float crossing_y, Boundary &line, Pa
 // Loop over all boundaries and check if Particle p has crossed a boundary and if so, 
 // change the position and velocity of p as to simulate a collision according (or atleast somewhat similar to) 
 // regular classical mechanics
-void checkAllBoundaries(Particle &p, Boundary* boundaries){
-    for(int i=0; i<NUMBOUNDARIES; i++){
+void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
+    for(int i=0; i<numboundaries; i++){
         Boundary &line = boundaries[i];
         float first_check = ((p.x-line.x1)*line.nx+(p.y-line.y1)*line.ny)*((p.oldx-line.x1)*line.nx+(p.oldy-line.y1)*line.ny);
         if(first_check > 0) continue;
@@ -65,11 +65,11 @@ void checkAllBoundaries(Particle &p, Boundary* boundaries){
     }
 }
 
-void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, Particle* particles){
+void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints){
     std::vector<Pair> pairs;
     std::vector<BoundaryPair> boundary_pairs;
 
-    for(int i=0; i<NUMPOINTS; i++){
+    for(int i=0; i<numpoints; i++){
         // Make sure the particle is not being painted on the screen at the moment
         while(drawingIndex.load() <= i){}
 
@@ -81,7 +81,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, Parti
         p.vely += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
 
         // Update positional change of particles caused boundaries (make sure particles cannot pass boundaries)
-        checkAllBoundaries(p, boundaries);
+        checkAllBoundaries(p, boundaries, numboundaries);
         
         p.oldx = p.x;
         p.oldy = p.y;
@@ -106,10 +106,10 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, Parti
         }
     }
 
-    for(int i=0; i<NUMPOINTS; i++){
+    for(int i=0; i<numpoints; i++){
         Particle &p = particles[i];
         // Find boundaries that are near enough to particles to possibly influence their density
-        for(int j=0; j<NUMBOUNDARIES; j++){
+        for(int j=0; j<numboundaries; j++){
             Boundary &line = boundaries[j];
             float projection = (line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny;
             float crossing_x = p.x + projection*line.nx;
@@ -138,7 +138,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, Parti
     }
     
     // Calculate the pressure of each particle based on their density
-    for (int i = 0; i < NUMPOINTS; i++) {
+    for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
         p.press = STIFF * (p.dens - REST);
     }
@@ -170,20 +170,20 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, Parti
     }
     
     // Update the position of particles based on Euler's equation for an ideal fluid
-    for (int i = 0; i < NUMPOINTS; i++) {
+    for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
         p.x += p.velx * (INTERVAL_MILI/1000.0);
         p.y += p.vely * (INTERVAL_MILI/1000.0);
     }
 }
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, Particle* particles, HWND m_hwnd){
+void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, HWND m_hwnd){
     float velocity = 0;
     while(!exit.load()){
         bool expected = true;
         if(updateRequired.compare_exchange_weak(expected, false)){
             // If an update is necessary, update the particles UPDATES_PER_RENDER times and then redraw the particles
-            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, particles);
+            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, numboundaries, particles, numpoints);
             drawingIndex.store(0);
 
             // Redraw the particles

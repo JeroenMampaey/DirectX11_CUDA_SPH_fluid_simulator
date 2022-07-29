@@ -1,8 +1,8 @@
 #include "simulation_builder.h"
 
 void SimulationBuilder::addParticle(int x, int y) {
-    for(int i=0; i<5; i++){
-        for(int j=0; j<5; j++){
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
             particles.push_back(D2D1::Ellipse(D2D1::Point2F(x+2.5*i*RADIUS, y+2.5*j*RADIUS), RADIUS, RADIUS));
         }
     }
@@ -48,17 +48,17 @@ void SimulationBuilder::keyboardEvent(short key){
 void SimulationBuilder::storeAndClear(){
     std::string file_content = "PARTICLES:\n";
     for(D2D1_ELLIPSE particle : particles){
-        file_content += std::to_string(particle.point.x) + " " + std::to_string(particle.point.y) + "\n";
+        file_content += std::to_string((int)particle.point.x) + " " + std::to_string((int)particle.point.y) + "\n";
     }
     file_content += "LINES:\n";
     for(std::pair<D2D1_POINT_2F, D2D1_POINT_2F> line : lines){
-        file_content += std::to_string(line.first.x) + " " + std::to_string(line.first.y) + " " + std::to_string(line.second.x) + " " + std::to_string(line.second.y) + "\n";
+        file_content += std::to_string((int)line.first.x) + " " + std::to_string((int)line.first.y) + " " + std::to_string((int)line.second.x) + " " + std::to_string((int)line.second.y) + "\n";
     }
     HANDLE hFile;
     char* dataBuffer = &file_content[0];
     DWORD dwBytesToWrite = file_content.size();
     DWORD dwBytesWritten = 0;
-    hFile = CreateFileA("simulation.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    hFile = CreateFileA("../simulation_layout/simulation2D.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE)
     { 
