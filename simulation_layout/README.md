@@ -1,0 +1,1 @@
+This folder is used to store text files describing the initial conditions for the simulations

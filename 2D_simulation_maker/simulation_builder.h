@@ -34,6 +34,7 @@ class SimulationBuilder{
         void startLine(int x, int y);
         void moveLine(int x, int y);
 
+        // Transition table for the automaton defining the behavior for mouse events
         int transition_table[10][3] = {
             {0, 1, 8},
             {2, 0, 1},
@@ -47,6 +48,7 @@ class SimulationBuilder{
             {9, 9, 0},
         };
 
+        // Output/action table for the automaton defining the behavior for mouse events
         void (SimulationBuilder::*action_table[10])(int, int) = {
             &SimulationBuilder::doNothing,
             &SimulationBuilder::doNothing,

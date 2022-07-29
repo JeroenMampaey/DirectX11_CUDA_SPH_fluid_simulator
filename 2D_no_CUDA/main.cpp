@@ -109,11 +109,13 @@ void MainWindow::OnPaint()
         pRenderTarget->Clear( D2D1::ColorF(D2D1::ColorF::SkyBlue) );
         
         // Draw the boundaries
+        pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
         for(int i = 0; i < numboundaries; i++){
             pRenderTarget->DrawLine(D2D1::Point2F(boundaries[i].x1, boundaries[i].y1), D2D1::Point2F(boundaries[i].x2, boundaries[i].y2), pBrush);
         }
 
         // Draw the particles
+        pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
         for(int i = 0; i < numpoints; i++){
             pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(particles[i].x, particles[i].y), RADIUS, RADIUS), pBrush);
             drawingIndex.store(i+1);
@@ -155,8 +157,10 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_CREATE:
+        // Register this class as a window property (used for callbacks)
         SetProp(m_hwnd, L"MainWindow", this);
 
+        // Setup the initial conditions for the simulation
         buildSimulationLayout();
 
         if (FAILED(D2D1CreateFactory(
@@ -183,6 +187,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_DESTROY:
+        // Remove this class as a window property (used for callbacks)
         RemoveProp(m_hwnd, L"MainWindow");
 
         DiscardGraphicsResources();
@@ -240,33 +245,41 @@ void MainWindow::buildSimulationLayout(){
     hFile = CreateFileA("../simulation_layout/simulation2D.txt", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 
     if(hFile == INVALID_HANDLE_VALUE){
+        // If the file does not exist, build the default layout
         buildDefaultSimulationLayout();
         return;
     }
 
+    // Try reading the simulation2D.txt file
     if( FALSE == ReadFileEx(hFile, ReadBuffer, MAX_BUFFERSIZE-1, &ol, MainWindow::FileIOCompletionRoutine) )
     {
+        // If something went wrong, build the default layout
         CloseHandle(hFile);
         buildDefaultSimulationLayout();
         return;
     }
 
+    // Wait at most 10 seconds for the file to be read (this returns early once the file has been read thus usually the 10 seconds 
+    // will not be necessary)
     SleepEx(10000, TRUE);
 
     dwBytesRead = g_BytesTransferred;
 
     if (dwBytesRead > 0 && dwBytesRead <= MAX_BUFFERSIZE-1)
     {
+        // If the file was read successfully, parse the contents
         ReadBuffer[dwBytesRead]='\0';
         buildSimulationLayoutFromFile(ReadBuffer);
     }
     else{
+        // If something went wrong, build the default layout
         buildDefaultSimulationLayout();
     }
 
     CloseHandle(hFile);
 }
 
+// Setup a simple default simulation layout
 void MainWindow::buildDefaultSimulationLayout(){
     numpoints = DEFAULT_NUMPOINTS;
     numboundaries = DEFAULT_NUMBOUNDARIES;
@@ -293,17 +306,23 @@ void MainWindow::buildDefaultSimulationLayout(){
     }
 }
 
+// Parse the ReadBuffer and setup the corresponding simulation layout
 void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     std::vector<Particle> tempParticles;
     std::vector<Boundary> tempBoundaries;
+    // Skip the first line which should contain "PARTICLES:\n"
     int index = 11;
+    
+    // Parse all particles until "LINES:\n" is found
     while(ReadBuffer[index]!='L'){
+        // Read the x coordinate of the particle
         int first_number = 0;
         while(ReadBuffer[index]!=' '){
             first_number = first_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
+        // Read the y coordinate of the particle
         int second_number = 0;
         while(ReadBuffer[index]!='\n'){
             second_number = second_number*10 + (ReadBuffer[index]-'0');
@@ -313,25 +332,31 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         tempParticles.push_back(Particle(first_number, second_number, 0, 0, 0));
     }
     index += 7;
+
+    // Parse all boundaries until the end of the array (marked by '\0')
     while(ReadBuffer[index]!='\0'){
+        // Read the x coordinate of the first point of the line
         int first_number = 0;
         while(ReadBuffer[index]!=' '){
             first_number = first_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
+        // Read the y coordinate of the first point of the line
         int second_number = 0;
         while(ReadBuffer[index]!=' '){
             second_number = second_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
+        // Read the x coordinate of the second point of the line
         int third_number = 0;
         while(ReadBuffer[index]!=' '){
             third_number = third_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
+        // Read the y coordinate of the second point of the line
         int fourth_number = 0;
         while(ReadBuffer[index]!='\n'){
             fourth_number = fourth_number*10 + (ReadBuffer[index]-'0');
@@ -341,6 +366,7 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         tempBoundaries.push_back(Boundary(first_number, second_number, third_number, fourth_number));
     }
 
+    // Build the particle and boundary arrays from the temporary vectors
     numpoints = tempParticles.size();
     numboundaries = tempBoundaries.size();
 
@@ -356,8 +382,10 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     }
 }
 
+// Callback used for reading the simulation2D.txt file
 VOID CALLBACK MainWindow::FileIOCompletionRoutine(__in  DWORD dwErrorCode, __in  DWORD dwNumberOfBytesTransfered, __in  LPOVERLAPPED lpOverlapped ){
     MainWindow* pThis = (MainWindow*)GetProp((HWND)lpOverlapped->hEvent, L"MainWindow");
+    // Signal the number of bytes read from the file to the MainWindow instance registered as property of the window
     pThis->setBytesTransferred(dwNumberOfBytesTransfered);
 }
 

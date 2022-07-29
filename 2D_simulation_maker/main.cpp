@@ -75,17 +75,21 @@ void MainWindow::OnPaint()
 
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
 
+        // Draw all particles
         std::vector<D2D1_ELLIPSE> &particles = simulation_builder.getParticles();
         for (D2D1_ELLIPSE particle : particles)
         {
             pRenderTarget->FillEllipse(particle, pBrush);
         }
 
+        // Draw all boundaries
         std::vector<std::pair<D2D1_POINT_2F, D2D1_POINT_2F>> &lines = simulation_builder.getLines();
         for (std::pair<D2D1_POINT_2F, D2D1_POINT_2F> line : lines)
         {
             pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
             pRenderTarget->DrawLine(line.first, line.second, pBrush);
+
+            // Also draw for each boundary a normal vector (simply a small red line)
             float length = sqrt((line.second.x-line.first.x)*(line.second.x-line.first.x)+(line.second.y-line.first.y)*(line.second.y-line.first.y));
             if(length > 0){
                 float nx = (line.second.y-line.first.y)/length;
@@ -156,18 +160,22 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     
     case WM_LBUTTONDOWN:
+        // Signal the mouseEvent with the SimulationBuilder
         simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_LEFT);
         return 0;
 
     case WM_RBUTTONDOWN:
+        // Signal the mouseEvent with the SimulationBuilder
         simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_RIGHT);
         return 0;
     
     case WM_MOUSEMOVE:
+        // Signal the mouseEvent with the SimulationBuilder
         simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_MOV);
         return 0;
     
     case WM_KEYDOWN:
+        // Signal the keyboardEvent with the SimulationBuilder
         simulation_builder.keyboardEvent(wParam);
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);

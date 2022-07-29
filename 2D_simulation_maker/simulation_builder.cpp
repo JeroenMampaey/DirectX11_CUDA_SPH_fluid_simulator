@@ -1,5 +1,6 @@
 #include "simulation_builder.h"
 
+// Add a small square of particles starting at x, y
 void SimulationBuilder::addParticle(int x, int y) {
     for(int i=0; i<3; i++){
         for(int j=0; j<3; j++){
@@ -13,15 +14,18 @@ void SimulationBuilder::doNothing(int x, int y) {
     // do nothing
 }
 
+// Start a new line at x, y
 void SimulationBuilder::startLine(int x, int y){
     lines.push_back(std::make_pair(D2D1::Point2F(x, y), D2D1::Point2F(x, y)));
 }
 
+// move the last point of the last line to x, y
 void SimulationBuilder::moveLine(int x, int y){
     lines.back().second = D2D1::Point2F(x, y);
     InvalidateRect(m_hwnd, NULL, FALSE);
 }
 
+// Respond to mouse events according to an automaton
 void SimulationBuilder::mouseEvent(int x, int y, int event_type) {
     current_state = transition_table[current_state][event_type];
     (this->*action_table[current_state])(x, y);
@@ -38,6 +42,7 @@ std::vector<std::pair<D2D1_POINT_2F, D2D1_POINT_2F>>& SimulationBuilder::getLine
 void SimulationBuilder::keyboardEvent(short key){
     switch(key){
         case 'A':
+            // When the A-key is pressed, clear the screen and store the particles and boundaries in a file
             storeAndClear();
             break;
         default:
@@ -45,7 +50,9 @@ void SimulationBuilder::keyboardEvent(short key){
     }
 }
 
+// Clear the screen and store the particles and boundaries in a file at "../simulation_layout/simulation2D.txt"
 void SimulationBuilder::storeAndClear(){
+    // Convert the particles and the boundaries to a string format
     std::string file_content = "PARTICLES:\n";
     for(D2D1_ELLIPSE particle : particles){
         file_content += std::to_string((int)particle.point.x) + " " + std::to_string((int)particle.point.y) + "\n";
@@ -54,6 +61,8 @@ void SimulationBuilder::storeAndClear(){
     for(std::pair<D2D1_POINT_2F, D2D1_POINT_2F> line : lines){
         file_content += std::to_string((int)line.first.x) + " " + std::to_string((int)line.first.y) + " " + std::to_string((int)line.second.x) + " " + std::to_string((int)line.second.y) + "\n";
     }
+
+    // Write the string to a file
     HANDLE hFile;
     char* dataBuffer = &file_content[0];
     DWORD dwBytesToWrite = file_content.size();
@@ -85,6 +94,7 @@ void SimulationBuilder::storeAndClear(){
 
     CloseHandle(hFile);
 
+    // Clear the screen
     particles.clear();
     lines.clear();
     current_state = 0;

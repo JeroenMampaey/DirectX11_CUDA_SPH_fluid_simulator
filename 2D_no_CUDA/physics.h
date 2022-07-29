@@ -21,6 +21,7 @@
 #define PI 3.141592
 #define SQRT_PI 1.772453
 
+// M_P depends on how many particles are desired per volume unit, determined experimentally
 #define M_P REST*RADIUS*RADIUS*4*3
 
 #include <d2d1.h>
