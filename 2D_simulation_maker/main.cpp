@@ -8,17 +8,6 @@
 #include "../basewin.h"
 #include "simulation_builder.h"
 
-// safely release the COM interface pointers as recommended here:
-// https://docs.microsoft.com/en-us/windows/win32/medfound/saferelease
-template <class T> void SafeRelease(T **ppT)
-{
-    if (*ppT)
-    {
-        (*ppT)->Release();
-        *ppT = NULL;
-    }
-}
-
 class MainWindow : public BaseWindow<MainWindow>
 {
     ID2D1Factory            *pFactory;

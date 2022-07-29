@@ -7,6 +7,17 @@
 #pragma comment(lib,"gdi32.lib")
 #pragma comment(lib, "ole32.lib")
 
+// safely release the COM interface pointers as recommended here:
+// https://docs.microsoft.com/en-us/windows/win32/medfound/saferelease
+template <class T> void SafeRelease(T **ppT)
+{
+    if (*ppT)
+    {
+        (*ppT)->Release();
+        *ppT = NULL;
+    }
+}
+
 template <class DERIVED_TYPE> 
 class BaseWindow
 {
