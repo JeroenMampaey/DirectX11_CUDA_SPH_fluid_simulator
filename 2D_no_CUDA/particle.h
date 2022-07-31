@@ -2,6 +2,8 @@
 #define PARTICLE_H
 
 #include <cmath>
+#include <vector>
+#include "pair.h"
 
 class Particle{
     public:
@@ -13,6 +15,8 @@ class Particle{
         float vely;
         float dens;
         float press;
+        std::vector<Neighbor> particle_neighbors;
+        std::vector<Neighbor> virtual_neighbors;
 
         Particle(float x, float y, float velx, float vely, float dens){
             this->x = x;

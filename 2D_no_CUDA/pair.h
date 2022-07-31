@@ -1,7 +1,27 @@
 #ifndef PAIR_H
 #define PAIR_H
 
-#include "particle.h"
+class Particle;
+
+class Neighbor{
+    public:
+        Particle* p;
+        float dist;
+        float x;
+        float y;
+
+        float q;
+        float q2;
+
+        Neighbor(Particle* p, float dist, float x, float y, float q, float q2){
+            this->p = p;
+            this->dist = dist;
+            this->x = x;
+            this->y = y;
+            this->q = q;
+            this->q2 = q2;
+        }
+};
 
 class Pair{
     public:
