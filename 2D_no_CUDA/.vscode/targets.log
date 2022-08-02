@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Sat Jul 30 23:22:43 2022
+# Make-gegevensbank, weergegeven op Tue Aug 02 00:52:09 2022
 
 # Variabelen
 
@@ -33,7 +33,8 @@ HOMEDRIVE = C:
 # automatisch
 ^D = $(patsubst %/,%,$(dir $^))
 # makefile
-CURDIR := c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA
+CURDIR := c:/Users/jrmam/Desktop/CUDA_programm 
+ing/project/2D_no_CUDA
 # standaard
 SHELL := sh.exe
 # omgeving
@@ -77,7 +78,7 @@ NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_27532_UVTFSTYPVQIPYUJO
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_12136_IHTHLYTIEUJJERAS
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -199,7 +200,7 @@ LANG = C
 # omgeving
 PROCESSOR_LEVEL = 25
 # omgeving
-VSCODE_PID = 27532
+VSCODE_PID = 12136
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
@@ -216,7 +217,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin (sleutel C:/Program Files/Eclipse Adoptium/jdk-11.0.14.101-hotspot/bin, wijzigingstijd 1645897040): 126 bestanden, geen onmogelijkheden.
 # C:\windows\System32\WindowsPowerShell\v1.0\ (sleutel C:/windows/System32/WindowsPowerShell/v1.0/, wijzigingstijd 1644881062): 29 bestanden, geen onmogelijkheden.
 # C:\windows\System32\Wbem (sleutel C:/windows/System32/Wbem, wijzigingstijd 1652495833): 155 bestanden, geen onmogelijkheden.
-# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA, wijzigingstijd 1659131544): 11 bestanden, geen onmogelijkheden.
+# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA, wijzigingstijd 1659227231): 11 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/libnvvp, wijzigingstijd 1656728263): 14 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common (sleutel C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common, wijzigingstijd 1632727558): 10 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64 (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/extras/CUPTI/lib64, wijzigingstijd 1656728260): 12 bestanden, geen onmogelijkheden.
@@ -231,9 +232,8 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # kan status van C:\ProgramData\DockerDesktop\version-bin niet opvragen.
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
-# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1658793455): 45 bestanden, geen onmogelijkheden.
-# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/N 
-VIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
+# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659265603): 45 bestanden, geen onmogelijkheden.
+# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
 # 3760 bestanden, geen onmogelijkheden in 23 mappen.
@@ -247,7 +247,7 @@ VIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen 
 run.exe: main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h pair.h
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
 #  Impliciete/statische patroonstam: ''
-#  Laatst gewijzigd 2022-07-30 17:17:36
+#  Laatst gewijzigd 2022-08-01 02:41:28
 #  Bestand is bijgewerkt.
 #  Moet worden bijgewerkt (-q is ingesteld).
 # automatisch
@@ -265,7 +265,7 @@ run.exe: main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h pair.
 # automatisch
 # ^ := main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h pair.h
 # automatisch
-# ? := physics.cpp physics.h
+# ? := physics.cpp
 # variabele verzameling van hashtabel-statistieken:
 # Belasting=8/32=25%, Rehash=0, Botsingen=1/10=10%
 #  uit te voeren opdrachten (van 'makefile', regel 4):
@@ -284,7 +284,7 @@ all: run.exe
 # Geen doel:
 particle.h:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-28 22:06:54
+#  Laatst gewijzigd 2022-08-01 02:37:35
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -341,7 +341,7 @@ main.cpp:
 # Geen doel:
 physics.h:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-30 18:05:16
+#  Laatst gewijzigd 2022-08-01 00:22:14
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -358,7 +358,7 @@ clean:
 # Geen doel:
 physics.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-30 18:05:00
+#  Laatst gewijzigd 2022-08-01 02:58:12
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -367,10 +367,11 @@ physics.cpp:
 # Geen doel:
 pair.h:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-29 01:18:12
+#  Laatst gewijzigd 2022-07-31 00:40:15
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
+# variabele verzameling van hashtabel-statistieke 
+n:
 # Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 
 # hashtabel-statistieken van bestanden:
@@ -386,6 +387,6 @@ pair.h:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Make-gegevensbank voltooid op Sat Jul 30 23:22:43 2022
+# Make-gegevensbank voltooid op Tue Aug 02 00:52:09 2022
 
  

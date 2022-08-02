@@ -13,16 +13,17 @@
 
 #define DAMPING 0.1
 
-#define SMOOTH 35.0
+#define SMOOTH 20.0
 #define REST 0.2
-#define MULTIPLIER 6.0
-#define STIFF 100000.0
+#define STIFF 500000.0
 
 #define PI 3.141592
 #define SQRT_PI 1.772453
 
 // M_P depends on how many particles are desired per volume unit, determined experimentally
-#define M_P REST*RADIUS*RADIUS*4*2
+#define M_P REST*RADIUS*RADIUS*4
+
+#define VEL_LIMIT 500.0
 
 #include <d2d1.h>
 #include <atomic>

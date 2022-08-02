@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <vector>
-#include "pair.h"
+#include "neighbor.h"
 
 class Particle{
     public:
@@ -16,7 +16,7 @@ class Particle{
         float dens;
         float press;
         std::vector<Neighbor> particle_neighbors;
-        std::vector<Neighbor> virtual_neighbors;
+        std::vector<VirtualNeigbors> virtual_neighbors;
 
         Particle(float x, float y, float velx, float vely, float dens){
             this->x = x;
