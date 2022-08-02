@@ -1,0 +1,1 @@
+This folder contains some example layouts for some typical simulations. To use for example one of these 2D layouts, copy the txt file here to the [simulation_layout](../simulation_layout) folder and rename the txt file to "simulation2D.txt".

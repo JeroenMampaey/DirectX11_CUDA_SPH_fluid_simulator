@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Tue Aug 02 20:13:41 2022
+# Make-gegevensbank, weergegeven op Tue Aug 02 22:24:44 2022
 
 # Variabelen
 
@@ -33,8 +33,7 @@ HOMEDRIVE = C:
 # automatisch
 ^D = $(patsubst %/,%,$(dir $^))
 # makefile
-CURDIR := c:/Users/jrmam/Desktop/CUDA_programm 
-ing/project/2D_no_CUDA
+CURDIR := c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker
 # standaard
 SHELL := sh.exe
 # omgeving
@@ -56,7 +55,7 @@ PROGRAMW6432 = C:\Program Files
 # omgeving
 PROGRAMDATA = C:\ProgramData
 # omgeving
-VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project\2D_no_CUDA
+VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project\2D_simulation_maker
 # omgeving
 NO_PROXY = 127.0.0.1
 # omgeving
@@ -100,7 +99,7 @@ VSCODE_CLI = 1
 # omgeving
 VSCODE_CODE_CACHE_PATH = C:\Users\jrmam\AppData\Roaming\Code\CachedData\3b889b090b5ad5793f524b5d1d39fda662b96a2a
 # omgeving
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
 # omgeving
 COMMONPROGRAMFILES = C:\Program Files (x86)\Common Files
 # omgeving
@@ -112,7 +111,7 @@ VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # omgeving
 USERDOMAIN = LAPTOP-4OCTM8L7
 # omgeving
-PLATFORMIO_PATH = C:\Users\jrmam\.platformio\penv\Scripts;C:\Users\jrmam\.platformio\penv;C:\Users\jrmam\.platformio\python3;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin
+PLATFORMIO_PATH = C:\Users\jrmam\.platformio\python3;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Program Files (x86)\GnuWin32\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp;C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Git\cmd;C:\Program Files\PuTTY\;C:\Program Files\usbipd-win\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2022.2.0\;C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps;;C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin
 # standaard
 MAKE = $(MAKE_COMMAND)
 # standaard
@@ -208,7 +207,7 @@ VSCODE_PID = 22692
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=97/1024=9%, Rehash=0, Botsingen=12/119=10%
+# Belasting=97/1024=9%, Rehash=0, Botsingen=12/117=10%
 
 # Patroonspecifieke variabelewaarden
 
@@ -221,7 +220,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin (sleutel C:/Program Files/Eclipse Adoptium/jdk-11.0.14.101-hotspot/bin, wijzigingstijd 1645897040): 126 bestanden, geen onmogelijkheden.
 # C:\windows\System32\WindowsPowerShell\v1.0\ (sleutel C:/windows/System32/WindowsPowerShell/v1.0/, wijzigingstijd 1644881062): 29 bestanden, geen onmogelijkheden.
 # C:\windows\System32\Wbem (sleutel C:/windows/System32/Wbem, wijzigingstijd 1652495833): 155 bestanden, geen onmogelijkheden.
-# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA, wijzigingstijd 1659463983): 12 bestanden, geen onmogelijkheden.
+# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker, wijzigingstijd 1659459796): 8 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/libnvvp, wijzigingstijd 1656728263): 14 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common (sleutel C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common, wijzigingstijd 1632727558): 10 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64 (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/extras/CUPTI/lib64, wijzigingstijd 1656728260): 12 bestanden, geen onmogelijkheden.
@@ -232,15 +231,16 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64 (sleutel C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/bin/Hostx64/x64, wijzigingstijd 1656806333): 69 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin, wijzigingstijd 1656728269): 45 bestanden, geen onmogelijkheden.
 # C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin (sleutel C:/Users/jrmam/AppData/Local/Programs/Microsoft VS Code/bin, wijzigingstijd 1658837513): 4 bestanden, geen onmogelijkheden.
-# C:\windows (sleutel C:/windows, wijzigingstijd 1657845261): 120 bestanden, geen onmogelijkheden.
+# C:\windows (sleute 
+l C:/windows, wijzigingstijd 1657845261): 120 bestanden, geen onmogelijkheden.
 # kan status van C:\ProgramData\DockerDesktop\version-bin niet opvragen.
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
-# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659265603): 45 bestanden, geen onmogelijkheden.
+# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659464600): 45 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
-# 3761 bestanden, geen onmogelijkheden in 23 mappen.
+# 3757 bestanden, geen onmogelijkheden in 23 mappen.
 
 # Impliciete regels
 
@@ -248,47 +248,21 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 
 # Bestanden
 
-run.exe: main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
+run.exe: main.cpp simulation_builder.cpp ../basewin.h
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
-#  Impliciete/statische patroonstam: ''
-#  Laatst gewijzigd 2022-08-02 20:10:44
+#  Laatst gewijzigd 2022-08-02 22:16:14
 #  Bestand is bijgewerkt.
-#  Moet worden bijgewerkt (-q is ingesteld).
-# automatisch
-# @ := run.exe
-# automatisch
-# % := 
-# automatisch
-# * := 
-# automatisch
-# + := main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
-# automatisch
-# | := 
-# automatisch
-# < := main.cpp
-# automatisch
-# ^ := main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
-# automatisch
-# ? := main.cpp pump.h
+#  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=8/32=25%, Rehash=0, Botsingen=1/10=10%
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 #  uit te voeren opdrachten (van 'makefile', regel 4):
-	nvcc main.cpp physics.cpp -o run.exe
+	nvcc main.cpp simulation_builder.cpp -o run.exe
 	
 
 all: run.exe
 #  Doel afkomstig van opdrachtregel.
 #  Impliciete regel-zoekopdracht is uitgevoerd.
 #  Bestand bestaat niet.
-#  Bestand is bijgewerkt.
-#  Moet worden bijgewerkt (-q is ingesteld).
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/2=0%
-
-# Geen doel:
-particle.h:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 02:57:32
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -301,36 +275,9 @@ particle.h:
 #  Bestand is niet bijgewerkt.
 
 # Geen doel:
-pump.h:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 20:13:06
-#  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
-
-# Geen doel:
-neighbor.h:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 02:57:08
-#  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
-
-# Geen doel:
 makefile:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 20:13:39
-#  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
-
-# Geen doel:
-boundary.h:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-28 18:57:42
+#  Laatst gewijzigd 2022-07-29 22:07:28
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -339,7 +286,16 @@ boundary.h:
 # Geen doel:
 main.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 20:12:44
+#  Laatst gewijzigd 2022-08-02 20:07:34
+#  Bestand is bijgewerkt.
+#  Succesvol bijgewerkt.
+# variabele verzameling van hashtabel-statistieken:
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+
+# Geen doel:
+simulation_builder.cpp:
+#  Impliciete regel-zoekopdracht is uitgevoerd.
+#  Laatst gewijzigd 2022-08-02 22:16:08
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -360,15 +316,6 @@ main.cpp:
 #  Wijzigingstijd is nooit gecontroleerd.
 #  Bestand is niet bijgewerkt.
 
-# Geen doel:
-physics.h:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 02:57:19
-#  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
-
 clean:
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
 #  Wijzigingstijd is nooit gecontroleerd.
@@ -377,18 +324,8 @@ clean:
 	powershell "(Remove-Item -ErrorAction Ignore run.exe)"
 	
 
-# Geen doel:
-physics.cpp:
-#  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 20:08:45
-#  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
-# variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Re 
-hash=0, Botsingen=0/0=0%
-
 # hashtabel-statistieken van bestanden:
-# Belasting=14/1024=1%, Rehash=0, Botsingen=0/36=0%
+# Belasting=9/1024=1%, Rehash=0, Botsingen=0/25=0%
 # VPATH-zoekpaden
 
 # Geen 'vpath'-zoekpaden.
@@ -400,6 +337,6 @@ hash=0, Botsingen=0/0=0%
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Make-gegevensbank voltooid op Tue Aug 02 20:13:41 2022
+# Make-gegevensbank voltooid op Tue Aug 02 22:24:44 2022
 
  

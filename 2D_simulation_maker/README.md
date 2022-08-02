@@ -1,0 +1,1 @@
+This folder contains the program files for the 2D simulation_builder program. This program can be used to build a simulation layout and then this layout will be saved as "simulation2D.txt" in the [simulation_layout](../simulation_layout) folder.

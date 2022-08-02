@@ -1,40 +1,54 @@
 #include "physics.h"
-#include "pair.h"
+#include "neighbor.h"
 #include <vector>
 
-// Add a virtual particle that simulates density effects caused by a corner of two boundary lines for Particle p
-void addCornerBoundaryParticle(float crossing_x, float crossing_y, float distance, Particle &p, std::vector<BoundaryPair> &boundary_pairs){
-    float direction_x = (crossing_x-p.x)/distance;
-    float direction_y = (crossing_y-p.y)/distance;
-    float x = crossing_x+direction_x*(SMOOTH/2);
-    float y = crossing_y+direction_y*(SMOOTH/2);
-    float mass = MULTIPLIER*((p.dens < REST) ? REST : p.dens)*SMOOTH*SMOOTH/8;
-    boundary_pairs.push_back(BoundaryPair(&p, x, y, mass, distance+SMOOTH/2));
+// Loop over all pumps and check if Particle p is currently inside a pump (assuming that pumps do not overlap), 
+// if inside a pump simply set the velocities equal to the velocities that this pump specifies (this does not generate pumps 
+// that are at all physically realistic but pumps are mainly usefull to simply allow particles to loop around)
+void checkAllPumps(Particle &p, Pump* pumps, int numpumps){
+    for(int i = 0; i < numpumps; i++){
+        if(p.x >= pumps[i].x_low && p.x <= pumps[i].x_high && p.y >= pumps[i].y_low && p.y <= pumps[i].y_high){
+            p.velx = pumps[i].velocity_x;
+            p.vely = pumps[i].velocity_y;
+            return;
+        }
+    }
 }
 
-// Add virtual particles along Boundary line to try to simulate density effects of a real boundary for Particle p 
-void addBoundaryParticles(float crossing_x, float crossing_y, Boundary &line, Particle &p, std::vector<BoundaryPair> &boundary_pairs){
-    float distance_to_1 = sqrt((line.x1-crossing_x)*(line.x1-crossing_x)+(line.y1-crossing_y)*(line.y1-crossing_y));
-    float distance_to_2 = sqrt((line.x2-crossing_x)*(line.x2-crossing_x)+(line.y2-crossing_y)*(line.y2-crossing_y));
-    float distance;
-    if((distance = sqrt((crossing_x+(SMOOTH/2)*line.nx-p.x)*(crossing_x+(SMOOTH/2)*line.nx-p.x)+(crossing_y+(SMOOTH/2)*line.ny-p.y)*(crossing_y+(SMOOTH/2)*line.ny-p.y)))<SMOOTH){
-      float x = crossing_x+(SMOOTH/2)*line.nx;
-      float y = crossing_y+(SMOOTH/2)*line.ny;
-      float mass = MULTIPLIER*((p.dens < REST) ? REST : p.dens)*SMOOTH*SMOOTH/10;
-      boundary_pairs.push_back(BoundaryPair(&p, x, y, mass, distance));
+// Helper function for the addGhostParticles function
+void addGhostParticle(Particle &p, Boundary &line, Particle* neighbor_particle, float neighbor_x, float neighbor_y, int index){
+    float projection = (line.x1 - neighbor_x)*line.nx + (line.y1 - neighbor_y)*line.ny;
+    float virtual_x = neighbor_x + 2*projection*line.nx;
+    float virtual_y = neighbor_y + 2*projection*line.ny;
+    float first_check = ((p.x-line.x1)*line.nx+(p.y-line.y1)*line.ny)*((virtual_x-line.x1)*line.nx+(virtual_y-line.y1)*line.ny);
+    if(first_check > 0) return;
+    float second_check1 = (line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny;
+    float second_check2 = (virtual_x-p.x)*line.nx+(virtual_y-p.y)*line.ny;
+    float crossing_x = p.x;
+    float crossing_y = p.y;
+    if(second_check2 > 0.0){
+        crossing_x = p.x+(virtual_x-p.x)*second_check1/second_check2;
+        crossing_y = p.y+(virtual_y-p.y)*second_check1/second_check2;
     }
-    for(float i = SMOOTH/10; i<distance_to_1 && (distance=sqrt((crossing_x+(SMOOTH/2)*line.nx-line.px*i-p.x)*(crossing_x+(SMOOTH/2)*line.nx-line.px*i-p.x)+(crossing_y+(SMOOTH/2)*line.ny-line.py*i-p.y)*(crossing_y+(SMOOTH/2)*line.ny-line.py*i-p.y)))<SMOOTH; i += SMOOTH/10){
-      float x = crossing_x+(SMOOTH/2)*line.nx-line.px*i;
-      float y = crossing_y+(SMOOTH/2)*line.ny-line.py*i;
-      float mass = MULTIPLIER*((p.dens < REST) ? REST : p.dens)*SMOOTH*SMOOTH/10;
-      boundary_pairs.push_back(BoundaryPair(&p, x, y, mass, distance));
+    float second_check3 = sqrt((crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1))/line.length;
+    float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
+    if(second_check3>1.0 || second_check4<0.0) return;
+    float dist = sqrt((virtual_x-p.x)*(virtual_x-p.x)+(virtual_y-p.y)*(virtual_y-p.y));
+    if(dist > SMOOTH) return;
+    float q = (float)(2*exp( -dist*dist / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+    float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist*dist / (SMOOTH*SMOOTH/4)));
+    p.dens += M_P*q2;
+    p.virtual_neighbors[index].neighbors.push_back(Neighbor(neighbor_particle, dist, virtual_x, virtual_y, q, q2));
+}
+
+// Add ghost particles for particle p over boundary line
+void addGhostParticles(Particle &p, Boundary &line){
+    int index = p.virtual_neighbors.size();
+    p.virtual_neighbors.push_back(VirtualNeigbors(line.nx, line.ny));
+    for(Neighbor neighbor : p.particle_neighbors){
+        addGhostParticle(p, line, neighbor.p, neighbor.x, neighbor.y, index);
     }
-    for(float i = SMOOTH/10; i<distance_to_2 && (distance=sqrt((crossing_x+(SMOOTH/2)*line.nx+line.px*i-p.x)*(crossing_x+(SMOOTH/2)*line.nx+line.px*i-p.x)+(crossing_y+(SMOOTH/2)*line.ny+line.py*i-p.y)*(crossing_y+(SMOOTH/2)*line.ny+line.py*i-p.y)))<SMOOTH; i += SMOOTH/10){
-      float x = crossing_x+(SMOOTH/2)*line.nx+line.px*i;
-      float y = crossing_y+(SMOOTH/2)*line.ny+line.py*i;
-      float mass = MULTIPLIER*((p.dens < REST) ? REST : p.dens)*SMOOTH*SMOOTH/10;
-      boundary_pairs.push_back(BoundaryPair(&p, x, y, mass, distance));
-    }
+    addGhostParticle(p, line, &p, p.x, p.y, index);
 }
 
 // Loop over all boundaries and check if Particle p has crossed a boundary and if so, 
@@ -57,18 +71,15 @@ void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
         float second_check3 = sqrt((crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1))/line.length;
         float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
         if(second_check3>1.0 || second_check4<0.0) continue;
-        p.x = crossing_x - 5*line.nx;
-        p.y = crossing_y - 5*line.ny;
-        p.velx += -(p.velx*line.nx+p.vely*line.ny)*line.nx-DAMPING*(p.velx*line.nx+p.vely*line.ny)*line.nx;
-        p.vely += -(p.velx*line.nx+p.vely*line.ny)*line.ny-DAMPING*(p.velx*line.nx+p.vely*line.ny)*line.ny;
+        p.x = crossing_x - 3.0*line.nx;
+        p.y = crossing_y - 3.0*line.ny;
+        p.velx = 0;
+        p.vely = 0;
         return;
     }
 }
 
-void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints){
-    std::vector<Pair> pairs;
-    std::vector<BoundaryPair> boundary_pairs;
-
+void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps){
     for(int i=0; i<numpoints; i++){
         // Make sure the particle is not being painted on the screen at the moment
         while(drawingIndex.load() <= i){}
@@ -76,6 +87,9 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         Particle &p = particles[i];
         p.velx = (p.x - p.oldx) / (INTERVAL_MILI/1000.0);
         p.vely = (p.y - p.oldy) / (INTERVAL_MILI/1000.0);
+
+        // Update velocities based on whether the particle is in a pump or not
+        checkAllPumps(p, pumps, numpumps);
         
         // Update positional change of particles caused by gravity
         p.vely += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
@@ -90,51 +104,66 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         p.dens = 0;
         p.velx = 0;
         p.vely = 0;
+        p.particle_neighbors.clear();
+        p.virtual_neighbors.clear();
 
         // Find particles that are near to each other and calculate densities
         for (int j = 0; j < i; j++) {
           Particle &p2 = particles[j];
           float dist = sqrt((p.x-p2.x)*(p.x-p2.x)+(p.y-p2.y)*(p.y-p2.y));
           if (dist < SMOOTH) {
-            Pair new_pair = Pair(&p, &p2);
-            new_pair.q = (float)(2*exp( -dist*dist / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-            new_pair.q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist*dist / (SMOOTH*SMOOTH/4)));
-            pairs.push_back(new_pair);
-            p.dens += M_P*new_pair.q2;
-            p2.dens += M_P*new_pair.q2;
+            // If another particle is close enough to be a neighbor, first check if there is no boundary between the two particles
+            bool crosses_boundary = false;
+            for(int i=0; i<numboundaries; i++){
+                Boundary &line = boundaries[i];
+                float first_check = ((p.x-line.x1)*line.nx+(p.y-line.y1)*line.ny)*((p2.x-line.x1)*line.nx+(p2.y-line.y1)*line.ny);
+                if(first_check > 0) continue;
+                float second_check1 = (line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny;
+                float second_check2 = (p2.x-p.x)*line.nx+(p2.y-p.y)*line.ny;
+                float crossing_x = p.x;
+                float crossing_y = p.y;
+                if(second_check2 > 0.0){
+                    crossing_x = p.x+(p2.x-p.x)*second_check1/second_check2;
+                    crossing_y = p.y+(p2.y-p.y)*second_check1/second_check2;
+                }
+                float second_check3 = sqrt((crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1))/line.length;
+                float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
+                if(second_check3>1.0 || second_check4<0.0) continue;
+                crosses_boundary = true;
+            }
+            if(crosses_boundary) continue;
+
+            // Particle p2 is a neighbor of p
+            float q = (float)(2*exp( -dist*dist / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist*dist / (SMOOTH*SMOOTH/4)));
+            p.dens += M_P*q2;
+            p2.dens += M_P*q2;
+            p.particle_neighbors.push_back(Neighbor(&p2, dist, p2.x, p2.y, q, q2));
+            p2.particle_neighbors.push_back(Neighbor(&p, dist, p.x, p.y, q, q2));
           }
         }
     }
 
-    for(int i=0; i<numpoints; i++){
+    for(int i = 0; i<numpoints; i++){
         Particle &p = particles[i];
-        // Find boundaries that are near enough to particles to possibly influence their density
+        // Look for boundaries near this particle
         for(int j=0; j<numboundaries; j++){
             Boundary &line = boundaries[j];
             float projection = (line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny;
-            float crossing_x = p.x + projection*line.nx;
-            float crossing_y = p.y + projection*line.ny;
-            float second_check3 = sqrt((crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1))/line.length;
-            float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
-            float distance;
-            if(projection <= SMOOTH/2 && projection >= 0 && second_check3 <= 1 && second_check4 >= 0){
-                addBoundaryParticles(p.x+projection*line.nx, p.y+projection*line.ny, line, p, boundary_pairs);
-            }
-            else if((distance = sqrt((line.x1-p.x)*(line.x1-p.x) + (line.y1-p.y)*(line.y1-p.y))) < SMOOTH && ((line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny) > 0){
-                addCornerBoundaryParticle(line.x1, line.y1, distance, p, boundary_pairs);
-            }
-            else if((distance = sqrt((line.x2-p.x)*(line.x2-p.x) + (line.y2-p.y)*(line.y2-p.y))) < SMOOTH && ((line.x2-p.x)*line.nx+(line.y2-p.y)*line.ny) > 0){
-                addCornerBoundaryParticle(line.x2, line.y2, distance, p, boundary_pairs);
+            if(projection >= 0){
+                float crossing_x = p.x + projection*line.nx;
+                float crossing_y = p.y + projection*line.ny;
+                float second_check3 = sqrt((crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1))/line.length;
+                float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
+                bool particle_is_near_to_line = projection <= SMOOTH && second_check3 <= 1 && second_check4 >= 0;
+                bool particle_is_near_to_endpoint1 = sqrt((line.x1-p.x)*(line.x1-p.x) + (line.y1-p.y)*(line.y1-p.y)) < SMOOTH && ((line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny) > 0;
+                bool particle_is_near_to_endpoint2 = sqrt((line.x2-p.x)*(line.x2-p.x) + (line.y2-p.y)*(line.y2-p.y)) < SMOOTH && ((line.x2-p.x)*line.nx+(line.y2-p.y)*line.ny) > 0;
+                if(particle_is_near_to_line || particle_is_near_to_endpoint1 || particle_is_near_to_endpoint2){
+                    // particle is near enough to the boundary to require ghost particlesd
+                    addGhostParticles(p, line);
+                }
             }
         }
-    }
-
-    // Correct density of particles near boundaries
-    for(int i=0; i<boundary_pairs.size(); i++){
-        BoundaryPair &p = boundary_pairs[i];
-        p.q = (float)(2*exp( -p.dist*p.dist / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-        p.q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -p.dist*p.dist / (SMOOTH*SMOOTH/4)));
-        p.a->dens += (p.boundary_mass)*p.q2;
     }
     
     // Calculate the pressure of each particle based on their density
@@ -143,47 +172,62 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         p.press = STIFF * (p.dens - REST);
     }
 
-    // Calculate the acceleration of each particle caused by the surrounding particles
-    // https://philip-mocz.medium.com/create-your-own-smoothed-particle-hydrodynamics-simulation-with-python-76e1cec505f1
-    for (int i = 0; i < pairs.size(); i++) {
-        Pair &p = pairs[i];
-        float press = M_P*(p.a->press/(p.a->dens*p.a->dens) + p.b->press/(p.b->dens*p.b->dens));
-        float displace = (press * p.q) * (INTERVAL_MILI/1000.0);
-        float abx = (p.a->x - p.b->x);
-        float aby = (p.a->y - p.b->y);
-        p.a->velx += displace * abx;
-        p.a->vely += displace * aby;
-        p.b->velx -= displace * abx;
-        p.b->vely -= displace * aby;
-    }
-    
-    // Calculate the acceleration of each particle caused by the surrounding boundaries
-    // https://cg.informatik.uni-freiburg.de/publications/2017_VRIPHYS_MLSBoundaries.pdf
-    for (int i = 0; i < boundary_pairs.size(); i++) {
-        BoundaryPair &p = boundary_pairs[i];
-        float press = (p.boundary_mass)*(p.a->press/(p.a->dens*p.a->dens));
-        float displace = (press * p.q) * (INTERVAL_MILI/1000.0);
-        float abx = (p.a->x - p.boundary_x);
-        float aby = (p.a->y - p.boundary_y);
-        p.a->velx += displace * abx;
-        p.a->vely += displace * aby;
+    // Calculate all the forces caused by the Euler equation
+    for(int i = 0; i<numpoints; i++){
+        Particle &p = particles[i];
+        // Calculate velocity changes caused by other regular particles
+        for(Neighbor neighbor : p.particle_neighbors){
+            float press = M_P*(p.press/(p.dens*p.dens) + neighbor.p->press/(neighbor.p->dens*neighbor.p->dens));
+            float displace = (press * neighbor.q) * (INTERVAL_MILI/1000.0);
+            float abx = (p.x - neighbor.x);
+            float aby = (p.y - neighbor.y);
+            p.velx += displace * abx;
+            p.vely += displace * aby;
+        }
+
+        // Calculate velocity changes caused by boundaries
+        for(VirtualNeigbors bn : p.virtual_neighbors){
+            float velx_change = 0.0;
+            float vely_change = 0.0;
+            for(Neighbor neighbor : bn.neighbors){
+                float press = M_P*(p.press/(p.dens*p.dens) + neighbor.p->press/(neighbor.p->dens*neighbor.p->dens));
+                float displace = (press * neighbor.q) * (INTERVAL_MILI/1000.0);
+                float abx = (p.x - neighbor.x);
+                float aby = (p.y - neighbor.y);
+                velx_change += displace * abx;
+                vely_change += displace * aby;
+            }
+            // Only allow a boundary to cause a velocity change if the particle is repulsed by it 
+            // since boundaries should not be able to attract particles
+            if(velx_change*bn.boundary_nx + vely_change*bn.boundary_ny <= 0.0){
+                p.velx += velx_change;
+                p.vely += vely_change;
+            }
+        }
     }
     
     // Update the position of particles based on Euler's equation for an ideal fluid
     for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
+        float strength = sqrt(p.velx*p.velx + p.vely*p.vely);
+        // Put a velocity limit on the particles too allow the system to work still somewhat normally 
+        // if some unforeseen behaviour would occur
+        if(strength > VEL_LIMIT){
+            p.velx *= (VEL_LIMIT/strength);
+            p.vely *= (VEL_LIMIT/strength);
+        }
         p.x += p.velx * (INTERVAL_MILI/1000.0);
         p.y += p.vely * (INTERVAL_MILI/1000.0);
     }
 }
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, HWND m_hwnd){
+void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps, HWND m_hwnd){
     float velocity = 0;
     while(!exit.load()){
         bool expected = true;
         if(updateRequired.compare_exchange_weak(expected, false)){
             // If an update is necessary, update the particles UPDATES_PER_RENDER times and then redraw the particles
-            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, numboundaries, particles, numpoints);
+            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, numboundaries, particles, numpoints, pumps, numpumps);
             drawingIndex.store(0);
 
             // Redraw the particles
