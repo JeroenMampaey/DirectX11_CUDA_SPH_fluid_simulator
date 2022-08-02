@@ -2,9 +2,18 @@
 #include "neighbor.h"
 #include <vector>
 
-//TODO:
-// -remove sqrt's
-// -move some calculations out of loop
+// Loop over all pumps and check if Particle p is currently inside a pump (assuming that pumps do not overlap), 
+// if inside a pump simply set the velocities equal to the velocities that this pump specifies (this does not generate pumps 
+// that are at all physically realistic but pumps are mainly usefull to simply allow particles to loop around)
+void checkAllPumps(Particle &p, Pump* pumps, int numpumps){
+    for(int i = 0; i < numpumps; i++){
+        if(p.x >= pumps[i].x_low && p.x <= pumps[i].x_high && p.y >= pumps[i].y_low && p.y <= pumps[i].y_high){
+            p.velx = pumps[i].velocity_x;
+            p.vely = pumps[i].velocity_y;
+            return;
+        }
+    }
+}
 
 // Helper function for the addGhostParticles function
 void addGhostParticle(Particle &p, Boundary &line, Particle* neighbor_particle, float neighbor_x, float neighbor_y, int index){
@@ -70,7 +79,7 @@ void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
     }
 }
 
-void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints){
+void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps){
     for(int i=0; i<numpoints; i++){
         // Make sure the particle is not being painted on the screen at the moment
         while(drawingIndex.load() <= i){}
@@ -78,6 +87,9 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         Particle &p = particles[i];
         p.velx = (p.x - p.oldx) / (INTERVAL_MILI/1000.0);
         p.vely = (p.y - p.oldy) / (INTERVAL_MILI/1000.0);
+
+        // Update velocities based on whether the particle is in a pump or not
+        checkAllPumps(p, pumps, numpumps);
         
         // Update positional change of particles caused by gravity
         p.vely += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
@@ -209,13 +221,13 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
     }
 }
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, HWND m_hwnd){
+void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps, HWND m_hwnd){
     float velocity = 0;
     while(!exit.load()){
         bool expected = true;
         if(updateRequired.compare_exchange_weak(expected, false)){
             // If an update is necessary, update the particles UPDATES_PER_RENDER times and then redraw the particles
-            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, numboundaries, particles, numpoints);
+            for(int i=0; i<UPDATES_PER_RENDER; i++) updateParticles(drawingIndex, boundaries, numboundaries, particles, numpoints, pumps, numpumps);
             drawingIndex.store(0);
 
             // Redraw the particles
