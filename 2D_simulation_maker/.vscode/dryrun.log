@@ -1,0 +1,4 @@
+make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker' wordt binnengegaan
+nvcc main.cpp simulation_builder.cpp -o run.exe
+make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker' wordt verlaten
+ 

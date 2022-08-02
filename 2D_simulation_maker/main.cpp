@@ -86,18 +86,33 @@ void MainWindow::OnPaint()
         std::vector<std::pair<D2D1_POINT_2F, D2D1_POINT_2F>> &lines = simulation_builder.getLines();
         for (std::pair<D2D1_POINT_2F, D2D1_POINT_2F> line : lines)
         {
-            pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
-            pRenderTarget->DrawLine(line.first, line.second, pBrush);
+            if(line.second.x!=line.first.x || line.second.y!=line.first.y){
+                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
+                pRenderTarget->DrawLine(line.first, line.second, pBrush);
 
-            // Also draw for each boundary a normal vector (simply a small red line)
-            float length = sqrt((line.second.x-line.first.x)*(line.second.x-line.first.x)+(line.second.y-line.first.y)*(line.second.y-line.first.y));
-            if(length > 0){
+                // Also draw for each boundary a normal vector (simply a small red line)
+                float length = sqrt((line.second.x-line.first.x)*(line.second.x-line.first.x)+(line.second.y-line.first.y)*(line.second.y-line.first.y));
                 float nx = (line.second.y-line.first.y)/length;
                 float ny = (line.first.x-line.second.x)/length;
                 D2D1_POINT_2F first_point = D2D1::Point2F(line.first.x+(line.second.x-line.first.x)/2, line.first.y+(line.second.y-line.first.y)/2);
                 D2D1_POINT_2F second_point = D2D1::Point2F(first_point.x+nx*30, first_point.y+ny*30);
                 pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red));
                 pRenderTarget->DrawLine(first_point, second_point, pBrush);
+            }
+        }
+
+        // Draw all the boxes
+        std::vector<std::pair<D2D1_RECT_F, D2D1_POINT_2F>> &boxes = simulation_builder.getBoxes();
+        for (std::pair<D2D1_RECT_F, D2D1_POINT_2F> box : boxes){
+            if(box.first.right!=box.first.left && box.first.bottom!=box.first.top){
+                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green));
+                pRenderTarget->DrawRectangle(box.first, pBrush);
+
+                // Also draw for each box a velocity vector (simply a small orange line)
+                D2D1_POINT_2F center_point = D2D1::Point2F((box.first.left+box.first.right)/2, (box.first.top+box.first.bottom)/2);
+                D2D1_POINT_2F other_point = D2D1::Point2F(center_point.x+box.second.x, center_point.y+box.second.y);
+                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red));
+                pRenderTarget->DrawLine(center_point, other_point, pBrush);
             }
         }
         
@@ -160,23 +175,51 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         return 0;
     
     case WM_LBUTTONDOWN:
-        // Signal the mouseEvent with the SimulationBuilder
-        simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_LEFT);
-        return 0;
+        // Signal the mouse position with the SimulationBuilder
+        simulation_builder.updateMousePosition(LOWORD(lParam), HIWORD(lParam));
 
-    case WM_RBUTTONDOWN:
-        // Signal the mouseEvent with the SimulationBuilder
-        simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_RIGHT);
+        // Signal the event with the SimulationBuilder
+        simulation_builder.event(MOUSE_CLICK);
         return 0;
     
     case WM_MOUSEMOVE:
-        // Signal the mouseEvent with the SimulationBuilder
-        simulation_builder.mouseEvent(LOWORD(lParam), HIWORD(lParam), MOUSE_MOV);
+        // Signal the mouse position with the SimulationBuilder
+        simulation_builder.updateMousePosition(LOWORD(lParam), HIWORD(lParam));
+
+        // Signal the event with the SimulationBuilder
+        simulation_builder.event(MOUSE_MOVE);
         return 0;
     
     case WM_KEYDOWN:
-        // Signal the keyboardEvent with the SimulationBuilder
-        simulation_builder.keyboardEvent(wParam);
+        // Signal the event with the SimulationBuilder
+        switch(wParam){
+            case 'W':
+                simulation_builder.event(W_CLICK);
+                break;
+            case 'B':
+                simulation_builder.event(B_CLICK);
+                break;
+            case 'P':
+                simulation_builder.event(P_CLICK);
+                break;
+            case 'A':
+                simulation_builder.event(A_CLICK);
+                break;
+            case VK_LEFT:
+                simulation_builder.event(LEFT_KEY_CLICK);
+                break;
+            case VK_RIGHT:
+                simulation_builder.event(RIGHT_KEY_CLICK);
+                break;
+            case VK_UP:
+                simulation_builder.event(UP_KEY_CLICK);
+                break;
+            case VK_DOWN:
+                simulation_builder.event(DOWN_KEY_CLICK);
+                break;
+            default:
+                break;
+        }
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
