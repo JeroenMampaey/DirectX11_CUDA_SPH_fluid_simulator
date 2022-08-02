@@ -38,8 +38,11 @@ class MainWindow : public BaseWindow<MainWindow>
 
     int numboundaries = 0;
     int numpoints = 0;
+    int numpumps = 0;
+
     Boundary* boundaries;
     Particle* particles;
+    Pump* pumps;
 
     int last_ms = 0;
     int passed_ms = 0;
@@ -121,6 +124,12 @@ void MainWindow::OnPaint()
             drawingIndex.store(i+1);
         }
 
+        // Draw the pumps
+        pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green));
+        for(int i=0; i < numpumps; i++){
+            pRenderTarget->DrawRectangle(D2D1::RectF(pumps[i].x_low, pumps[i].y_low, pumps[i].x_high, pumps[i].y_high), pBrush);
+        }
+
         hr = pRenderTarget->EndDraw();
         if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
         {
@@ -170,7 +179,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
 
         // Setup the background thread for all caclulations concerning the physics
-        physicsThread = std::thread(physicsBackgroundThread, std::ref(exit), std::ref(updateRequired), std::ref(drawingIndex), boundaries, numboundaries, particles, numpoints, m_hwnd);
+        physicsThread = std::thread(physicsBackgroundThread, std::ref(exit), std::ref(updateRequired), std::ref(drawingIndex), boundaries, numboundaries, particles, numpoints, pumps, numpumps, m_hwnd);
 
         // Setup the timer to notify the physics thread to update everything
         SetTimer(m_hwnd,
@@ -201,6 +210,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         delete[] boundaries;
         delete[] particles;
+        delete[] pumps;
 
         return 0;
 
@@ -310,6 +320,8 @@ void MainWindow::buildDefaultSimulationLayout(){
 void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     std::vector<Particle> tempParticles;
     std::vector<Boundary> tempBoundaries;
+    std::vector<Pump> tempPumps;
+
     // Skip the first line which should contain "PARTICLES:\n"
     int index = 11;
     
@@ -331,10 +343,12 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         index++;
         tempParticles.push_back(Particle(first_number, second_number, 0, 0, 0));
     }
+
+    // Skip "LINES:\n"
     index += 7;
 
-    // Parse all boundaries until the end of the array (marked by '\0')
-    while(ReadBuffer[index]!='\0'){
+    // Parse all boundaries until "PUMPS:\n" is found
+    while(ReadBuffer[index]!='P'){
         // Read the x coordinate of the first point of the line
         int first_number = 0;
         while(ReadBuffer[index]!=' '){
@@ -366,12 +380,64 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         tempBoundaries.push_back(Boundary(first_number, second_number, third_number, fourth_number));
     }
 
+    // Skip "PUMPS:\n"
+    index += 7;
+
+    // Parse all boundaries until the end of the array (marked by '\0')
+    while(ReadBuffer[index]!='\0'){
+        // Read the lowest x coordinate of the pump rectangle
+        int first_number = 0;
+        while(ReadBuffer[index]!=' '){
+            first_number = first_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        // Read the highest x coordinate of the pump rectangle
+        int second_number = 0;
+        while(ReadBuffer[index]!=' '){
+            second_number = second_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        // Read the lowest y coordinate of the pump rectangle
+        int third_number = 0;
+        while(ReadBuffer[index]!=' '){
+            third_number = third_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        // Read the highest y coordinate of the pump rectangle
+        int fourth_number = 0;
+        while(ReadBuffer[index]!=' '){
+            fourth_number = fourth_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        // Read the x coordinate of the velocity vector of the pump
+        int fifth_number = 0;
+        while(ReadBuffer[index]!=' '){
+            fifth_number = fifth_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        // Read the y coordinate of the velocity vector of the pump
+        int sixth_number = 0;
+        while(ReadBuffer[index]!='\n'){
+            sixth_number = sixth_number*10 + (ReadBuffer[index]-'0');
+            index++;
+        }
+        index++;
+        tempPumps.push_back(Pump(first_number, second_number, third_number, fourth_number, fifth_number, sixth_number));
+    }
+
     // Build the particle and boundary arrays from the temporary vectors
     numpoints = tempParticles.size();
     numboundaries = tempBoundaries.size();
+    numpumps = tempPumps.size();
 
     particles = new Particle[numpoints];
     boundaries = new Boundary[numboundaries];
+    pumps = new Pump[numpumps];
 
     for(int i=0; i<numpoints; i++){
         particles[i] = tempParticles[i];
@@ -379,6 +445,10 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
 
     for(int i=0; i<numboundaries; i++){
         boundaries[i] = tempBoundaries[i];
+    }
+
+    for(int i=0; i<numpumps; i++){
+        pumps[i] = tempPumps[i];
     }
 }
 

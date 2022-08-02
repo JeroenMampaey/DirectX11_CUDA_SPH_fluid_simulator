@@ -25,6 +25,8 @@
 #define DOWN_KEY_CLICK 8
 #define A_CLICK 9
 
+#define DEFAULT_PUMP_VELOCITY 50
+
 class SimulationBuilder{
     private:
         HWND m_hwnd;

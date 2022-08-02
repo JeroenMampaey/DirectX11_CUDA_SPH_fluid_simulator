@@ -1,1 +1,1 @@
-This folder is used to store text files describing the initial conditions for the simulations
+This folder is used to store text files describing the initial conditions for the simulations. The layout for 2D simulation should be called "simulation2D.txt".

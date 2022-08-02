@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Tue Aug 02 16:04:34 2022
+# Make-gegevensbank, weergegeven op Tue Aug 02 22:24:44 2022
 
 # Variabelen
 
@@ -55,7 +55,7 @@ PROGRAMW6432 = C:\Program Files
 # omgeving
 PROGRAMDATA = C:\ProgramData
 # omgeving
-VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project
+VSCODE_CWD = C:\Users\jrmam\Desktop\CUDA_programming\project\2D_simulation_maker
 # omgeving
 NO_PROXY = 127.0.0.1
 # omgeving
@@ -79,7 +79,7 @@ NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_32724_KCHPLUAELDBDYFAC
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_22692_YJQNNTLOHOMMDJKO
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -203,7 +203,7 @@ PROCESSOR_LEVEL = 25
 # omgeving
 FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
 # omgeving
-VSCODE_PID = 32724
+VSCODE_PID = 22692
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
@@ -220,7 +220,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Eclipse Adoptium\jdk-11.0.14.101-hotspot\bin (sleutel C:/Program Files/Eclipse Adoptium/jdk-11.0.14.101-hotspot/bin, wijzigingstijd 1645897040): 126 bestanden, geen onmogelijkheden.
 # C:\windows\System32\WindowsPowerShell\v1.0\ (sleutel C:/windows/System32/WindowsPowerShell/v1.0/, wijzigingstijd 1644881062): 29 bestanden, geen onmogelijkheden.
 # C:\windows\System32\Wbem (sleutel C:/windows/System32/Wbem, wijzigingstijd 1652495833): 155 bestanden, geen onmogelijkheden.
-# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker, wijzigingstijd 1659449074): 8 bestanden, geen onmogelijkheden.
+# . (sleutel c:/Users/jrmam/Desktop/CUDA_programming/project/2D_simulation_maker, wijzigingstijd 1659459796): 8 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\libnvvp (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/libnvvp, wijzigingstijd 1656728263): 14 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common (sleutel C:/Program Files (x86)/NVIDIA Corporation/PhysX/Common, wijzigingstijd 1632727558): 10 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin\\..\extras\CUPTI\lib64 (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/extras/CUPTI/lib64, wijzigingstijd 1656728260): 12 bestanden, geen onmogelijkheden.
@@ -231,11 +231,12 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.31.31103\bin\Hostx64\x64 (sleutel C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.31.31103/bin/Hostx64/x64, wijzigingstijd 1656806333): 69 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\bin (sleutel C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.7/bin, wijzigingstijd 1656728269): 45 bestanden, geen onmogelijkheden.
 # C:\Users\jrmam\AppData\Local\Programs\Microsoft VS Code\bin (sleutel C:/Users/jrmam/AppData/Local/Programs/Microsoft VS Code/bin, wijzigingstijd 1658837513): 4 bestanden, geen onmogelijkheden.
-# C:\windows (sleutel C:/windows, wijzigingstijd 1657845261): 120 bestanden, geen onmogelijkheden.
+# C:\windows (sleute 
+l C:/windows, wijzigingstijd 1657845261): 120 bestanden, geen onmogelijkheden.
 # kan status van C:\ProgramData\DockerDesktop\version-bin niet opvragen.
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
-# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659265603): 45 bestanden, geen onmogelijkheden.
+# C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659464600): 45 bestanden, geen onmogelijkheden.
 # C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
@@ -249,7 +250,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 
 run.exe: main.cpp simulation_builder.cpp ../basewin.h
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
-#  Laatst gewijzigd 2022-07-30 00:53:14
+#  Laatst gewijzigd 2022-08-02 22:16:14
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -285,7 +286,7 @@ makefile:
 # Geen doel:
 main.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-30 00:40:34
+#  Laatst gewijzigd 2022-08-02 20:07:34
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -294,7 +295,7 @@ main.cpp:
 # Geen doel:
 simulation_builder.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-07-30 00:46:56
+#  Laatst gewijzigd 2022-08-02 22:16:08
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -336,6 +337,6 @@ clean:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Make-gegevensbank voltooid op Tue Aug 02 16:04:34 2022
+# Make-gegevensbank voltooid op Tue Aug 02 22:24:44 2022
 
  

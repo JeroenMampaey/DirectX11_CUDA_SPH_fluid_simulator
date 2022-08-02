@@ -27,7 +27,7 @@ void SimulationBuilder::moveLine(){
 
 // Start a new box at mouseX, mouseY
 void SimulationBuilder::startBox(){
-    boxes.push_back(std::make_pair(D2D1::RectF(mouseX, mouseY, mouseX, mouseY), D2D1::Point2F(30, 0)));
+    boxes.push_back(std::make_pair(D2D1::RectF(mouseX, mouseY, mouseX, mouseY), D2D1::Point2F(DEFAULT_PUMP_VELOCITY, 0)));
 }
 
 // Move the "top-left point" of the last box to mouseX, mouseY (even though it's called the "top-left point", it is not necessarily top-left)
