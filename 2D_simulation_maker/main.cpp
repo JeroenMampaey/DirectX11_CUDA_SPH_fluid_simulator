@@ -111,7 +111,7 @@ void MainWindow::OnPaint()
                 // Also draw for each box a velocity vector (simply a small orange line)
                 D2D1_POINT_2F center_point = D2D1::Point2F((box.first.left+box.first.right)/2, (box.first.top+box.first.bottom)/2);
                 D2D1_POINT_2F other_point = D2D1::Point2F(center_point.x+box.second.x, center_point.y+box.second.y);
-                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red));
+                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange));
                 pRenderTarget->DrawLine(center_point, other_point, pBrush);
             }
         }

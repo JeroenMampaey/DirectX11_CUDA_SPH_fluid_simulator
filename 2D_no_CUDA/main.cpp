@@ -17,7 +17,7 @@
 
 #define FPS_UPDATE_INTERVAL_MILI 300.0
 
-#define DEFAULT_NUMPOINTS 1000
+#define DEFAULT_NUMPOINTS 1500
 #define DEFAULT_NUMBOUNDARIES 3
 
 // 10000 lines for particles: max 4+3 characters plus whitespace and '\n' -> 90000
@@ -302,9 +302,9 @@ void MainWindow::buildDefaultSimulationLayout(){
     boundaries[2] = Boundary(RIGHT, CEILING, RIGHT, FLOOR);
 
     float start_x = LEFT + 2*RADIUS;
-    float end_x = LEFT + (RIGHT-LEFT)/3;
-    float start_y = CEILING + 2*RADIUS;
-    float end_y = CEILING + (FLOOR-CEILING)/2;
+    float end_x = LEFT + (RIGHT-LEFT)/4;
+    float start_y = CEILING + (FLOOR-CEILING)/4;
+    float end_y = FLOOR - 2*RADIUS;
     float interval = sqrt((end_x-start_x)*(end_y-start_y)/DEFAULT_NUMPOINTS);
     float x = start_x;
     float y = start_y;

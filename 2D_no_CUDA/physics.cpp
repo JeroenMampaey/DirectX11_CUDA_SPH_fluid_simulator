@@ -2,15 +2,15 @@
 #include "neighbor.h"
 #include <vector>
 
-//TODO:
-// -remove sqrt's
-// -move some calculations out of loop
-
+// Loop over all pumps and check if Particle p is currently inside a pump (assuming that pumps do not overlap), 
+// if inside a pump simply set the velocities equal to the velocities that this pump specifies (this does not generate pumps 
+// that are at all physically realistic but pumps are mainly usefull to simply allow particles to loop around)
 void checkAllPumps(Particle &p, Pump* pumps, int numpumps){
     for(int i = 0; i < numpumps; i++){
         if(p.x >= pumps[i].x_low && p.x <= pumps[i].x_high && p.y >= pumps[i].y_low && p.y <= pumps[i].y_high){
             p.velx = pumps[i].velocity_x;
             p.vely = pumps[i].velocity_y;
+            return;
         }
     }
 }
@@ -88,6 +88,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         p.velx = (p.x - p.oldx) / (INTERVAL_MILI/1000.0);
         p.vely = (p.y - p.oldy) / (INTERVAL_MILI/1000.0);
 
+        // Update velocities based on whether the particle is in a pump or not
         checkAllPumps(p, pumps, numpumps);
         
         // Update positional change of particles caused by gravity
