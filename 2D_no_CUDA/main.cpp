@@ -323,7 +323,9 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     std::vector<Pump> tempPumps;
 
     // Skip the first line which should contain "PARTICLES:\n"
-    int index = 11;
+    int index = 10;
+    if(ReadBuffer[index]=='\r') index++;
+    index++;
     
     // Parse all particles until "LINES:\n" is found
     while(ReadBuffer[index]!='L'){
@@ -336,16 +338,19 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         index++;
         // Read the y coordinate of the particle
         int second_number = 0;
-        while(ReadBuffer[index]!='\n'){
+        while(ReadBuffer[index]!='\n' && ReadBuffer[index]!='\r'){
             second_number = second_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
+        if(ReadBuffer[index]=='\r') index++;
         index++;
         tempParticles.push_back(Particle(first_number, second_number, 0, 0, 0));
     }
 
     // Skip "LINES:\n"
-    index += 7;
+    index += 6;
+    if(ReadBuffer[index]=='\r') index++;
+    index++;
 
     // Parse all boundaries until "PUMPS:\n" is found
     while(ReadBuffer[index]!='P'){
@@ -372,16 +377,19 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         index++;
         // Read the y coordinate of the second point of the line
         int fourth_number = 0;
-        while(ReadBuffer[index]!='\n'){
+        while(ReadBuffer[index]!='\n' && ReadBuffer[index]!='\r'){
             fourth_number = fourth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
+        if(ReadBuffer[index]=='\r') index++;
         index++;
         tempBoundaries.push_back(Boundary(first_number, second_number, third_number, fourth_number));
     }
 
     // Skip "PUMPS:\n"
-    index += 7;
+    index += 6;
+    if(ReadBuffer[index]=='\r') index++;
+    index++;
 
     // Parse all boundaries until the end of the array (marked by '\0')
     while(ReadBuffer[index]!='\0'){
@@ -422,10 +430,11 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         index++;
         // Read the y coordinate of the velocity vector of the pump
         int sixth_number = 0;
-        while(ReadBuffer[index]!='\n'){
+        while(ReadBuffer[index]!='\n' && ReadBuffer[index]!='\r'){
             sixth_number = sixth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
+        if(ReadBuffer[index]=='\r') index++;
         index++;
         tempPumps.push_back(Pump(first_number, second_number, third_number, fourth_number, fifth_number, sixth_number));
     }
