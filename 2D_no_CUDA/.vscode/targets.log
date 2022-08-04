@@ -8,7 +8,7 @@ make.exe all --print-data-base --no-builtin-variables --no-builtin-rules --quest
 # Dit programma is gemaakt voor i386-pc-mingw32
  
 
-# Make-gegevensbank, weergegeven op Wed Aug 03 11:56:47 2022
+# Make-gegevensbank, weergegeven op Thu Aug 04 02:08:15 2022
 
 # Variabelen
 
@@ -47,6 +47,8 @@ PATHEXT = .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
 # makefile (van 'makefile', regel 1)
 MAKEFILE_LIST :=  makefile
 # omgeving
+FPS_BROWSER_USER_PROFILE_STRING = Default
+# omgeving
 TMP = C:\Users\jrmam\AppData\Local\Temp
 # omgeving
 PROGRAMW6432 = C:\Program Files
@@ -77,7 +79,7 @@ NVTOOLSEXT_PATH = C:\Program Files\NVIDIA Corporation\NvToolsExt\
 # automatisch
 %F = $(notdir $%)
 # omgeving
-CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_26392_TJIXAMWGZMUEOGXJ
+CHROME_CRASHPAD_PIPE_NAME = \\.\pipe\crashpad_13704_TGBCDHDQIKLSYPJS
 # omgeving
 COMPUTERNAME = LAPTOP-4OCTM8L7
 # omgeving
@@ -199,11 +201,13 @@ LANG = C
 # omgeving
 PROCESSOR_LEVEL = 25
 # omgeving
-VSCODE_PID = 26392
+FPS_BROWSER_APP_PROFILE_STRING = Internet Explorer
+# omgeving
+VSCODE_PID = 13704
 # omgeving
 USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=95/1024=9%, Rehash=0, Botsingen=12/115=10%
+# Belasting=97/1024=9%, Rehash=0, Botsingen=12/119=10%
 
 # Patroonspecifieke variabelewaarden
 
@@ -232,8 +236,7 @@ USERDOMAIN_ROAMINGPROFILE = LAPTOP-4OCTM8L7
 # C:\Program Files\Git\cmd (sleutel C:/Program Files/Git/cmd, wijzigingstijd 1645899666): 8 bestanden, geen onmogelijkheden.
 # C:\windows\system32 (sleutel C:/windows/system32, wijzigingstijd 1657885104): 2928 bestanden, geen onmogelijkheden.
 # C:\Users\jrmam\AppData\Local\Microsoft\WindowsApps (sleutel C:/Users/jrmam/AppData/Local/Microsoft/WindowsApps, wijzigingstijd 1659464600): 45 bestanden, geen onmogelijkheden.
-# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/N 
-VIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
+# C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR (sleutel C:/Program Files/NVIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen onmogelijkheden.
 # C:\Program Files (x86)\GnuWin32\bin (sleutel C:/Program Files (x86)/GnuWin32/bin, wijzigingstijd 1657762066): 5 bestanden, geen onmogelijkheden.
 
 # 3762 bestanden, geen onmogelijkheden in 23 mappen.
@@ -246,11 +249,28 @@ VIDIA Corporation/NVIDIA NvDLISR, wijzigingstijd 1632727566): 5 bestanden, geen 
 
 run.exe: main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
 #  Impliciete regel-zoekopdracht is niet uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 23:34:08
+#  Impliciete/statische patroonstam: ''
+#  Laatst gewijzigd 2022-08-03 12:27:05
 #  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
+#  Moet worden bijgewerkt (-q is ingesteld).
+# automatisch
+# @ := run.exe
+# automatisch
+# % := 
+# automatisch
+# * := 
+# automatisch
+# + := main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
+# automatisch
+# | := 
+# automatisch
+# < := main.cpp
+# automatisch
+# ^ := main.cpp physics.cpp ../basewin.h physics.h boundary.h particle.h neighbor.h pump.h
+# automatisch
+# ? := main.cpp
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+# Belasting=8/32=25%, Rehash=0, Botsingen=1/10=10%
 #  uit te voeren opdrachten (van 'makefile', regel 4):
 	nvcc main.cpp physics.cpp -o run.exe
 	
@@ -260,9 +280,9 @@ all: run.exe
 #  Impliciete regel-zoekopdracht is uitgevoerd.
 #  Bestand bestaat niet.
 #  Bestand is bijgewerkt.
-#  Succesvol bijgewerkt.
+#  Moet worden bijgewerkt (-q is ingesteld).
 # variabele verzameling van hashtabel-statistieken:
-# Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
+# Belasting=0/32=0%, Rehash=0, Botsingen=0/2=0%
 
 # Geen doel:
 particle.h:
@@ -291,7 +311,7 @@ pump.h:
 # Geen doel:
 neighbor.h:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 23:33:44
+#  Laatst gewijzigd 2022-08-03 12:01:03
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -318,7 +338,7 @@ boundary.h:
 # Geen doel:
 main.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 23:33:44
+#  Laatst gewijzigd 2022-08-03 12:32:56
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
@@ -359,14 +379,14 @@ clean:
 # Geen doel:
 physics.cpp:
 #  Impliciete regel-zoekopdracht is uitgevoerd.
-#  Laatst gewijzigd 2022-08-02 23:33:44
+#  Laatst gewijzigd 2022-08-03 12:11:53
 #  Bestand is bijgewerkt.
 #  Succesvol bijgewerkt.
 # variabele verzameling van hashtabel-statistieken:
 # Belasting=0/32=0%, Rehash=0, Botsingen=0/0=0%
 
 # hashtabel-statistieken van bestanden:
-# Belasting=14/1024=1%, Rehash=0, Botsingen=0/35=0%
+# Belasting=14/1024=1%, Rehash=0, Botsingen=0/36=0%
 # VPATH-zoekpaden
 
 # Geen 'vpath'-zoekpaden.
@@ -378,6 +398,6 @@ physics.cpp:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Make-gegevensbank voltooid op Wed Aug 03 11:56:47 2022
+# Make-gegevensbank voltooid op Thu Aug 04 02:08:15 2022
 
  

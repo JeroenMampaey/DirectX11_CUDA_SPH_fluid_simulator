@@ -14,7 +14,7 @@ class Particle{
         float velx;
         float vely;
         float dens;
-        float press;
+        float pressure_density_ratio;
         std::vector<Neighbor> particle_neighbors;
         std::vector<VirtualNeigbors> virtual_neighbors;
 
@@ -26,7 +26,7 @@ class Particle{
             this->velx = velx;
             this->vely = vely;
             this->dens = dens;
-            this->press = 0.0;
+            this->pressure_density_ratio = 0.0;
         }
 
         Particle(){
