@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "../basewin.h"
+#include "../extra_code/basewin.h"
 #include "physics.h"
 
 #define TIMER_ID1 0
@@ -19,6 +19,8 @@
 
 #define DEFAULT_NUMPOINTS 1500
 #define DEFAULT_NUMBOUNDARIES 3
+
+#define DEBUG false
 
 // 10000 lines for particles: max 4+3 characters plus whitespace and '\n' -> 90000
 // 500 lines for boundaries: max 4+3+4+3 characters plus 3 whitespaces and '\n' -> 9000
@@ -166,17 +168,22 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
     case WM_CREATE:
-        // Register this class as a window property (used for callbacks)
-        SetProp(m_hwnd, L"MainWindow", this);
-
-        // Setup the initial conditions for the simulation
-        buildSimulationLayout();
+        //Try to open a console for debugging
+        if(DEBUG && !CreateNewConsole(1024)){
+            return -1;
+        }
 
         if (FAILED(D2D1CreateFactory(
                 D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
         {
             return -1;
         }
+
+        // Register this class as a window property (used for callbacks)
+        SetProp(m_hwnd, L"MainWindow", this);
+
+        // Setup the initial conditions for the simulation
+        buildSimulationLayout();
 
         // Setup the background thread for all caclulations concerning the physics
         physicsThread = std::thread(physicsBackgroundThread, std::ref(exit), std::ref(updateRequired), std::ref(drawingIndex), boundaries, numboundaries, particles, numpoints, pumps, numpumps, m_hwnd);
@@ -187,11 +194,13 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 UPDATES_PER_RENDER*INTERVAL_MILI,
                 (TIMERPROC) NULL);
 
-        // Setup the timer show ms per frame in the title bar
-        SetTimer(m_hwnd,
+        // Setup the timer show ms per frame in case debugging is enabled
+        if(DEBUG){
+            SetTimer(m_hwnd,
                 TIMER_ID2,
                 FPS_UPDATE_INTERVAL_MILI,
                 (TIMERPROC) NULL);
+        }
         
         return 0;
 
@@ -212,10 +221,15 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         delete[] particles;
         delete[] pumps;
 
+        //destroy the console
+        if(DEBUG){
+            ReleaseConsole();
+        }
+
         return 0;
 
     case WM_PAINT:
-        {
+        if(DEBUG){
             // Estimate the number of ms per frame
             SYSTEMTIME st;
             GetSystemTime(&st);
@@ -237,8 +251,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 return 0;
             
             case TIMER_ID2:
-                // Update the title bar with number of ms per frame
-                SetWindowTextA(m_hwnd, (LPCSTR)std::to_string(passed_ms).c_str());
+                // Print the number of ms per frame to the console
+                printf("%d ms per frame\n", passed_ms);
                 return 0;
         }
     }

@@ -1,6 +1,6 @@
 all: run.exe
 
-run.exe: main.cpp simulation_builder.cpp ../basewin.h
+run.exe: main.cpp simulation_builder.cpp ../extra_code/basewin.h
 	nvcc main.cpp simulation_builder.cpp -o run.exe
 
 clean:

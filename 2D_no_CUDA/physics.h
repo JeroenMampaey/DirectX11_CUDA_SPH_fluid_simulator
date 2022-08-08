@@ -30,6 +30,7 @@
 #include "boundary.h"
 #include "particle.h"
 #include "pump.h"
+#include "../extra_code/console_debug.h"
 
 void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps, HWND m_hwnd);
 
