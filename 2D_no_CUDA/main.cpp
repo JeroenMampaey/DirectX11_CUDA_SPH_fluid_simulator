@@ -20,8 +20,6 @@
 #define DEFAULT_NUMPOINTS 1500
 #define DEFAULT_NUMBOUNDARIES 3
 
-#define DEBUG false
-
 // 10000 lines for particles: max 4+3 characters plus whitespace and '\n' -> 90000
 // 500 lines for boundaries: max 4+3+4+3 characters plus 3 whitespaces and '\n' -> 9000
 #define MAX_BUFFERSIZE 99000
@@ -169,8 +167,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     {
     case WM_CREATE:
         //Try to open a console for debugging
-        if(DEBUG && !CreateNewConsole(1024)){
-            return -1;
+        if(DEBUG){
+            Debugger::startDebugger(1024, m_hwnd);
         }
 
         if (FAILED(D2D1CreateFactory(
@@ -223,7 +221,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         //destroy the console
         if(DEBUG){
-            ReleaseConsole();
+            Debugger::stopDebugger();
         }
 
         return 0;
@@ -252,7 +250,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             
             case TIMER_ID2:
                 // Print the number of ms per frame to the console
-                printf("%d ms per frame\n", passed_ms);
+                //TODO: use debugger to print the number of ms per frame
+                //printf("%d ms per frame\n", passed_ms);
                 return 0;
         }
     }

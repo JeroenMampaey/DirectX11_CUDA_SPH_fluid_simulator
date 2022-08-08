@@ -25,6 +25,8 @@
 
 #define VEL_LIMIT 500.0
 
+#define DEBUG true
+
 #include <d2d1.h>
 #include <atomic>
 #include "boundary.h"

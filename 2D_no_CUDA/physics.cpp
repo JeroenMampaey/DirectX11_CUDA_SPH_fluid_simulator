@@ -173,9 +173,15 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         p.pressure_density_ratio = press / (p.dens*p.dens);
     }
 
+    int max_neighbours = 0;
+
     // Calculate all the forces caused by the Euler equation
     for(int i = 0; i<numpoints; i++){
         Particle &p = particles[i];
+
+        int number_of_neighbours = p.particle_neighbors.size()+p.virtual_neighbors.size();
+        if(number_of_neighbours > max_neighbours) max_neighbours = number_of_neighbours;
+
         // Calculate velocity changes caused by other regular particles
         for(Neighbor neighbor : p.particle_neighbors){
             float press = M_P*(p.pressure_density_ratio + neighbor.p->pressure_density_ratio);
@@ -206,7 +212,12 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
             }
         }
     }
-    
+
+    if(DEBUG){
+        //TODO: use debugger to show the maximum number of neighbours
+        //printf("Max neighbours: %d\n", max_neighbours);
+    }
+
     // Update the position of particles based on Euler's equation for an ideal fluid
     for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
