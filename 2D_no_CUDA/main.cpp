@@ -436,17 +436,29 @@ void MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         index++;
         // Read the x coordinate of the velocity vector of the pump
         int fifth_number = 0;
+        int sign = 1;
+        if(ReadBuffer[index]=='-'){
+            sign = -1;
+            index++;
+        }
         while(ReadBuffer[index]!=' '){
             fifth_number = fifth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
+        fifth_number *= sign;
         index++;
         // Read the y coordinate of the velocity vector of the pump
         int sixth_number = 0;
+        sign = 1;
+        if(ReadBuffer[index]=='-'){
+            sign = -1;
+            index++;
+        }
         while(ReadBuffer[index]!='\n' && ReadBuffer[index]!='\r'){
             sixth_number = sixth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
+        sixth_number *= sign;
         if(ReadBuffer[index]=='\r') index++;
         index++;
         tempPumps.push_back(Pump(first_number, second_number, third_number, fourth_number, fifth_number, sixth_number));

@@ -25,7 +25,7 @@
 #define DOWN_KEY_CLICK 8
 #define A_CLICK 9
 
-#define DEFAULT_PUMP_VELOCITY 50
+#define DEFAULT_PUMP_VELOCITY 200
 
 class SimulationBuilder{
     private:
