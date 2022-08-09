@@ -1,5 +1,5 @@
 *.exe
 simulation_layout/*.txt
 .vscode
-!.vscode/launch.json
 .vscode/*
+.vscode/

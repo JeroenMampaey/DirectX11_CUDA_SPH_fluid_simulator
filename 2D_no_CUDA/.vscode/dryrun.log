@@ -1,5 +1,0 @@
-make.exe --dry-run --always-make --keep-going --print-directory
-make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA' wordt binnengegaan
-nvcc main.cpp physics.cpp -o run.exe
-make.exe: Map 'c:/Users/jrmam/Desktop/CUDA_programming/project/2D_no_CUDA' wordt verlaten
- 
