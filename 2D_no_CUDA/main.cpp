@@ -168,7 +168,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
         //Try to open a console for debugging
         if(DEBUG){
-            Debugger::startDebugger(1024, m_hwnd);
+            Debugger::startDebugger(0, m_hwnd);
+            Debugger::bindTopic(DEBUG_PASSED_MS_ID, "MsPerFrame");
+            Debugger::bindTopic(DEBUG_MAX_NEIGHBOURS_ID, "MaxBoundaryParticles");
         }
 
         if (FAILED(D2D1CreateFactory(
@@ -239,8 +241,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         OnPaint();
         return 0;
 
-    case WM_TIMER: 
- 
+    case WM_TIMER:
         switch (wParam) 
         { 
             case TIMER_ID1:
@@ -250,8 +251,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             
             case TIMER_ID2:
                 // Print the number of ms per frame to the console
-                //TODO: use debugger to print the number of ms per frame
-                //printf("%d ms per frame\n", passed_ms);
+                Debugger::updateTopic(DEBUG_PASSED_MS_ID, (char*)std::to_string(passed_ms).c_str());
                 return 0;
         }
     }

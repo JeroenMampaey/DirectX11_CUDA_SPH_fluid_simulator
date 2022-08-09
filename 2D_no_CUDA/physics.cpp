@@ -1,6 +1,7 @@
 #include "physics.h"
 #include "neighbor.h"
 #include <vector>
+#include <string>
 
 // Loop over all pumps and check if Particle p is currently inside a pump (assuming that pumps do not overlap), 
 // if inside a pump simply set the velocities equal to the velocities that this pump specifies (this does not generate pumps 
@@ -214,8 +215,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
     }
 
     if(DEBUG){
-        //TODO: use debugger to show the maximum number of neighbours
-        //printf("Max neighbours: %d\n", max_neighbours);
+        Debugger::updateTopic(DEBUG_MAX_NEIGHBOURS_ID, (char*)std::to_string(max_neighbours).c_str());
     }
 
     // Update the position of particles based on Euler's equation for an ideal fluid

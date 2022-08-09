@@ -26,6 +26,8 @@
 #define VEL_LIMIT 500.0
 
 #define DEBUG true
+#define DEBUG_PASSED_MS_ID 0
+#define DEBUG_MAX_NEIGHBOURS_ID 1
 
 #include <d2d1.h>
 #include <atomic>
