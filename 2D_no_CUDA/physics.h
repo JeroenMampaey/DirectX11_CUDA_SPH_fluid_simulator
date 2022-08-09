@@ -25,7 +25,7 @@
 
 #define VEL_LIMIT 500.0
 
-#define DEBUG true
+#define DEBUG false
 #define DEBUG_PASSED_MS_ID 0
 #define DEBUG_MAX_NEIGHBOURS_ID 1
 

@@ -10,7 +10,7 @@
 
 class Debugger {
     public: 
-        static void startDebugger(int16_t minLength, HWND m_hwnd);
+        static void startDebugger(HWND m_hwnd);
         static void stopDebugger();
         static void bindTopic(int topicId, char* topic);
         static void updateTopic(int topicId, char* line);

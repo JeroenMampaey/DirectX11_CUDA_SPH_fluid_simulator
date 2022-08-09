@@ -168,7 +168,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_CREATE:
         //Try to open a console for debugging
         if(DEBUG){
-            Debugger::startDebugger(0, m_hwnd);
+            Debugger::startDebugger(m_hwnd);
             Debugger::bindTopic(DEBUG_PASSED_MS_ID, "MsPerFrame");
             Debugger::bindTopic(DEBUG_MAX_NEIGHBOURS_ID, "MaxBoundaryParticles");
         }

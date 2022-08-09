@@ -31,12 +31,12 @@ void Debugger::stopDebugger()
 }
 
 // Function to start a debugger which opens a console that can be used to display some text
-void Debugger::startDebugger(int16_t minLength, HWND m_hwnd)
+void Debugger::startDebugger(HWND m_hwnd)
 {
     // Attempt to create new console
     if(!AllocConsole()) return;
 
-    AdjustConsoleBuffer(minLength);
+    AdjustConsoleBuffer(1024);
 
     // Store the handle to the new console
     stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
