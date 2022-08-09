@@ -1,3 +1,4 @@
 *.exe
 simulation_layout/*.txt
-*.vscode/*
+.vscode
+!.vscode/launch.json
