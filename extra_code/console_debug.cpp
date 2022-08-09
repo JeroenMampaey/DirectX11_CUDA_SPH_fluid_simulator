@@ -186,12 +186,12 @@ void Debugger::updateTopic(int topicId, char* line){
         return;
     }
 
-    i++;
     buffers[currentFrame][100*index+i].Char.AsciiChar = ':';
     buffers[currentFrame][100*index+i].Attributes = FOREGROUND_BLUE;
     i++;
     buffers[currentFrame][100*index+i].Char.AsciiChar = ' ';
     buffers[currentFrame][100*index+i].Attributes = FOREGROUND_BLUE;
+    i++;
 
     // Then write the line/info to the buffer
     int lineStart = i;

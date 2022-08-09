@@ -160,7 +160,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
                 bool particle_is_near_to_endpoint1 = ((line.x1-p.x)*(line.x1-p.x) + (line.y1-p.y)*(line.y1-p.y)) < SMOOTH*SMOOTH && ((line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny) > 0;
                 bool particle_is_near_to_endpoint2 = ((line.x2-p.x)*(line.x2-p.x) + (line.y2-p.y)*(line.y2-p.y)) < SMOOTH*SMOOTH && ((line.x2-p.x)*line.nx+(line.y2-p.y)*line.ny) > 0;
                 if(particle_is_near_to_line || particle_is_near_to_endpoint1 || particle_is_near_to_endpoint2){
-                    // particle is near enough to the boundary to require ghost particlesd
+                    // particle is near enough to the boundary to require ghost particles
                     addGhostParticles(p, line);
                 }
             }

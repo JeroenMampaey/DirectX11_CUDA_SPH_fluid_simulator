@@ -23,7 +23,7 @@
 // M_P depends on how many particles are desired per volume unit, determined experimentally
 #define M_P REST*RADIUS*RADIUS*4
 
-#define VEL_LIMIT 1000.0
+#define VEL_LIMIT 800.0
 
 #define DEBUG true
 #define DEBUG_PASSED_MS_ID 0
