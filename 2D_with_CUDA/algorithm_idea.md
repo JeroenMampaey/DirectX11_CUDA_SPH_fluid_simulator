@@ -22,27 +22,27 @@ pump, assuming at most 100 boundaries and 15 pumps this results in ~1 KB per thr
 Assuming k threadblocks per SM and m warps per threadblock the shared memory constraint gives us the following:
 
 (1)
-100000 >= k*(1000+1000)+k*m*32*95
-       = k*2000+k*m*3040
-       = k*(2000+m*3040)
+100000 >= k * (1000 + 1000) + k * m * 32 * 95
+       = k * 2000 + k * m * 3040
+       = k * (2000 + m * 3040)
 
 Also if we require that atleast N particles can be used we need atleast this many threads thus:
 
 (2)
-30*k*m*32 >= N
+30 * k * m * 32 >= N
 <->
 k*m >= N/960
 
 But we also have because of the warp constraint that:
 
 (3)
-N <= 30*48*32
+N <= 30 * 48 * 32
   = 46080
 
 And then we also have the obvious constraints:
 
 (4)
-k*m <= 48
+k * m <= 48
 
 (5)
 k <= 16
@@ -50,7 +50,7 @@ k <= 16
 And now knowing this we want to maximize N while keeping reasonable values for k and m. To achieve this I'll try to simply plug some 
 values:
 
-k=8:
+- k=8:
   Then (1) gives that 
   
   3.45 >= m
@@ -59,7 +59,7 @@ k=8:
   and N=23040, even though the occupancy is suboptimal we still have a reasonable amount of threadblocks and a good amount of particles. 
   The number of bytes per thread here is instead of 95 bytes, 109 bytes which is pretty good.
 
-k=4:
+- k=4:
   Then (1) gives that
 
   7.56 >= m
@@ -69,7 +69,7 @@ k=4:
   which is less optimal. The number of bytes per thread here is instead of 95 bytes, 102 bytes which is good but once again not as good 
   as when using k=8.
 
-k=2:
+- k=2:
   Then (1) gives that
 
   15.78 >= m
@@ -77,7 +77,7 @@ k=2:
   Thus to maximize N we find from (2) that we need to maximize m and thus m=15 achieving an occupancy of 30 warps per SM a.k.a 62.5% 
   and N=28800. The number of bytes per thread here is instead of 95 bytes, 100 bytes.
 
-k=1
+- k=1
   Then (1) gives that
 
   32.23 >= m
