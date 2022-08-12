@@ -236,7 +236,6 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
 }
 
 void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps, HWND m_hwnd){
-    float velocity = 0;
     while(!exit.load()){
         bool expected = true;
         if(updateRequired.compare_exchange_weak(expected, false)){

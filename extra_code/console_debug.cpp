@@ -122,7 +122,7 @@ void Debugger::periodicCallback(HWND unnamedParam1, UINT unnamedParam2, UINT_PTR
 // Function to add a new topic to the debugger, this function is not necessarily completely save in case multiple threads 
 // are trying to bind some topic to the same topic id, hence I assume that the caller is responsible for making sure that
 // the topic id is not already in use
-void Debugger::bindTopic(int topicId, char* topic){
+void Debugger::bindTopic(int topicId, const char* topic){
     if(topicId < 0 || topicId >= 25){
         //TODO error: notify user that topicId is out of bounds
         return;

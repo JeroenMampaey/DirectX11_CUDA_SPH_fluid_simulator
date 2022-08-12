@@ -12,7 +12,7 @@ class Debugger {
     public: 
         static void startDebugger(HWND m_hwnd);
         static void stopDebugger();
-        static void bindTopic(int topicId, char* topic);
+        static void bindTopic(int topicId, const char* topic);
         static void updateTopic(int topicId, char* line);
 
     private:
