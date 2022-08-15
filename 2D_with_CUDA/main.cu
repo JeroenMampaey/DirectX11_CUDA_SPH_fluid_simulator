@@ -373,35 +373,35 @@ bool MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     // Parse all boundaries until "PUMPS:\n" is found
     while(ReadBuffer[index]!='P'){
         // Read the x coordinate of the first point of the line
-        int first_number = 0;
+        unsigned short first_number = 0;
         while(ReadBuffer[index]!=' '){
             first_number = first_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the y coordinate of the first point of the line
-        int second_number = 0;
+        unsigned short second_number = 0;
         while(ReadBuffer[index]!=' '){
             second_number = second_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the x coordinate of the second point of the line
-        int third_number = 0;
+        unsigned short third_number = 0;
         while(ReadBuffer[index]!=' '){
             third_number = third_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the y coordinate of the second point of the line
-        int fourth_number = 0;
+        unsigned short fourth_number = 0;
         while(ReadBuffer[index]!='\n' && ReadBuffer[index]!='\r'){
             fourth_number = fourth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         if(ReadBuffer[index]=='\r') index++;
         index++;
-        tempBoundaries.push_back({(float)first_number, (float)second_number, (float)third_number, (float)fourth_number});
+        tempBoundaries.push_back({first_number, second_number, third_number, fourth_number});
     }
 
     // Skip "PUMPS:\n"
@@ -412,35 +412,35 @@ bool MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     // Parse all boundaries until the end of the array (marked by '\0')
     while(ReadBuffer[index]!='\0'){
         // Read the lowest x coordinate of the pump rectangle
-        int first_number = 0;
+        unsigned short first_number = 0;
         while(ReadBuffer[index]!=' '){
             first_number = first_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the highest x coordinate of the pump rectangle
-        int second_number = 0;
+        unsigned short second_number = 0;
         while(ReadBuffer[index]!=' '){
             second_number = second_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the lowest y coordinate of the pump rectangle
-        int third_number = 0;
+        unsigned short third_number = 0;
         while(ReadBuffer[index]!=' '){
             third_number = third_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the highest y coordinate of the pump rectangle
-        int fourth_number = 0;
+        unsigned short fourth_number = 0;
         while(ReadBuffer[index]!=' '){
             fourth_number = fourth_number*10 + (ReadBuffer[index]-'0');
             index++;
         }
         index++;
         // Read the x coordinate of the velocity vector of the pump
-        int fifth_number = 0;
+        short fifth_number = 0;
         int sign = 1;
         if(ReadBuffer[index]=='-'){
             sign = -1;
@@ -453,7 +453,7 @@ bool MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         fifth_number *= sign;
         index++;
         // Read the y coordinate of the velocity vector of the pump
-        int sixth_number = 0;
+        short sixth_number = 0;
         sign = 1;
         if(ReadBuffer[index]=='-'){
             sign = -1;
@@ -466,8 +466,8 @@ bool MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
         sixth_number *= sign;
         if(ReadBuffer[index]=='\r') index++;
         index++;
-        tempPumps.push_back({(float)first_number, (float)second_number, (float)third_number, (float)fourth_number});
-        tempPumpVelocities.push_back({(float)fifth_number, (float)sixth_number});
+        tempPumps.push_back({first_number, second_number, third_number, fourth_number});
+        tempPumpVelocities.push_back({fifth_number, sixth_number});
     }
 
     // Build the particle and boundary arrays from the temporary vectors

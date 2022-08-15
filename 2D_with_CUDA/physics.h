@@ -28,6 +28,8 @@
 #define DEBUG true
 #define DEBUG_PASSED_MS_ID 0
 
+#define SHARED_MEM_PER_THREAD 101
+
 #include <d2d1.h>
 #include <atomic>
 #include "../extra_code/console_debug.h"
@@ -38,22 +40,22 @@ typedef struct Particle{
 } Particle;
 
 typedef struct Boundary{
-    float x1;
-    float y1;
-    float x2;
-    float y2;
+    unsigned short x1;
+    unsigned short y1;
+    unsigned short x2;
+    unsigned short y2;
 } Boundary;
 
 typedef struct Pump{
-    float x_low;
-    float x_high;
-    float y_low;
-    float y_high;
+    unsigned short x_low;
+    unsigned short x_high;
+    unsigned short y_low;
+    unsigned short y_high;
 } Pump;
 
 typedef struct PumpVelocity{
-    float velx;
-    float vely;
+    short velx;
+    short vely;
 } PumpVelocity;
 
 void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<bool> &doneDrawing, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, HWND m_hwnd);
