@@ -28,8 +28,8 @@ void addGhostParticle(Particle &p, Boundary &line, Particle* neighbor_particle, 
     float crossing_x = p.x;
     float crossing_y = p.y;
     if(second_check2 > 0.0){
-        crossing_x = p.x+(virtual_x-p.x)*second_check1/second_check2;
-        crossing_y = p.y+(virtual_y-p.y)*second_check1/second_check2;
+        crossing_x += (virtual_x-p.x)*second_check1/second_check2;
+        crossing_y += (virtual_y-p.y)*second_check1/second_check2;
     }
     float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
     float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
@@ -63,17 +63,17 @@ void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
         float second_check1 = (line.x1-p.oldx)*line.nx+(line.y1-p.oldy)*line.ny;
         if(second_check1 < 0) continue;
         float second_check2 = (p.x-p.oldx)*line.nx+(p.y-p.oldy)*line.ny;
-        float crossing_x = p.x;
-        float crossing_y = p.y;
+        float crossing_x = p.oldx;
+        float crossing_y = p.oldy;
         if(second_check2 > 0.0){
-            crossing_x = p.oldx+(p.x-p.oldx)*second_check1/second_check2;
-            crossing_y = p.oldy+(p.y-p.oldy)*second_check1/second_check2;
+            crossing_x += (p.x-p.oldx)*second_check1/second_check2;
+            crossing_y += (p.y-p.oldy)*second_check1/second_check2;
         }
         float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
         float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
         if(second_check3>line.length_squared || second_check4<0.0) continue;
-        p.x = crossing_x - 3.0*line.nx;
-        p.y = crossing_y - 3.0*line.ny;
+        p.x = crossing_x - (RADIUS/2)*line.nx;
+        p.y = crossing_y - (RADIUS/2)*line.ny;
         p.velx = 0;
         p.vely = 0;
         return;
@@ -124,8 +124,8 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
                 float crossing_x = p.x;
                 float crossing_y = p.y;
                 if(second_check2 > 0.0){
-                    crossing_x = p.x+(p2.x-p.x)*second_check1/second_check2;
-                    crossing_y = p.y+(p2.y-p.y)*second_check1/second_check2;
+                    crossing_x += (p2.x-p.x)*second_check1/second_check2;
+                    crossing_y += (p2.y-p.y)*second_check1/second_check2;
                 }
                 float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                 float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;

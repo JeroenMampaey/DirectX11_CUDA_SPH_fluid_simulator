@@ -27,9 +27,9 @@
 
 class MainWindow : public BaseWindow<MainWindow>
 {
-    ID2D1Factory            *pFactory;
-    ID2D1HwndRenderTarget   *pRenderTarget;
-    ID2D1SolidColorBrush    *pBrush;
+    ID2D1Factory            *pFactory = NULL;
+    ID2D1HwndRenderTarget   *pRenderTarget = NULL;
+    ID2D1SolidColorBrush    *pBrush = NULL;
     std::thread            physicsThread;
 
     std::atomic<bool> exit = {false};
@@ -41,10 +41,10 @@ class MainWindow : public BaseWindow<MainWindow>
     int numpoints = 0;
     int numpumps = 0;
 
-    Boundary* boundaries;
-    Particle* particles;
-    Pump* pumps;
-    PumpVelocity* pumpvelocities;
+    Boundary* boundaries = NULL;
+    Particle* particles = NULL;
+    Pump* pumps = NULL;
+    PumpVelocity* pumpvelocities = NULL;
 
     int last_ms = 0;
     int passed_ms = 0;
