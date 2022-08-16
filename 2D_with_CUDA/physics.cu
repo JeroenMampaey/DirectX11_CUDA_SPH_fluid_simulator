@@ -4,10 +4,12 @@
 #include <cooperative_groups.h>
 
 //TODO:
+//  -Try using register hints, 8.6 compute capability should offer me about 80 32-bit registers
 //  -Compare Boundary &line = ... performance to Boundary line = ...
 //  -When adding the ghost particles for each neighbour, eliminate the extra scopes by using sensible names instead of first_check etc.
 //  -When checking whether particle crosses this boundary: first_check<0 or first_check<=0??
 //  -if(dens==0.0) dens=0.01; is still very arbitrary
+//  -is a for-loop necessary for checking if boundaries_vel is along the average boundary normal?
 
 // Private declared functions
 __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particle* particles, Particle* old_particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, float* pressure_density_ratios);
@@ -138,8 +140,6 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             old_y = my_y;
             my_x += vel_x*(INTERVAL_MILI/1000.0);
             my_y += vel_y*(INTERVAL_MILI/1000.0);
-            vel_x = 0.0;
-            vel_y = 0.0;
 
             // Also update the particle positions in global memory
             particles[thread_id].x = my_x;
@@ -193,6 +193,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     //  - Convert this particle to a ghost particle over the boundary
                     //  - Check whether the connection between this particle and the particle of the thread crosses a boundary
                     //    in which case the particle is not actually a true neighbour
+                    float accumulated_ghost_particle_density = 0.0;
                     int j=0;
                     for(; j<number_of_boundary_neighbours; j++){
                         Boundary &line = boundaries[j];
@@ -238,13 +239,18 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                             float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
                             if(dist_squared > SMOOTH*SMOOTH) continue;
                             float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
-                            dens += M_P*q2;
+                            accumulated_ghost_particle_density += M_P*q2;
                         }
                     }
 
-                    if(j<numboundaries || i==thread_id) continue;
+                    if(j<numboundaries) continue;
                     
-                    // Change the density because of the neighbour particle itself and also add the particle to the neighbours list
+                    // Change the density caused by ghost particles
+                    dens += accumulated_ghost_particle_density;
+
+                    if(i==thread_id) continue;
+
+                    // Change the density because of the neighbour particle and also add the particle to the neighbours list
                     float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
                     dens += M_P*q2;
                     particle_neighbour_indexes[number_of_particle_neighbours] = i;
@@ -263,7 +269,62 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
         // Synchronize the grid
         grid.sync();
 
-        //TODO: Update the positions for the particles
+        if(thread_id < numpoints){
+            float neighbours_vel_x = 0.0;
+            float neighbours_vel_y = 0.0;
+            float boundaries_vel_x = 0.0;
+            float boundaries_vel_y = 0.0;
+            for(int i=0; i<number_of_particle_neighbours; i++){
+                Particle p2 = particles[i];
+                float p2_pressure_density_ratio = pressure_density_ratios[i];
+                float press = M_P*(my_pressure_density_ratio + p2_pressure_density_ratio);
+
+                // First calculate displacement of the particle caused by neighbours
+                {
+                    float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
+                    float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+                    float displace = (press * q) * (INTERVAL_MILI/1000.0);
+                    float abx = (my_x - p2.x);
+                    float aby = (my_y - p2.y);
+                    neighbours_vel_x += displace * abx;
+                    neighbours_vel_y += displace * aby;
+                }
+
+                // Next calculate displacement of the particle caused by boundaries
+                for(int j=0; j<number_of_boundary_neighbours; j++){
+                    Boundary &line = boundaries[j];
+                    float line_nx = line.y2-line.y1;
+                    float line_ny = line.x1-line.x2;
+                    float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
+                    float virtual_x = p2.x + 2*projection*line_nx;
+                    float virtual_y = p2.y + 2*projection*line_ny;
+                    float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
+                    if(first_check > 0) continue;
+                    float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
+                    float second_check2 = (virtual_x-my_x)*line_nx+(virtual_y-my_y)*line_ny;
+                    float crossing_x = my_x;
+                    float crossing_y = my_y;
+                    if(second_check2 > 0.0){
+                        crossing_x += (virtual_x-my_x)*second_check1/second_check2;
+                        crossing_y += (virtual_y-my_y)*second_check1/second_check2;
+                    }
+                    float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
+                    float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
+                    if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
+                    float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
+                    if(dist_squared > SMOOTH*SMOOTH) continue;
+                    float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+                    float displace = (press * q) * (INTERVAL_MILI/1000.0);
+                    float abx = (my_x - virtual_x);
+                    float aby = (my_y - virtual_y);
+                    boundaries_vel_x += displace * abx;
+                    boundaries_vel_y += displace * aby;
+                }
+            }
+
+            //TODO: make sure the boundaries_vel_x and boundaries_vel_y values are in the same direction as the average boundary normal
+            //first approach: simply use a for-loop
+        }
     }
     //TODO: store the old_x and old_y values
 }

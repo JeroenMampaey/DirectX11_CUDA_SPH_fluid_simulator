@@ -205,6 +205,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
                 velx_change += displace * abx;
                 vely_change += displace * aby;
             }
+
             // Only allow a boundary to cause a velocity change if the particle is repulsed by it 
             // since boundaries should not be able to attract particles
             if(velx_change*bn.boundary_nx + vely_change*bn.boundary_ny <= 0.0){
