@@ -18,8 +18,7 @@ void destroyDeviceMemory(Boundary* device_boundaries, int numboundaries, Particl
 bool transferToDeviceMemory(Boundary* boundaries, Boundary* device_boundaries, int numboundaries, Particle* particles, Particle* device_particles, Particle* old_particles, int numpoints, Pump* pumps, Pump* device_pumps, PumpVelocity* pumpvelocities, PumpVelocity* device_pumpvelocities, int numpumps);
 
 void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<bool> &doneDrawing, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, HWND m_hwnd){
-    int blockSize = 96;
-    int numBlocks = (numpoints + blockSize - 1) / blockSize;
+    int numBlocks = (numpoints + BLOCK_SIZE - 1) / BLOCK_SIZE;
     
     Boundary* device_boundaries = NULL;
     Particle* device_particles = NULL;
@@ -38,8 +37,8 @@ void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateR
         if(updateRequired.compare_exchange_weak(expected, false)){
             // If an update is necessary, update the particles UPDATES_PER_RENDER times and then redraw the particles
             if(success){
-                int sharedMemorySize = numboundaries*sizeof(Boundary)+numpumps*sizeof(Pump)+numpumps*sizeof(PumpVelocity)+SHARED_MEM_PER_THREAD*blockSize;
-                updateParticles<<<numBlocks, blockSize, sharedMemorySize>>>(device_boundaries, numboundaries, device_particles, old_particles, numpoints, device_pumps, device_pumpvelocities, numpumps, pressure_density_ratios);
+                int sharedMemorySize = numboundaries*sizeof(Boundary)+numpumps*sizeof(Pump)+numpumps*sizeof(PumpVelocity)+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
+                updateParticles<<<numBlocks, BLOCK_SIZE, sharedMemorySize>>>(device_boundaries, numboundaries, device_particles, old_particles, numpoints, device_pumps, device_pumpvelocities, numpumps, pressure_density_ratios);
                 while(!doneDrawing.load()){}
                 cudaMemcpy(boundaries, device_boundaries, sizeof(Boundary) * numboundaries, cudaMemcpyDeviceToHost);
                 cudaMemcpy(particles, device_particles, numpoints * sizeof(Particle), cudaMemcpyDeviceToHost);
@@ -92,7 +91,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
         my_x = particles[thread_id].x;
         my_y = particles[thread_id].y;
     }
-    for(int i=0; i<UPDATES_PER_RENDER; i++){
+    for(int e=0; e<UPDATES_PER_RENDER; e++){
         if(thread_id < numpoints){
             float vel_x = (my_x - old_x) / (INTERVAL_MILI/1000.0);
             float vel_y = (my_y - old_y) / (INTERVAL_MILI/1000.0);
@@ -156,6 +155,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
 
         float my_pressure_density_ratio = 0.0;
 
+        float boundary_average_nx = 0.0;
+        float boundary_average_ny = 0.0;
+
         if(thread_id < numpoints){ 
             // Look for boundaries near the particle
             for(unsigned char i=0; i<numboundaries; i++){
@@ -175,6 +177,8 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                         // Particle is near enough to the boundary
                         boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
                         number_of_boundary_neighbours++;
+                        boundary_average_nx += line_nx/sqrt(line_nx*line_nx+line_ny*line_ny);
+                        boundary_average_ny += line_ny/sqrt(line_nx*line_nx+line_ny*line_ny);
                     }
                 }
             }
@@ -270,8 +274,8 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
         grid.sync();
 
         if(thread_id < numpoints){
-            float neighbours_vel_x = 0.0;
-            float neighbours_vel_y = 0.0;
+            float vel_x = 0.0;
+            float vel_y = 0.0;
             float boundaries_vel_x = 0.0;
             float boundaries_vel_y = 0.0;
             for(int i=0; i<number_of_particle_neighbours; i++){
@@ -286,8 +290,8 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     float displace = (press * q) * (INTERVAL_MILI/1000.0);
                     float abx = (my_x - p2.x);
                     float aby = (my_y - p2.y);
-                    neighbours_vel_x += displace * abx;
-                    neighbours_vel_y += displace * aby;
+                    vel_x += displace * abx;
+                    vel_y += displace * aby;
                 }
 
                 // Next calculate displacement of the particle caused by boundaries
@@ -322,11 +326,31 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 }
             }
 
-            //TODO: make sure the boundaries_vel_x and boundaries_vel_y values are in the same direction as the average boundary normal
-            //first approach: simply use a for-loop
+            // Only allow a boundary to cause a velocity change if the particle is repulsed by it 
+            // since boundaries should not be able to attract particles
+            if(boundary_average_nx*boundaries_vel_x+boundary_average_ny*boundaries_vel_y <= 0.0){
+                vel_x += boundaries_vel_x;
+                vel_y += boundaries_vel_y;
+            }
+
+            // Put a velocity limit on the particles too allow the system to work still somewhat normally 
+            // if some unforeseen behaviour would occur
+            if(vel_x*vel_x+vel_y*vel_y > VEL_LIMIT*VEL_LIMIT){
+                vel_x *= VEL_LIMIT/sqrt(vel_x*vel_x+vel_y*vel_y);
+                vel_y *= VEL_LIMIT/sqrt(vel_x*vel_x+vel_y*vel_y);
+            }
+            my_x += vel_x * (INTERVAL_MILI/1000.0);
+            my_y += vel_y * (INTERVAL_MILI/1000.0);
         }
     }
-    //TODO: store the old_x and old_y values
+
+    // Store the both position and old positions in global memeory
+    if(thread_id < numpoints){
+        old_particles[thread_id].x = old_x;
+        old_particles[thread_id].y = old_y;
+        particles[thread_id].x = my_x;
+        particles[thread_id].y = my_y;
+    }
 }
 
 void destroyDeviceMemory(Boundary* device_boundaries, int numboundaries, Particle* device_particles, Particle* old_particles, int numpoints, Pump* device_pumps, PumpVelocity* device_pumpvelocities, int numpumps, float* pressure_density_ratios){

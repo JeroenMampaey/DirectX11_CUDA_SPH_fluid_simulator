@@ -28,6 +28,7 @@
 #define DEBUG true
 #define DEBUG_PASSED_MS_ID 0
 
+#define BLOCK_SIZE 96
 #define SHARED_MEM_PER_THREAD 101
 
 #include <d2d1.h>
