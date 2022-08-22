@@ -149,7 +149,7 @@ void Debugger::bindTopic(int topicId, const char* topic){
 }
 
 // Function to update a topic with the given topic id
-void Debugger::updateTopic(int topicId, char* line){
+void Debugger::updateTopic(int topicId, const char* line){
     if(topicId < 0 || topicId >= 25){
         //TODO error: notify user that topicId is out of bounds
         return;

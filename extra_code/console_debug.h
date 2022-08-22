@@ -13,7 +13,7 @@ class Debugger {
         static void startDebugger(HWND m_hwnd);
         static void stopDebugger();
         static void bindTopic(int topicId, const char* topic);
-        static void updateTopic(int topicId, char* line);
+        static void updateTopic(int topicId, const char* line);
 
     private:
         static void AdjustConsoleBuffer(int16_t minLength);

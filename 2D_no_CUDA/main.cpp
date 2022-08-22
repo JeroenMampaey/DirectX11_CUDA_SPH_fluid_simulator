@@ -251,7 +251,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             
             case TIMER_ID2:
                 // Print the number of ms per frame to the console
-                Debugger::updateTopic(DEBUG_PASSED_MS_ID, (char*)std::to_string(passed_ms).c_str());
+                Debugger::updateTopic(DEBUG_PASSED_MS_ID, std::to_string(passed_ms).c_str());
                 return 0;
         }
     }

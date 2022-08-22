@@ -27,6 +27,8 @@
 
 #define DEBUG true
 #define DEBUG_PASSED_MS_ID 0
+#define DEBUG_THREAD1_ERROR 1
+#define DEBUG_THREAD2_ERROR 2
 
 #define BLOCK_SIZE 96
 #define SHARED_MEM_PER_THREAD 101

@@ -216,7 +216,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
     }
 
     if(DEBUG){
-        Debugger::updateTopic(DEBUG_MAX_NEIGHBOURS_ID, (char*)std::to_string(max_neighbours).c_str());
+        Debugger::updateTopic(DEBUG_MAX_NEIGHBOURS_ID, std::to_string(max_neighbours).c_str());
     }
 
     // Update the position of particles based on Euler's equation for an ideal fluid

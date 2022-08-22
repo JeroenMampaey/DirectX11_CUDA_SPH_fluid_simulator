@@ -52,7 +52,7 @@ class MainWindow : public BaseWindow<MainWindow>
     bool buildSimulationLayout();
     bool buildDefaultSimulationLayout();
     bool buildSimulationLayoutFromFile(char* ReadBuffer);
-    bool allocateArrayMemory();
+    cudaError_t allocateArrayMemory();
 
     HRESULT CreateGraphicsResources();
     void DiscardGraphicsResources();
@@ -178,6 +178,8 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         if(DEBUG){
             Debugger::startDebugger(m_hwnd);
             Debugger::bindTopic(DEBUG_PASSED_MS_ID, "MsPerFrame");
+            Debugger::bindTopic(DEBUG_THREAD1_ERROR, "MainthreadError");
+            Debugger::bindTopic(DEBUG_THREAD2_ERROR, "PhysicsthreadError");
         }
 
         if (FAILED(D2D1CreateFactory(
@@ -239,7 +241,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             
             case TIMER_ID2:
                 // Print the number of ms per frame to the console
-                Debugger::updateTopic(DEBUG_PASSED_MS_ID, (char*)std::to_string(passed_ms).c_str());
+                Debugger::updateTopic(DEBUG_PASSED_MS_ID, std::to_string(passed_ms).c_str());
                 return 0;
         }
     }
@@ -296,8 +298,12 @@ bool MainWindow::buildDefaultSimulationLayout(){
     numboundaries = DEFAULT_NUMBOUNDARIES;
     numpumps = DEFAULT_NUMPUMPS;
 
+    cudaError_t success;
     // Allocate pinned memory for the particles, boundaries and pumps
-    if(!allocateArrayMemory()){
+    if((success = allocateArrayMemory()) != cudaSuccess){
+        if(DEBUG){
+            Debugger::updateTopic(DEBUG_THREAD1_ERROR, ("Main thread CUDA memory allocations failed, status: "+std::to_string(success)).c_str());
+        }
         return false;
     }
 
@@ -475,8 +481,12 @@ bool MainWindow::buildSimulationLayoutFromFile(char* ReadBuffer){
     numboundaries = tempBoundaries.size();
     numpumps = tempPumps.size();
 
+    cudaError_t success;
     // Allocate pinned memory for the particles, boundaries and pumps
-    if(!allocateArrayMemory()){
+    if((success = allocateArrayMemory()) != cudaSuccess){
+        if(DEBUG){
+            Debugger::updateTopic(DEBUG_THREAD1_ERROR, ("Main thread CUDA memory allocations failed, status: "+std::to_string(success)).c_str());
+        }
         return false;
     }
 
@@ -548,29 +558,29 @@ void MainWindow::destroyApplication(){
 }
 
 // Allocates the memory for the particle, boundary and pump arrays
-bool MainWindow::allocateArrayMemory(){
+cudaError_t MainWindow::allocateArrayMemory(){
     cudaError_t status;
     if(numpoints > 0){
         status = cudaMallocHost((void**)&particles, sizeof(Particle)*numpoints);
         if (status != cudaSuccess){
-            return false;
+            return status;
         }
     }
     if(numboundaries > 0){
         status = cudaMallocHost((void**)&boundaries, sizeof(Boundary)*numboundaries);
         if (status != cudaSuccess){
-            return false;
+            return status;
         }
     }
     if(numpumps > 0){
         status = cudaMallocHost((void**)&pumps, sizeof(Pump)*numpumps);
         if (status != cudaSuccess){
-            return false;
+            return status;
         }
         status = cudaMallocHost((void**)&pumpvelocities, sizeof(PumpVelocity)*numpumps);
         if (status != cudaSuccess){
-            return false;
+            return status;
         }
     }
-    return true;
+    return cudaSuccess;
 }
