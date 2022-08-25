@@ -28,7 +28,6 @@ void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateR
     float* pressure_density_ratios = NULL;
 
     cudaError_t success = setupDeviceMemory(boundaries, device_boundaries, numboundaries, particles, device_particles, old_particles, numpoints, pumps, device_pumps, pumpvelocities, device_pumpvelocities, numpumps, pressure_density_ratios);
-
     while(!exit.load()){
         bool expected = true;
         if(updateRequired.compare_exchange_weak(expected, false)){
@@ -65,7 +64,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
 
     // Put all the boundaries and all the pumps in shared memory
     Boundary* boundaries_local_pointer = s;
-    Pump* pumps_local_pointer = (Pump*)(&s[numboundaries]);
+    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numboundaries]);
     PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numpumps]);
 
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
@@ -111,7 +110,12 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             // Update positional change of particles caused by gravity
             vel_y += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
 
-            // Update positional change of particles caused boundaries (make sure particles cannot pass boundaries)
+            // Update particle positions
+            my_x += vel_x*(INTERVAL_MILI/1000.0);
+            my_y += vel_y*(INTERVAL_MILI/1000.0);
+
+
+            // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
             for(int i=0; i<numboundaries; i++){
                 Boundary line = boundaries_local_pointer[i];
                 float line_nx = line.y2-line.y1;
@@ -130,18 +134,16 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                 float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                 if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-                my_x = crossing_x - (RADIUS/2)*line_nx/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                my_y = crossing_y - (RADIUS/2)*line_ny/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                vel_x = 0;
-                vel_y = 0;
+                my_x = crossing_x - RADIUS*line_nx/sqrt(line_nx*line_nx+line_ny*line_ny);
+                my_y = crossing_y - RADIUS*line_ny/sqrt(line_nx*line_nx+line_ny*line_ny);
+                vel_x = 0.0;
+                vel_y = 0.0;
                 break;
             }
 
-            // Update particle positions
-            old_x = my_x;
-            old_y = my_y;
-            my_x += vel_x*(INTERVAL_MILI/1000.0);
-            my_y += vel_y*(INTERVAL_MILI/1000.0);
+            // Store the old particle positions
+            old_x = my_x - vel_x*(INTERVAL_MILI/1000.0);
+            old_y = my_y - vel_y*(INTERVAL_MILI/1000.0);
 
             // Also update the particle positions in global memory
             particles[thread_id] = {my_x, my_y};
@@ -166,19 +168,31 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 Boundary line = boundaries_local_pointer[i];
                 float line_nx = line.y2-line.y1;
                 float line_ny = line.x1-line.x2;
-                line_nx *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                line_ny *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
+                float multiplier = rsqrt(line_nx*line_nx+line_ny*line_ny);
+                line_nx *= multiplier;
+                line_ny *= multiplier;
                 float projection = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
                 if(projection >= 0){
                     float crossing_x = my_x + projection*line_nx;
                     float crossing_y = my_y + projection*line_ny;
                     float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                     float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
-                    bool particle_is_near_to_line = projection <= SMOOTH && second_check3 <= (line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4 >= 0;
-                    bool particle_is_near_to_endpoint1 = ((line.x1-my_x)*(line.x1-my_x) + (line.y1-my_y)*(line.y1-my_y)) < SMOOTH*SMOOTH && ((line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny) > 0;
-                    bool particle_is_near_to_endpoint2 = ((line.x2-my_x)*(line.x2-my_x) + (line.y2-my_y)*(line.y2-my_y)) < SMOOTH*SMOOTH && ((line.x2-my_x)*line_nx+(line.y2-my_y)*line_ny) > 0;
-                    if(particle_is_near_to_line || particle_is_near_to_endpoint1 || particle_is_near_to_endpoint2){
-                        // Particle is near enough to the boundary
+                    if(projection <= SMOOTH && second_check3 <= (line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4 >= 0){
+                        // Particle is hovering above this boundary and distance from boundary is less than SMOOTH
+                        boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
+                        number_of_boundary_neighbours++;
+                        boundary_average_nx += line_nx;
+                        boundary_average_ny += line_ny;
+                    }
+                    else if(((line.x1-my_x)*(line.x1-my_x) + (line.y1-my_y)*(line.y1-my_y)) < SMOOTH*SMOOTH && ((line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny) > 0){
+                        // Particle is close enough to one endpoint of the boundary
+                        boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
+                        number_of_boundary_neighbours++;
+                        boundary_average_nx += line_nx;
+                        boundary_average_ny += line_ny;
+                    }
+                    else if(((line.x2-my_x)*(line.x2-my_x) + (line.y2-my_y)*(line.y2-my_y)) < SMOOTH*SMOOTH && ((line.x2-my_x)*line_nx+(line.y2-my_y)*line_ny) > 0){
+                        // Particle is close enough to another endpoint of the boundary
                         boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
                         number_of_boundary_neighbours++;
                         boundary_average_nx += line_nx;
@@ -187,7 +201,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 }
             }
 
-            // Initialize the particle neighbours pointer
+            // Initialize the particle neighbours pointer (conversion from a char pointer to short pointer requires alignment)
             int aligner = (long long)&boundary_neighbour_indexes[number_of_boundary_neighbours] & 1 ? 1 : 0;
             particle_neighbour_indexes = (unsigned short*)(&boundary_neighbour_indexes[number_of_boundary_neighbours]+aligner);
 
@@ -212,7 +226,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                         // Check whether particle crosses this boundary
                         {
                             float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((p2.x-line.x1)*line_nx+(p2.y-line.y1)*line_ny);
-                            if(first_check < 0){
+                            if(first_check <= 0.0){
                                 float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
                                 float second_check2 = (p2.x-my_x)*line_nx+(p2.y-my_y)*line_ny;
                                 float crossing_x = my_x;
@@ -229,8 +243,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
 
                         // Create a ghost particle over the boundary corresponding to this neighbour
                         {
-                            line_nx *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                            line_ny *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
+                            float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
+                            line_nx *= multiplier;
+                            line_ny *= multiplier;
                             float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
                             float virtual_x = p2.x + 2*projection*line_nx;
                             float virtual_y = p2.y + 2*projection*line_ny;
@@ -247,9 +262,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                             float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                             float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                             if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-                            float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
-                            if(dist_squared > SMOOTH*SMOOTH) continue;
-                            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
+                            float dist_squared2 = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
+                            if(dist_squared2 > SMOOTH*SMOOTH) continue;
+                            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared2 / (SMOOTH*SMOOTH/4)));
                             accumulated_ghost_particle_density += M_P*q2;
                         }
                     }
@@ -270,7 +285,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             }
             
             // Make sure no division by zero exceptions occur
-            //if(dens<=0.0) dens=0.00001; 
+            //if(dens<=0.0) dens=REST;
 
             // Calculate the pressure_density_ratio
             my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
@@ -294,7 +309,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 // First calculate displacement of the particle caused by neighbours
                 {
                     float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
-                    float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+                    float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
                     float displace = (press * q) * (INTERVAL_MILI/1000.0);
                     float abx = (my_x - p2.x);
                     float aby = (my_y - p2.y);
@@ -307,8 +322,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
                     float line_nx = (line.y2-line.y1);
                     float line_ny = (line.x1-line.x2);
-                    line_nx *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                    line_ny *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
+                    float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
+                    line_nx *= multiplier;
+                    line_ny *= multiplier;
                     float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
                     float virtual_x = p2.x + 2*projection*line_nx;
                     float virtual_y = p2.y + 2*projection*line_ny;
@@ -327,7 +343,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
                     float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
                     if(dist_squared > SMOOTH*SMOOTH) continue;
-                    float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+                    float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
                     float displace = (press * q) * (INTERVAL_MILI/1000.0);
                     float abx = (my_x - virtual_x);
                     float aby = (my_y - virtual_y);
@@ -341,8 +357,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
                 float line_nx = (line.y2-line.y1);
                 float line_ny = (line.x1-line.x2);
-                line_nx *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
-                line_ny *= 1/sqrtf(line_nx*line_nx+line_ny*line_ny);
+                float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
+                line_nx *= multiplier;
+                line_ny *= multiplier;
                 float projection = (line.x1-my_x)*line_nx +(line.y1-my_y)*line_ny;
                 float virtual_x = my_x + 2*projection*line_nx;
                 float virtual_y = my_y + 2*projection*line_ny;
@@ -361,8 +378,8 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
                 float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
                 if(dist_squared > SMOOTH*SMOOTH) continue;
-                float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-                float displace = (M_P * 2 * my_pressure_density_ratio * q) * (INTERVAL_MILI/1000.0);
+                float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+                float displace = (M_P * 2.0 * my_pressure_density_ratio * q) * (INTERVAL_MILI/1000.0);
                 float abx = (my_x - virtual_x);
                 float aby = (my_y - virtual_y);
                 boundaries_vel_x += displace * abx;
@@ -379,8 +396,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             // Put a velocity limit on the particles too allow the system to work still somewhat normally 
             // if some unforeseen behaviour would occur
             if(vel_x*vel_x+vel_y*vel_y > VEL_LIMIT*VEL_LIMIT){
-                vel_x *= VEL_LIMIT/sqrtf(vel_x*vel_x+vel_y*vel_y);
-                vel_y *= VEL_LIMIT/sqrtf(vel_x*vel_x+vel_y*vel_y);
+                float multiplier = VEL_LIMIT/sqrt(vel_x*vel_x+vel_y*vel_y);
+                vel_x *= multiplier;
+                vel_y *= multiplier;
             }
 
             my_x += vel_x*(INTERVAL_MILI/1000.0);

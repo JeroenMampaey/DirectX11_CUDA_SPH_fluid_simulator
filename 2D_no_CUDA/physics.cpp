@@ -53,8 +53,7 @@ void addGhostParticles(Particle &p, Boundary &line){
 }
 
 // Loop over all boundaries and check if Particle p has crossed a boundary and if so, 
-// change the position and velocity of p as to simulate a collision according (or atleast somewhat similar to) 
-// regular classical mechanics
+// change the position and velocity of p as to simulate a collision
 void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
     for(int i=0; i<numboundaries; i++){
         Boundary &line = boundaries[i];
@@ -72,20 +71,20 @@ void checkAllBoundaries(Particle &p, Boundary* boundaries, int numboundaries){
         float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
         float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
         if(second_check3>line.length_squared || second_check4<0.0) continue;
-        p.x = crossing_x - (RADIUS/2)*line.nx;
-        p.y = crossing_y - (RADIUS/2)*line.ny;
-        p.velx = 0;
-        p.vely = 0;
+        p.x = crossing_x - RADIUS*line.nx;
+        p.y = crossing_y - RADIUS*line.ny;
+        p.velx = 0.0;
+        p.vely = 0.0;
         return;
     }
 }
 
 void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, int numpumps){
-    for(int i=0; i<numpoints; i++){
+    for(int e=0; e<numpoints; e++){
         // Make sure the particle is not being painted on the screen at the moment
-        while(drawingIndex.load() <= i){}
+        while(drawingIndex.load() <= e){}
 
-        Particle &p = particles[i];
+        Particle &p = particles[e];
         p.velx = (p.x - p.oldx) / (INTERVAL_MILI/1000.0);
         p.vely = (p.y - p.oldy) / (INTERVAL_MILI/1000.0);
 
@@ -95,13 +94,17 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         // Update positional change of particles caused by gravity
         p.vely += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
 
-        // Update positional change of particles caused boundaries (make sure particles cannot pass boundaries)
-        checkAllBoundaries(p, boundaries, numboundaries);
-        
-        p.oldx = p.x;
-        p.oldy = p.y;
+        // Update particle positions
         p.x += p.velx*(INTERVAL_MILI/1000.0);
         p.y += p.vely*(INTERVAL_MILI/1000.0);
+
+        // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
+        checkAllBoundaries(p, boundaries, numboundaries);
+        
+        // Store the old particle positions
+        p.oldx = p.x - p.velx*(INTERVAL_MILI/1000.0);
+        p.oldy = p.y - p.vely*(INTERVAL_MILI/1000.0);
+        
         p.dens = 0;
         p.velx = 0;
         p.vely = 0;
@@ -109,7 +112,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
         p.virtual_neighbors.clear();
 
         // Find particles that are near to each other and calculate densities
-        for (int j = 0; j < i; j++) {
+        for (int j = 0; j < e; j++) {
           Particle &p2 = particles[j];
           float dist_squared = (p.x-p2.x)*(p.x-p2.x)+(p.y-p2.y)*(p.y-p2.y);
           if (dist_squared < SMOOTH*SMOOTH) {
@@ -133,10 +136,11 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
                 break;
             }
             if(i<numboundaries) continue;
-
+            
             // Particle p2 is a neighbor of p
             float q = (float)(2*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
             float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
+
             p.dens += M_P*q2;
             p2.dens += M_P*q2;
             p.particle_neighbors.push_back(Neighbor(&p2, p2.x, p2.y, q, q2));
@@ -156,11 +160,16 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
                 float crossing_y = p.y + projection*line.ny;
                 float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                 float second_check4 = (crossing_x-line.x1)*line.px+(crossing_y-line.y1)*line.py;
-                bool particle_is_near_to_line = projection <= SMOOTH && second_check3 <= line.length_squared && second_check4 >= 0;
-                bool particle_is_near_to_endpoint1 = ((line.x1-p.x)*(line.x1-p.x) + (line.y1-p.y)*(line.y1-p.y)) < SMOOTH*SMOOTH && ((line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny) > 0;
-                bool particle_is_near_to_endpoint2 = ((line.x2-p.x)*(line.x2-p.x) + (line.y2-p.y)*(line.y2-p.y)) < SMOOTH*SMOOTH && ((line.x2-p.x)*line.nx+(line.y2-p.y)*line.ny) > 0;
-                if(particle_is_near_to_line || particle_is_near_to_endpoint1 || particle_is_near_to_endpoint2){
-                    // particle is near enough to the boundary to require ghost particles
+                if(projection <= SMOOTH && second_check3 <= line.length_squared && second_check4 >= 0){
+                    // Particle is hovering above this boundary and distance from boundary is less than SMOOTH
+                    addGhostParticles(p, line);
+                }
+                else if(((line.x1-p.x)*(line.x1-p.x) + (line.y1-p.y)*(line.y1-p.y)) < SMOOTH*SMOOTH && ((line.x1-p.x)*line.nx+(line.y1-p.y)*line.ny) > 0){
+                    // Particle is close enough to one endpoint of the boundary
+                    addGhostParticles(p, line);
+                }
+                else if(((line.x2-p.x)*(line.x2-p.x) + (line.y2-p.y)*(line.y2-p.y)) < SMOOTH*SMOOTH && ((line.x2-p.x)*line.nx+(line.y2-p.y)*line.ny) > 0){
+                    // Particle is close enough to another endpoint of the boundary
                     addGhostParticles(p, line);
                 }
             }
@@ -170,8 +179,7 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
     // Calculate the pressure of each particle based on their density
     for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
-        float press = STIFF * (p.dens - REST);
-        p.pressure_density_ratio = press / (p.dens*p.dens);
+        p.pressure_density_ratio = STIFF*(p.dens-REST)/(p.dens*p.dens);
     }
 
     int max_neighbours = 0;
