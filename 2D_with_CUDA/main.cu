@@ -177,9 +177,9 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         //Try to open a console for debugging
         if(DEBUG){
             Debugger::startDebugger(m_hwnd);
-            //Debugger::bindTopic(DEBUG_PASSED_MS_ID, "MsPerFrame");
-            //Debugger::bindTopic(DEBUG_THREAD1_ERROR, "MainthreadError");
-            //Debugger::bindTopic(DEBUG_THREAD2_ERROR, "PhysicsthreadError");
+            Debugger::bindTopic(DEBUG_PASSED_MS_ID, "MsPerFrame");
+            Debugger::bindTopic(DEBUG_THREAD1_ERROR, "MainthreadError");
+            Debugger::bindTopic(DEBUG_THREAD2_ERROR, "PhysicsthreadError");
         }
 
         if (FAILED(D2D1CreateFactory(
@@ -302,7 +302,7 @@ bool MainWindow::buildDefaultSimulationLayout(){
     // Allocate pinned memory for the particles, boundaries and pumps
     if((success = allocateArrayMemory()) != cudaSuccess){
         if(DEBUG){
-            //Debugger::updateTopic(DEBUG_THREAD1_ERROR, ("Main thread CUDA memory allocations failed, status: "+std::to_string(success)).c_str());
+            Debugger::updateTopic(DEBUG_THREAD1_ERROR, ("Main thread CUDA memory allocations failed, status: "+std::to_string(success)).c_str());
         }
         return false;
     }

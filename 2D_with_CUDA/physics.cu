@@ -4,13 +4,7 @@
 #include <cooperative_groups.h>
 
 //TODO:
-//  -Try using register hints, 8.6 compute capability should offer me about 80 32-bit registers
 //  -Compare Boundary &line = ... performance to Boundary line = ...
-//  -When adding the ghost particles for each neighbour, eliminate the extra scopes by using sensible names instead of first_check etc.
-//  -When checking whether particle crosses this boundary: first_check<0 or first_check<=0??
-//  -if(dens==0.0) dens=0.01; is still very arbitrary
-//  -is a for-loop necessary for checking if boundaries_vel is along the average boundary normal?
-//  -include your own thread_id when making particle movement changes
 
 // Private declared functions
 __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particle* particles, Particle* old_particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, float* pressure_density_ratios);
@@ -36,7 +30,6 @@ void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateR
                 dim3 numBlocks((numpoints + BLOCK_SIZE - 1) / BLOCK_SIZE);
                 dim3 blockSize(BLOCK_SIZE);
                 int sharedMemorySize = numboundaries*sizeof(Boundary)+numpumps*sizeof(Pump)+numpumps*sizeof(PumpVelocity)+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
-                //updateParticles<<<numBlocks, BLOCK_SIZE, sharedMemorySize>>>(device_boundaries, numboundaries, device_particles, old_particles, numpoints, device_pumps, device_pumpvelocities, numpumps, pressure_density_ratios);
                 void* kernelArgs[] = {&device_boundaries, &numboundaries, &device_particles, &old_particles, &numpoints, &device_pumps, &device_pumpvelocities, &numpumps, &pressure_density_ratios};
                 cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0);
                 cudaError_t err = cudaGetLastError();
@@ -243,12 +236,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
 
                         // Create a ghost particle over the boundary corresponding to this neighbour
                         {
-                            float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
-                            line_nx *= multiplier;
-                            line_ny *= multiplier;
                             float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
-                            float virtual_x = p2.x + 2*projection*line_nx;
-                            float virtual_y = p2.y + 2*projection*line_ny;
+                            float virtual_x = p2.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                            float virtual_y = p2.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
                             float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
                             if(first_check > 0) continue;
                             float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
@@ -262,9 +252,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                             float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                             float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                             if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-                            float dist_squared2 = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
-                            if(dist_squared2 > SMOOTH*SMOOTH) continue;
-                            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared2 / (SMOOTH*SMOOTH/4)));
+                            float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
+                            if(dist_squared > SMOOTH*SMOOTH) continue;
+                            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
                             accumulated_ghost_particle_density += M_P*q2;
                         }
                     }
@@ -285,11 +275,11 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             }
             
             // Make sure no division by zero exceptions occur
-            //if(dens<=0.0) dens=REST;
-
-            // Calculate the pressure_density_ratio
-            my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
-            pressure_density_ratios[thread_id] = my_pressure_density_ratio;
+            if(dens>0.0){
+                // Calculate the pressure_density_ratio
+                my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
+                pressure_density_ratios[thread_id] = my_pressure_density_ratio;
+            }
         }
 
         // Synchronize the grid
@@ -322,12 +312,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
                     float line_nx = (line.y2-line.y1);
                     float line_ny = (line.x1-line.x2);
-                    float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
-                    line_nx *= multiplier;
-                    line_ny *= multiplier;
                     float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
-                    float virtual_x = p2.x + 2*projection*line_nx;
-                    float virtual_y = p2.y + 2*projection*line_ny;
+                    float virtual_x = p2.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                    float virtual_y = p2.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
                     float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
                     if(first_check > 0) continue;
                     float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
@@ -357,14 +344,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
                 float line_nx = (line.y2-line.y1);
                 float line_ny = (line.x1-line.x2);
-                float multiplier = 1.0/sqrt(line_nx*line_nx+line_ny*line_ny);
-                line_nx *= multiplier;
-                line_ny *= multiplier;
                 float projection = (line.x1-my_x)*line_nx +(line.y1-my_y)*line_ny;
-                float virtual_x = my_x + 2*projection*line_nx;
-                float virtual_y = my_y + 2*projection*line_ny;
-                float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
-                if(first_check > 0) continue;
+                float virtual_x = my_x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                float virtual_y = my_y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
                 float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
                 float second_check2 = (virtual_x-my_x)*line_nx+(virtual_y-my_y)*line_ny;
                 float crossing_x = my_x;

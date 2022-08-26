@@ -179,7 +179,9 @@ void updateParticles(std::atomic<int> &drawingIndex, Boundary* boundaries, int n
     // Calculate the pressure of each particle based on their density
     for (int i = 0; i < numpoints; i++) {
         Particle &p = particles[i];
-        p.pressure_density_ratio = STIFF*(p.dens-REST)/(p.dens*p.dens);
+        if(p.dens>0.0){
+            p.pressure_density_ratio = STIFF*(p.dens-REST)/(p.dens*p.dens);
+        }
     }
 
     int max_neighbours = 0;
