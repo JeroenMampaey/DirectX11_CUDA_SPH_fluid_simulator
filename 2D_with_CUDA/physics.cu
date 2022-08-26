@@ -50,15 +50,13 @@ void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateR
 }
 
 __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particle* particles, Particle* old_particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, float* pressure_density_ratios){
-    extern __shared__ Boundary s[];
+    // Initialize shared memory pointers
+    extern __shared__ Boundary boundaries_local_pointer[];
+    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numboundaries]);
+    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numpumps]);
 
     // Get the grid_group because later on device wide synchronization will be necessary
     cooperative_groups::grid_group grid = cooperative_groups::this_grid();
-
-    // Put all the boundaries and all the pumps in shared memory
-    Boundary* boundaries_local_pointer = s;
-    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numboundaries]);
-    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numpumps]);
 
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
 

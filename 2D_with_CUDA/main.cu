@@ -57,7 +57,6 @@ class MainWindow : public BaseWindow<MainWindow>
     HRESULT CreateGraphicsResources();
     void DiscardGraphicsResources();
     void OnPaint();
-    void Resize();
     void destroyApplication();
 
     DWORD g_BytesTransferred = 0;

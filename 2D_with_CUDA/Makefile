@@ -5,3 +5,5 @@ run.exe: main.cu physics.cu ../extra_code/console_debug.cpp ../extra_code/basewi
 
 clean:
 	powershell "(Remove-Item -ErrorAction Ignore run.exe)"
+	powershell "(Remove-Item -ErrorAction Ignore run.exp)"
+	powershell "(Remove-Item -ErrorAction Ignore run.lib)"
