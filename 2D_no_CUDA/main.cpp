@@ -26,6 +26,7 @@
 
 class MainWindow : public BaseWindow<MainWindow>
 {
+private:
     ID2D1Factory            *pFactory;
     ID2D1HwndRenderTarget   *pRenderTarget;
     ID2D1SolidColorBrush    *pBrush;
@@ -238,7 +239,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         // Repaint the screen
         OnPaint();
-        return 0;
+        break;
 
     case WM_TIMER:
         switch (wParam) 
@@ -246,13 +247,14 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             case TIMER_ID1:
                 // Notify the physics thread to request an update
                 updateRequired.store(true);
-                return 0;
+                break;
             
             case TIMER_ID2:
                 // Print the number of ms per frame to the console
                 Debugger::updateTopic(DEBUG_PASSED_MS_ID, std::to_string(passed_ms).c_str());
-                return 0;
+                break;
         }
+        break;
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }

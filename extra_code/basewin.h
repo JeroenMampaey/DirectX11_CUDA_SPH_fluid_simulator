@@ -3,7 +3,8 @@
 
 #include <windows.h>
 #pragma comment(lib,"user32.lib")
-#pragma comment(lib, "d2d1")
+#pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "d3d11.lib")
 #pragma comment(lib,"gdi32.lib")
 #pragma comment(lib, "ole32.lib")
 
@@ -64,6 +65,7 @@ public:
     {
         WNDCLASS wc = {0};
 
+        wc.style = CS_OWNDC;
         wc.lpfnWndProc   = DERIVED_TYPE::WindowProc;
         wc.hInstance     = GetModuleHandle(NULL);
         wc.lpszClassName = ClassName();
@@ -71,11 +73,22 @@ public:
         RegisterClass(&wc);
 
         RECT rect = {0, 0, nWidth, nHeight};
-        AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW, 0, 0);
+        AdjustWindowRectEx(&rect, dwStyle, 0, 0);
 
         m_hwnd = CreateWindowEx(
-            dwExStyle, ClassName(), lpWindowName, dwStyle, x, y, rect.right-rect.left, rect.bottom-rect.top, hWndParent, hMenu, GetModuleHandle(NULL), this
-            );
+            dwExStyle, 
+            ClassName(), 
+            lpWindowName, 
+            dwStyle, 
+            x, 
+            y, 
+            rect.right-rect.left, 
+            rect.bottom-rect.top, 
+            hWndParent, 
+            hMenu, 
+            GetModuleHandle(NULL), 
+            this
+        );
 
         return (m_hwnd ? TRUE : FALSE);
     }

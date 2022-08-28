@@ -17,7 +17,6 @@ class MainWindow : public BaseWindow<MainWindow>
     HRESULT CreateGraphicsResources();
     void    DiscardGraphicsResources();
     void    OnPaint();
-    void    Resize();
 
     SimulationBuilder simulation_builder;
 
@@ -172,7 +171,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         // Repaint the screen
         OnPaint();
-        return 0;
+        break;
     
     case WM_LBUTTONDOWN:
         // Signal the mouse position with the SimulationBuilder
@@ -180,7 +179,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         // Signal the event with the SimulationBuilder
         simulation_builder.event(MOUSE_CLICK);
-        return 0;
+        break;
     
     case WM_MOUSEMOVE:
         // Signal the mouse position with the SimulationBuilder
@@ -188,7 +187,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         // Signal the event with the SimulationBuilder
         simulation_builder.event(MOUSE_MOVE);
-        return 0;
+        break;
     
     case WM_KEYDOWN:
         // Signal the event with the SimulationBuilder
@@ -220,6 +219,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             default:
                 break;
         }
+        break;
     }
     return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
 }
