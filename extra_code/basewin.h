@@ -31,13 +31,13 @@ public:
         {
             CREATESTRUCT* pCreate = (CREATESTRUCT*)lParam;
             pThis = (DERIVED_TYPE*)pCreate->lpCreateParams;
-            SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, (LONG_PTR)pThis);
 
             pThis->m_hwnd = hwnd;
         }
         else
         {
-            pThis = (DERIVED_TYPE*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+            pThis = (DERIVED_TYPE*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
         }
         if (pThis)
         {
@@ -45,7 +45,7 @@ public:
         }
         else
         {
-            return DefWindowProc(hwnd, uMsg, wParam, lParam);
+            return DefWindowProcW(hwnd, uMsg, wParam, lParam);
         }
     }
 
@@ -67,15 +67,15 @@ public:
 
         wc.style = CS_OWNDC;
         wc.lpfnWndProc   = DERIVED_TYPE::WindowProc;
-        wc.hInstance     = GetModuleHandle(NULL);
+        wc.hInstance     = GetModuleHandleW(NULL);
         wc.lpszClassName = ClassName();
 
-        RegisterClass(&wc);
+        RegisterClassW(&wc);
 
         RECT rect = {0, 0, nWidth, nHeight};
         AdjustWindowRectEx(&rect, dwStyle, 0, 0);
 
-        m_hwnd = CreateWindowEx(
+        m_hwnd = CreateWindowExW(
             dwExStyle, 
             ClassName(), 
             lpWindowName, 
@@ -86,7 +86,7 @@ public:
             rect.bottom-rect.top, 
             hWndParent, 
             hMenu, 
-            GetModuleHandle(NULL), 
+            GetModuleHandleW(NULL), 
             this
         );
 

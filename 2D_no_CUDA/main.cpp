@@ -11,6 +11,7 @@
 
 #include "../extra_code/basewin.h"
 #include "physics.h"
+#include <wrl/client.h>
 
 #define TIMER_ID1 0
 #define TIMER_ID2 1
@@ -27,9 +28,9 @@
 class MainWindow : public BaseWindow<MainWindow>
 {
 private:
-    ID2D1Factory            *pFactory;
-    ID2D1HwndRenderTarget   *pRenderTarget;
-    ID2D1SolidColorBrush    *pBrush;
+    Microsoft::WRL::ComPtr<ID2D1Factory> pFactory;
+    Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> pRenderTarget;
+    Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> pBrush;
     std::thread            physicsThread;
 
     std::atomic<bool> exit = false;
@@ -53,14 +54,14 @@ private:
     void buildSimulationLayoutFromFile(char* ReadBuffer);
 
     HRESULT CreateGraphicsResources();
-    void DiscardGraphicsResources();
     void OnPaint();
 
     DWORD g_BytesTransferred = 0;
 
 public:
 
-    MainWindow() : pFactory(NULL), pRenderTarget(NULL), pBrush(NULL){}
+    MainWindow();
+    ~MainWindow();
     PCWSTR  ClassName() const { return L"SPH Window Class"; }
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     void setBytesTransferred(DWORD g_BytesTransferred);
@@ -71,7 +72,7 @@ HRESULT MainWindow::CreateGraphicsResources()
 {
     // Make sure that the graphics resources have been created
     HRESULT hr = S_OK;
-    if (pRenderTarget == NULL)
+    if (pRenderTarget == nullptr)
     {
         RECT rc;
         GetClientRect(m_hwnd, &rc);
@@ -92,12 +93,6 @@ HRESULT MainWindow::CreateGraphicsResources()
     return hr;
 }
 
-void MainWindow::DiscardGraphicsResources()
-{
-    SafeRelease(&pRenderTarget);
-    SafeRelease(&pBrush);
-}
-
 void MainWindow::OnPaint()
 {
     // first make sure graphics resources are created already
@@ -114,26 +109,26 @@ void MainWindow::OnPaint()
         // Draw the boundaries
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
         for(int i = 0; i < numboundaries; i++){
-            pRenderTarget->DrawLine(D2D1::Point2F(boundaries[i].x1, boundaries[i].y1), D2D1::Point2F(boundaries[i].x2, boundaries[i].y2), pBrush);
+            pRenderTarget->DrawLine(D2D1::Point2F(boundaries[i].x1, boundaries[i].y1), D2D1::Point2F(boundaries[i].x2, boundaries[i].y2), pBrush.Get());
         }
 
         // Draw the particles
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
         for(int i = 0; i < numpoints; i++){
-            pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(particles[i].x, particles[i].y), RADIUS, RADIUS), pBrush);
+            pRenderTarget->FillEllipse(D2D1::Ellipse(D2D1::Point2F(particles[i].x, particles[i].y), RADIUS, RADIUS), pBrush.Get());
             drawingIndex.store(i+1);
         }
 
         // Draw the pumps
         pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green));
         for(int i=0; i < numpumps; i++){
-            pRenderTarget->DrawRectangle(D2D1::RectF(pumps[i].x_low, pumps[i].y_low, pumps[i].x_high, pumps[i].y_high), pBrush);
+            pRenderTarget->DrawRectangle(D2D1::RectF(pumps[i].x_low, pumps[i].y_low, pumps[i].x_high, pumps[i].y_high), pBrush.Get());
         }
 
         hr = pRenderTarget->EndDraw();
         if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
         {
-            DiscardGraphicsResources();
+            //TODO
         }
         EndPaint(m_hwnd, &ps);
     }
@@ -174,7 +169,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         }
 
         if (FAILED(D2D1CreateFactory(
-                D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
+                D2D1_FACTORY_TYPE_SINGLE_THREADED, pFactory.GetAddressOf())))
         {
             return -1;
         }
@@ -208,23 +203,7 @@ LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         // Remove this class as a window property (used for callbacks)
         RemoveProp(m_hwnd, L"MainWindow");
 
-        DiscardGraphicsResources();
-        SafeRelease(&pFactory);
         PostQuitMessage(0);
-
-        // Stop the background thread
-        exit.store(true);
-        drawingIndex.store(numpoints);
-        physicsThread.join();
-
-        delete[] boundaries;
-        delete[] particles;
-        delete[] pumps;
-
-        //destroy the console
-        if(DEBUG){
-            Debugger::stopDebugger();
-        }
 
         return 0;
 
@@ -496,4 +475,24 @@ VOID CALLBACK MainWindow::FileIOCompletionRoutine(__in  DWORD dwErrorCode, __in 
 
 void MainWindow::setBytesTransferred(DWORD g_BytesTransferred){
     this->g_BytesTransferred = g_BytesTransferred;
+}
+
+MainWindow::MainWindow() : pFactory(nullptr), pRenderTarget(nullptr), pBrush(nullptr){
+    
+}
+
+MainWindow::~MainWindow(){
+    // Stop the background thread
+    exit.store(true);
+    drawingIndex.store(numpoints);
+    physicsThread.join();
+
+    delete[] boundaries;
+    delete[] particles;
+    delete[] pumps;
+
+    //destroy the console
+    if(DEBUG){
+        Debugger::stopDebugger();
+    }
 }
