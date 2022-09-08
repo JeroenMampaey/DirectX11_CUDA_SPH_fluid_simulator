@@ -123,3 +123,17 @@ void CALLBACK GraphicsEngine::requestUpdate(HWND hWnd, UINT uMsg, UINT_PTR idEve
         pThis->update();
      }
 }
+
+void GraphicsEngine::DrawIndexed(UINT count) noexcept{
+	pContext->DrawIndexed(count, 0, 0);
+}
+
+void GraphicsEngine::SetProjection(DirectX::FXMMATRIX proj) noexcept
+{
+	projection = proj;
+}
+
+DirectX::XMMATRIX GraphicsEngine::GetProjection() const noexcept
+{
+	return projection;
+}

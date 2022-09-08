@@ -5,6 +5,7 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <DirectXMath.h>
+#include <d3dcompiler.h>
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
@@ -14,15 +15,21 @@
 #define GRAPHICS_ENGINE_UPDATE_TIMER_ID 101
 
 class GraphicsEngine{
+    friend class Bindable;
+
     public:
         GraphicsEngine(HWND hWnd, UINT msPerFrame);
         ~GraphicsEngine();
+        void DrawIndexed(UINT count) noexcept;
+        void SetProjection(DirectX::FXMMATRIX proj) noexcept;
+	    DirectX::XMMATRIX GetProjection() const noexcept;
     
     protected:
         void ClearBuffer(float red, float green, float blue) noexcept;
         void EndFrame();
         virtual void update() = 0;
 
+        DirectX::XMMATRIX projection;
         Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
         Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
