@@ -9,12 +9,13 @@
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
+#include "exports.h"
 
 #define HEIGHT 700
 #define WIDTH 1280
 #define GRAPHICS_ENGINE_UPDATE_TIMER_ID 101
 
-class GraphicsEngine{
+class LIBRARY_API GraphicsEngine{
     friend class Bindable;
 
     public:

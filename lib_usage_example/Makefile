@@ -1,17 +1,15 @@
-CPP_SOURCES = $(wildcard *.cpp ../lib/*.cpp ../lib/bindables/*.cpp ../lib/drawables/*.cpp)
+CPP_SOURCES = $(wildcard *.cpp)
 
-all: run.exe
+all: ../lib/binaries/lib_usage_example_run.exe
+	@powershell '(Write-Host "Executable build successfully, the executable can be found in the binaries folder in the lib directory" -ForegroundColor green)'
 
-run.exe: main.cpp VertexShader.cso PixelShader.cso
-	nvcc ${CPP_SOURCES} -o run.exe -std=c++17
+../lib/binaries/lib_usage_example_run.exe: ../lib/binaries/graphics.dll main.cpp
+	nvcc ${CPP_SOURCES} -l ../lib/binaries/graphics -o ../lib/binaries/lib_usage_example_run.exe -std=c++17
 
-VertexShader.cso: VertexShader.hlsl
-	fxc.exe VertexShader.hlsl -Fo VertexShader.cso -T vs_4_1
-
-PixelShader.cso: PixelShader.hlsl
-	fxc.exe PixelShader.hlsl -Fo PixelShader.cso -T ps_4_1
+../lib/binaries/graphics.dll:
+	@powershell '(Write-Host "The Graphics libary has not been build yet" -ForegroundColor red)'
+	@powershell '(Write-Host "Go to the lib folder and use the Makefile to build the library first" -ForegroundColor red)'
+	@exit 1
 
 clean:
-	powershell "(Remove-Item -ErrorAction Ignore VertexShader.cso)"
-	powershell "(Remove-Item -ErrorAction Ignore PixelShader.cso)"
-	powershell "(Remove-Item -ErrorAction Ignore run.exe)"
+	@powershell '(Remove-Item -ErrorAction Ignore ../lib/binaries/lib_usage_example_run.exe)'

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../lib/graphics_engine.h"
-#include "../lib/drawables/square.h"
+#include "../lib/lib_header.h"
 
 class ExampleEngine : public GraphicsEngine{
     public:
@@ -9,5 +8,6 @@ class ExampleEngine : public GraphicsEngine{
     protected:
         void update();
     private:
-        std::unique_ptr<Square> mySquare;
+        SquareFactory squareFactory = SquareFactory();
+        std::unique_ptr<Drawable> mySquare;
 };

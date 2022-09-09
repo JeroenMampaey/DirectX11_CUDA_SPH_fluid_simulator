@@ -1,6 +1,8 @@
 *.exe
 *.lib
 *.exp
+*.dll
+*.cso
 simulation_layout/*.txt
 .vscode
 .vscode/*

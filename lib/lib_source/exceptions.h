@@ -3,8 +3,9 @@
 #include <exception>
 #include <string>
 #include <windows.h>
+#include "exports.h"
 
-class WinException : public std::exception
+class LIBRARY_API WinException : public std::exception
 {
     public:
         WinException(int line, const char* file) noexcept;

@@ -1,4 +1,4 @@
-#include "../lib/app.h"
+#include "../lib/lib_header.h"
 #include "example_engine.h"
 
 #define MS_PER_FRAME 1000
