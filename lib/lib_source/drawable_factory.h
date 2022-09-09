@@ -6,8 +6,8 @@ template<class T>
 class LIBRARY_API DrawableFactory : public DrawableFactoryBase{
     public:
         std::unique_ptr<Drawable> createDrawable(GraphicsEngine& gfx, DrawableStateInitializerDesc& desc){
-            std::shared_ptr<DrawableState> initialState = getInitialDrawableState(desc);
-            std::unique_ptr<Drawable> newDrawable = callDrawableConstructor(gfx, *this, initialState);
+            std::unique_ptr<DrawableState> initialState = getInitialDrawableState(desc);
+            std::unique_ptr<Drawable> newDrawable = callDrawableConstructor(gfx, *this, std::move(initialState));
             if(sharedIndexCount!=-1){
                 setIndexCount(*newDrawable, sharedIndexCount);
             }
@@ -31,7 +31,7 @@ class LIBRARY_API DrawableFactory : public DrawableFactoryBase{
             }
         }
 
-        virtual std::shared_ptr<DrawableState> getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept = 0;
+        virtual std::unique_ptr<DrawableState> getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept = 0;
         virtual void initializeSharedBinds(GraphicsEngine& gfx) = 0;
         virtual void initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const = 0;
         virtual ~DrawableFactory() = default;

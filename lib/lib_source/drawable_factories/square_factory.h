@@ -26,7 +26,7 @@ struct LIBRARY_API SquareState : public DrawableState{
 
 class LIBRARY_API SquareFactory : public DrawableFactory<SquareFactory>{
     public:
-        std::shared_ptr<DrawableState> getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept override;
+        std::unique_ptr<DrawableState> getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept override;
         void initializeSharedBinds(GraphicsEngine& gfx) override;
         void initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const override;
 };

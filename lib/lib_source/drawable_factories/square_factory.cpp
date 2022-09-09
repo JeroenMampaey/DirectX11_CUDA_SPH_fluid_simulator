@@ -16,9 +16,9 @@ void SquareState::update(DrawableStateUpdateDesc& desc) noexcept{
     y = castedDesc.new_y;
 }
 
-std::shared_ptr<DrawableState> SquareFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
+std::unique_ptr<DrawableState> SquareFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
     SquareStateInitializerDesc& castedDesc = static_cast<SquareStateInitializerDesc&>(desc);
-    return std::make_shared<SquareState>(castedDesc.x, castedDesc.y);
+    return std::make_unique<SquareState>(castedDesc.x, castedDesc.y);
 }
 
 
