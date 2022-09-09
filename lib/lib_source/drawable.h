@@ -13,9 +13,11 @@ class LIBRARY_API Drawable{
         void draw(GraphicsEngine& gfx) const;
         void updateState(DrawableStateUpdateDesc& desc) noexcept;
         ~Drawable() noexcept;
+        Drawable& operator=(const Drawable& copy) = delete;
+        Drawable& operator=(Drawable&& copy) = delete;
     
     private:
-        Drawable(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::unique_ptr<DrawableState> pState);
+        Drawable(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::shared_ptr<DrawableState> pState);
         void addUniqueBind(std::unique_ptr<Bindable> bind) noexcept;
         void addSharedBind(std::shared_ptr<Bindable> bind) noexcept;
         void setIndexCount(int indexCount) noexcept;
@@ -23,6 +25,6 @@ class LIBRARY_API Drawable{
         DrawableFactoryBase& creator;
         std::vector<std::unique_ptr<Bindable>> binds;
         std::vector<std::shared_ptr<Bindable>> sharedBinds;
-        std::unique_ptr<DrawableState> pState;
+        std::shared_ptr<DrawableState> pState;
         int indexCount = -1;
 };

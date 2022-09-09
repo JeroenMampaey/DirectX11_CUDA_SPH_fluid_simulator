@@ -22,10 +22,10 @@ Drawable::~Drawable() noexcept{
     creator.removeDrawable();
 }
 
-Drawable::Drawable(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::unique_ptr<DrawableState> pState) 
+Drawable::Drawable(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::shared_ptr<DrawableState> pState) 
     : 
-    creator(creator), 
-    pState(std::move(pState))
+    creator(creator),
+    pState(pState)
 {
     creator.registerDrawable(gfx);
 }

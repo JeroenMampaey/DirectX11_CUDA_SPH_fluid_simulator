@@ -1,8 +1,8 @@
 #include "drawable_factory_base.h"
 #include "drawable.h"
 
-std::unique_ptr<Drawable> DrawableFactoryBase::callDrawableConstructor(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::unique_ptr<DrawableState> pState){
-    return std::unique_ptr<Drawable>(new Drawable(gfx, creator, std::move(pState)));
+std::unique_ptr<Drawable> DrawableFactoryBase::callDrawableConstructor(GraphicsEngine& gfx, DrawableFactoryBase& creator, std::shared_ptr<DrawableState> pState){
+    return std::unique_ptr<Drawable>(new Drawable(gfx, creator, pState));
 }
 
 void DrawableFactoryBase::addUniqueBind(Drawable& drawable, std::unique_ptr<Bindable> bind) const noexcept{

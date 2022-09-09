@@ -13,5 +13,6 @@ int App::Go(){
 		{
 			return *ecode;
 		}
+		wnd.checkForExceptions();
 	}
 }

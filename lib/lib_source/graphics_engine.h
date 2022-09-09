@@ -20,15 +20,17 @@ class LIBRARY_API GraphicsEngine{
 
     public:
         GraphicsEngine(HWND hWnd, UINT msPerFrame);
-        ~GraphicsEngine();
+        virtual ~GraphicsEngine();
         void DrawIndexed(UINT count) noexcept;
         void SetProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX GetProjection() const noexcept;
+        std::exception_ptr getThrownException() const noexcept;
     
     protected:
         void ClearBuffer(float red, float green, float blue) noexcept;
         void EndFrame();
         virtual void update() = 0;
+        void setThrownException(std::exception_ptr thrownException) noexcept;
 
         DirectX::XMMATRIX projection;
         Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
@@ -40,4 +42,5 @@ class LIBRARY_API GraphicsEngine{
     private:
         static void CALLBACK requestUpdate(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) noexcept;
         HWND hWnd;
+        std::exception_ptr thrownException = nullptr;
 };

@@ -1,13 +1,10 @@
 #include "square_factory.h"
 
-SquareStateUpdateDesc::SquareStateUpdateDesc(float new_x, float new_y) noexcept 
-    : 
-    DrawableStateUpdateDesc(), 
-    new_x(new_x), 
-    new_y(new_y)
-{}
+SquareStateUpdateDesc::SquareStateUpdateDesc(float new_x, float new_y) noexcept : new_x(new_x), new_y(new_y){}
 
-SquareState::SquareState(float x, float y) noexcept : DrawableState(), x(x), y(y){}
+SquareStateInitializerDesc::SquareStateInitializerDesc(float x, float y) noexcept : x(x), y(y){}
+
+SquareState::SquareState(float x, float y) noexcept : x(x), y(y){}
 
 DirectX::XMMATRIX SquareState::getTransformXM() const noexcept{
     return DirectX::XMMatrixTranslation(x, y, 0.0f) * DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.0f);
@@ -19,8 +16,9 @@ void SquareState::update(DrawableStateUpdateDesc& desc) noexcept{
     y = castedDesc.new_y;
 }
 
-std::unique_ptr<DrawableState> SquareFactory::getInitialDrawableState() const noexcept{
-    return std::make_unique<SquareState>(0.0f, 0.0f);
+std::shared_ptr<DrawableState> SquareFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
+    SquareStateInitializerDesc& castedDesc = static_cast<SquareStateInitializerDesc&>(desc);
+    return std::make_shared<SquareState>(castedDesc.x, castedDesc.y);
 }
 
 

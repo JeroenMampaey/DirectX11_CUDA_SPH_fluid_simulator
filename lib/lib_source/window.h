@@ -10,8 +10,6 @@
 
 class Window
 {
-    public:
-
     private:
         class WindowClass
         {
@@ -35,5 +33,5 @@ class Window
         Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND));
 	    ~Window() noexcept;
         static std::optional<int> ProcessMessages() noexcept;
-
+        void checkForExceptions() const;
 };

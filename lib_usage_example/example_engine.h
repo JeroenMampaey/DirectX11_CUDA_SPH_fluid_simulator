@@ -6,7 +6,7 @@ class ExampleEngine : public GraphicsEngine{
     public:
         ExampleEngine(HWND hWnd, UINT msPerFrame);
     protected:
-        void update();
+        void update() override;
     private:
         SquareFactory squareFactory = SquareFactory();
         std::unique_ptr<Drawable> mySquare;

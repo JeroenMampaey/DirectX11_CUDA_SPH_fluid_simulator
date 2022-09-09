@@ -118,10 +118,15 @@ void GraphicsEngine::EndFrame(){
 }
 
 void CALLBACK GraphicsEngine::requestUpdate(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) noexcept{
-     GraphicsEngine* pThis = (GraphicsEngine*)GetPropW(hWnd, L"GraphicsEngine");
-     if(pThis != NULL){
-        pThis->update();
-     }
+    GraphicsEngine* pThis = (GraphicsEngine*)GetPropW(hWnd, L"GraphicsEngine");
+    if(pThis != NULL){
+        try{
+            pThis->update();
+        }
+        catch(...){
+            pThis->setThrownException(std::current_exception());
+        }
+    }
 }
 
 void GraphicsEngine::DrawIndexed(UINT count) noexcept{
@@ -136,4 +141,12 @@ void GraphicsEngine::SetProjection(DirectX::FXMMATRIX proj) noexcept
 DirectX::XMMATRIX GraphicsEngine::GetProjection() const noexcept
 {
 	return projection;
+}
+
+std::exception_ptr GraphicsEngine::getThrownException() const noexcept{
+    return thrownException;
+}
+
+void GraphicsEngine::setThrownException(std::exception_ptr thrownException) noexcept{
+    this->thrownException = thrownException;
 }
