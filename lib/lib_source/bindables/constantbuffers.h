@@ -6,12 +6,12 @@
 template<typename C>
 class ConstantBuffer : public Bindable{
     public:
-        void Update(GraphicsEngine& gfx, const C& consts){
+        void update(GraphicsEngine& gfx, const C& consts){
 			HRESULT hr;
 			D3D11_MAPPED_SUBRESOURCE msr;
-			GFX_THROW_FAILED(GetContext(gfx)->Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
+			GFX_THROW_FAILED(getContext(gfx)->Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 			memcpy(msr.pData, &consts, sizeof(consts));
-			GetContext(gfx)->Unmap(pConstantBuffer.Get(), 0);
+			getContext(gfx)->Unmap(pConstantBuffer.Get(), 0);
 		}
         ConstantBuffer(GraphicsEngine& gfx, const C& consts){
 			HRESULT hr;
@@ -25,7 +25,7 @@ class ConstantBuffer : public Bindable{
 
 			D3D11_SUBRESOURCE_DATA csd = {};
 			csd.pSysMem = &consts;
-			GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&cbd, &csd, &pConstantBuffer));
+			GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&cbd, &csd, &pConstantBuffer));
 		}
         ConstantBuffer(GraphicsEngine& gfx){
 			HRESULT hr;
@@ -36,7 +36,7 @@ class ConstantBuffer : public Bindable{
 			cbd.MiscFlags = 0;
 			cbd.ByteWidth = sizeof(C);
 			cbd.StructureByteStride = 0;
-			GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&cbd, nullptr, &pConstantBuffer));
+			GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&cbd, nullptr, &pConstantBuffer));
 		}
     protected:
         Microsoft::WRL::ComPtr<ID3D11Buffer> pConstantBuffer;
@@ -46,11 +46,11 @@ template<typename C>
 class VertexConstantBuffer : public ConstantBuffer<C>
 {
         using ConstantBuffer<C>::pConstantBuffer;
-        using Bindable::GetContext;
+        using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void Bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
-            GetContext(gfx)->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
+            getContext(gfx)->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };
 
@@ -58,10 +58,10 @@ template<typename C>
 class PixelConstantBuffer : public ConstantBuffer<C>
 {
         using ConstantBuffer<C>::pConstantBuffer;
-        using Bindable::GetContext;
+        using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void Bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
-            GetContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
+            getContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };

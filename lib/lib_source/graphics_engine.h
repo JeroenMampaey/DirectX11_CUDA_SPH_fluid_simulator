@@ -6,14 +6,16 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include "exports.h"
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
-#include "exports.h"
+#pragma comment(lib, "dxgi")
 
 #define HEIGHT 700
 #define WIDTH 1280
 #define GRAPHICS_ENGINE_UPDATE_TIMER_ID 101
+#define NVIDIA_VENDOR_ID 4318
 
 class LIBRARY_API GraphicsEngine{
     friend class Bindable;
@@ -21,14 +23,14 @@ class LIBRARY_API GraphicsEngine{
     public:
         GraphicsEngine(HWND hWnd, UINT msPerFrame);
         virtual ~GraphicsEngine();
-        void DrawIndexed(UINT count) noexcept;
-        void SetProjection(DirectX::FXMMATRIX proj) noexcept;
-	    DirectX::XMMATRIX GetProjection() const noexcept;
+        void drawIndexed(UINT count) noexcept;
+        void setProjection(DirectX::FXMMATRIX proj) noexcept;
+	    DirectX::XMMATRIX getProjection() const noexcept;
         std::exception_ptr getThrownException() const noexcept;
     
     protected:
-        void ClearBuffer(float red, float green, float blue) noexcept;
-        void EndFrame();
+        void clearBuffer(float red, float green, float blue) noexcept;
+        void endFrame();
         virtual void update() = 0;
         void setThrownException(std::exception_ptr thrownException) noexcept;
 

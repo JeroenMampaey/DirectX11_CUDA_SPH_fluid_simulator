@@ -13,7 +13,7 @@
 class PixelShader : public Bindable{
     public:
         PixelShader(GraphicsEngine& gfx, const std::wstring& path);
-        void Bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
 };

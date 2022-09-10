@@ -7,27 +7,27 @@ Window::WindowClass::WindowClass() noexcept : hInst(GetModuleHandleW(nullptr)){
 	WNDCLASSEXA wc = {0};
 	wc.cbSize = sizeof(wc);
 	wc.style = CS_OWNDC;
-	wc.lpfnWndProc = HandleMsgSetup;
+	wc.lpfnWndProc = handleMsgSetup;
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
-	wc.hInstance = GetInstance();
+	wc.hInstance = getInstance();
 	wc.hCursor = nullptr;
 	wc.hbrBackground = nullptr;
 	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = GetName();
+	wc.lpszClassName = getName();
 
 	RegisterClassExA(&wc);
 }
 
 Window::WindowClass::~WindowClass() noexcept{
-	UnregisterClassA(wndClassName, GetInstance());
+	UnregisterClassA(wndClassName, getInstance());
 }
 
-const char* Window::WindowClass::GetName() noexcept{
+const char* Window::WindowClass::getName() noexcept{
 	return wndClassName;
 }
 
-HINSTANCE Window::WindowClass::GetInstance() noexcept{
+HINSTANCE Window::WindowClass::getInstance() noexcept{
 	return wndClass.hInst;
 }
 
@@ -43,10 +43,10 @@ Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory
 	}
 	
 	hWnd = CreateWindowExA(
-		0L, WindowClass::GetName(),name,
+		0L, WindowClass::getName(),name,
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 		CW_USEDEFAULT,CW_USEDEFAULT,wr.right - wr.left,wr.bottom - wr.top,
-		nullptr,nullptr,WindowClass::GetInstance(),this
+		nullptr,nullptr,WindowClass::getInstance(),this
 	);
 	
 	if( hWnd == nullptr )
@@ -56,16 +56,16 @@ Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory
 
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 
-    pGfx = engineFactory(hWnd);
+	SetWindowTextA(hWnd, "Binding graphics to the window...");
 
-    SetWindowTextA(hWnd, name);
+    pGfx = engineFactory(hWnd);
 }
 
 Window::~Window() noexcept{
 	DestroyWindow(hWnd);
 }
 
-std::optional<int> Window::ProcessMessages() noexcept{
+std::optional<int> Window::processMessages() noexcept{
 	MSG msg;
 
 	while(PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)){
@@ -80,23 +80,23 @@ std::optional<int> Window::ProcessMessages() noexcept{
 	return {};
 }
 
-LRESULT CALLBACK Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
+LRESULT CALLBACK Window::handleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
 	if(msg==WM_NCCREATE){
 		const CREATESTRUCTW* const pCreate = reinterpret_cast<CREATESTRUCTW*>(lParam);
 		Window* const pWnd = static_cast<Window*>(pCreate->lpCreateParams);
 		SetWindowLongPtrW(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pWnd));
-		SetWindowLongPtrW(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::HandleMsgThunk));
-		return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
+		SetWindowLongPtrW(hWnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&Window::handleMsgThunk));
+		return pWnd->handleMsg(hWnd, msg, wParam, lParam);
 	}
 	return DefWindowProcW( hWnd,msg,wParam,lParam );
 }
 
-LRESULT CALLBACK Window::HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
+LRESULT CALLBACK Window::handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
 	Window* const pWnd = reinterpret_cast<Window*>(GetWindowLongPtrW(hWnd, GWLP_USERDATA));
-	return pWnd->HandleMsg(hWnd, msg, wParam, lParam);
+	return pWnd->handleMsg(hWnd, msg, wParam, lParam);
 }
 
-LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
+LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
 	switch(msg)
 	{
 		case WM_CLOSE:

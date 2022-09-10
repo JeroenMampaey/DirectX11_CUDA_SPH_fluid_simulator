@@ -1,6 +1,6 @@
 #include "vertexbuffer.h"
 
-void VertexBuffer::Bind(GraphicsEngine& gfx, DrawableState& drawableState){
+void VertexBuffer::bind(GraphicsEngine& gfx, DrawableState& drawableState){
 	const UINT offset = 0u;
-	GetContext(gfx)->IASetVertexBuffers(0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset );
+	getContext(gfx)->IASetVertexBuffers(0, 1, pVertexBuffer.GetAddressOf(), &stride, &offset );
 }

@@ -1,0 +1,1 @@
+#include "lib_source/drawable_factories/square_factory.h"

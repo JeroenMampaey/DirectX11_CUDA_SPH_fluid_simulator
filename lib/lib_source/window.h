@@ -14,8 +14,8 @@ class Window
         class WindowClass
         {
             public:
-                static const char* GetName() noexcept;
-                static HINSTANCE GetInstance() noexcept;
+                static const char* getName() noexcept;
+                static HINSTANCE getInstance() noexcept;
             private:
                 WindowClass() noexcept;
                 ~WindowClass() noexcept;
@@ -23,15 +23,15 @@ class Window
                 static WindowClass wndClass;
                 HINSTANCE hInst;
         };
-        static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-	    static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-	    LRESULT HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+        static LRESULT CALLBACK handleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+	    static LRESULT CALLBACK handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+	    LRESULT handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
         HWND hWnd;
         std::unique_ptr<GraphicsEngine> pGfx;
 
     public:
         Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND));
 	    ~Window() noexcept;
-        static std::optional<int> ProcessMessages() noexcept;
+        static std::optional<int> processMessages() noexcept;
         void checkForExceptions() const;
 };

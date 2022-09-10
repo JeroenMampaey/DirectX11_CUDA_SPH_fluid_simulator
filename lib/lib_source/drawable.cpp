@@ -4,14 +4,14 @@ void Drawable::draw(GraphicsEngine& gfx) const{
     if(indexCount==-1) return;
 
     for(auto& b : binds){
-        b->Bind(gfx, *pState);
+        b->bind(gfx, *pState);
     }
 
     for(std::shared_ptr<Bindable> b : sharedBinds){
-        b->Bind(gfx, *pState);
+        b->bind(gfx, *pState);
     }
 
-    gfx.DrawIndexed(indexCount);
+    gfx.drawIndexed(indexCount);
 }
 
 void Drawable::updateState(DrawableStateUpdateDesc& desc) noexcept{

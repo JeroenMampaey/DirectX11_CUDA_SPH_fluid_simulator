@@ -13,13 +13,17 @@ struct LIBRARY_API SquareStateUpdateDesc : public DrawableStateUpdateDesc{
 struct LIBRARY_API SquareStateInitializerDesc : public DrawableStateInitializerDesc{
     float x;
     float y;
-    SquareStateInitializerDesc(float x, float y) noexcept;
+    float width;
+    float height;
+    SquareStateInitializerDesc(float x, float y, float width, float height) noexcept;
 };
 
 struct LIBRARY_API SquareState : public DrawableState{
     float x;
     float y;
-    SquareState(float x, float y) noexcept;
+    float width;
+    float height;
+    SquareState(float x, float y, float width, float height) noexcept;
     DirectX::XMMATRIX getTransformXM() const noexcept override;
     void update(DrawableStateUpdateDesc& desc) noexcept override;
 };

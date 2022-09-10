@@ -24,9 +24,26 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
 
+    Microsoft::WRL::ComPtr<IDXGIFactory> pFactory = nullptr;
+    GFX_THROW_FAILED(CreateDXGIFactory(__uuidof(IDXGIFactory) ,(void**)&pFactory));
+    Microsoft::WRL::ComPtr<IDXGIAdapter> pAdapter = nullptr;
+    D3D_DRIVER_TYPE driverType = D3D_DRIVER_TYPE_HARDWARE;
+    DXGI_ADAPTER_DESC adapterDesc;
+    for (UINT i = 0; (hr = pFactory->EnumAdapters(i, &pAdapter)) != DXGI_ERROR_NOT_FOUND; ++i) 
+    {
+        if(FAILED(hr)){
+            CHWND_LAST_EXCEPT();
+        }
+        GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
+        if(adapterDesc.VendorId==NVIDIA_VENDOR_ID){
+            driverType = D3D_DRIVER_TYPE_UNKNOWN;
+            break;
+        }
+    }
+
     GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
+        pAdapter.Get(),
+        driverType,
         nullptr,
         0,
         nullptr,
@@ -38,6 +55,12 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
         nullptr,
         &pContext
     ));
+
+    Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice = nullptr;
+    GFX_THROW_FAILED(pDevice->QueryInterface(__uuidof(IDXGIDevice), &dxgiDevice));
+    GFX_THROW_FAILED(dxgiDevice->GetAdapter(&pAdapter));
+    GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
+    SetWindowTextA(hWnd, std::to_string(adapterDesc.VendorId).c_str());
 
     Microsoft::WRL::ComPtr<ID3D11Resource> pBackbuffer = nullptr;
     GFX_THROW_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackbuffer));
@@ -99,15 +122,15 @@ GraphicsEngine::~GraphicsEngine(){
     RemovePropW(hWnd, L"GraphicsEngine");
 }
 
-void GraphicsEngine::ClearBuffer(float red, float green, float blue) noexcept{
+void GraphicsEngine::clearBuffer(float red, float green, float blue) noexcept{
     const float color[] = {red, green, blue, 1.0};
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-void GraphicsEngine::EndFrame(){
+void GraphicsEngine::endFrame(){
     HRESULT hr;
-    if(FAILED(hr = pSwap->Present(1, 0))){
+    if(FAILED(hr = pSwap->Present(0, 0))){
         if(hr == DXGI_ERROR_DEVICE_REMOVED){
             throw GFX_DEVICE_REMOVED_EXCEPT(pDevice->GetDeviceRemovedReason());
         }
@@ -129,16 +152,16 @@ void CALLBACK GraphicsEngine::requestUpdate(HWND hWnd, UINT uMsg, UINT_PTR idEve
     }
 }
 
-void GraphicsEngine::DrawIndexed(UINT count) noexcept{
+void GraphicsEngine::drawIndexed(UINT count) noexcept{
 	pContext->DrawIndexed(count, 0, 0);
 }
 
-void GraphicsEngine::SetProjection(DirectX::FXMMATRIX proj) noexcept
+void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept
 {
 	projection = proj;
 }
 
-DirectX::XMMATRIX GraphicsEngine::GetProjection() const noexcept
+DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept
 {
 	return projection;
 }

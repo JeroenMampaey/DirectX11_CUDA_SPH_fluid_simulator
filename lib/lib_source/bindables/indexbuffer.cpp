@@ -11,9 +11,9 @@ IndexBuffer::IndexBuffer(GraphicsEngine& gfx, const std::vector<unsigned short>&
 	ibd.StructureByteStride = sizeof(unsigned short);
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices.data();
-	GFX_THROW_FAILED(GetDevice(gfx)->CreateBuffer(&ibd, &isd, &pIndexBuffer));
+	GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&ibd, &isd, &pIndexBuffer));
 }
 
-void IndexBuffer::Bind(GraphicsEngine& gfx, DrawableState& DrawableState){
-    GetContext(gfx)->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+void IndexBuffer::bind(GraphicsEngine& gfx, DrawableState& DrawableState){
+    getContext(gfx)->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 }

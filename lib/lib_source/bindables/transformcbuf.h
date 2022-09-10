@@ -8,19 +8,8 @@
 class TransformCbuf : public Bindable
 {
     public:
-        TransformCbuf(GraphicsEngine& gfx){
-            if(!pVcbuf){
-                pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(gfx);
-            }
-        }
-        void Bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
-            pVcbuf->Update(gfx,
-                DirectX::XMMatrixTranspose(
-                    drawableState.getTransformXM() * gfx.GetProjection()
-                )
-            );
-            pVcbuf->Bind(gfx, drawableState);
-        }
+        TransformCbuf(GraphicsEngine& gfx);
+        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
     private:
         static std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };

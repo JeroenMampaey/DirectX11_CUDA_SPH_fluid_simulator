@@ -2,12 +2,24 @@
 
 SquareStateUpdateDesc::SquareStateUpdateDesc(float new_x, float new_y) noexcept : new_x(new_x), new_y(new_y){}
 
-SquareStateInitializerDesc::SquareStateInitializerDesc(float x, float y) noexcept : x(x), y(y){}
+SquareStateInitializerDesc::SquareStateInitializerDesc(float x, float y, float width, float height) noexcept 
+    : 
+    x(x), 
+    y(y),
+    width(width),
+    height(height)
+{}
 
-SquareState::SquareState(float x, float y) noexcept : x(x), y(y){}
+SquareState::SquareState(float x, float y, float width, float height) noexcept 
+    : 
+    x(x),
+    y(y),
+    width(width),
+    height(height)
+{}
 
 DirectX::XMMATRIX SquareState::getTransformXM() const noexcept{
-    return DirectX::XMMatrixTranslation(x, y, 0.0f) * DirectX::XMMatrixTranslation(0.0f, 0.0f, 5.0f);
+    return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }
 
 void SquareState::update(DrawableStateUpdateDesc& desc) noexcept{
@@ -18,7 +30,7 @@ void SquareState::update(DrawableStateUpdateDesc& desc) noexcept{
 
 std::unique_ptr<DrawableState> SquareFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
     SquareStateInitializerDesc& castedDesc = static_cast<SquareStateInitializerDesc&>(desc);
-    return std::make_unique<SquareState>(castedDesc.x, castedDesc.y);
+    return std::make_unique<SquareState>(castedDesc.x, castedDesc.y, castedDesc.width, castedDesc.height);
 }
 
 
@@ -44,7 +56,7 @@ void SquareFactory::initializeSharedBinds(GraphicsEngine& gfx){
     addSharedBind(std::make_shared<VertexBuffer>(gfx, vertices));
 
     std::shared_ptr<VertexShader> pvs = std::make_shared<VertexShader>(gfx, VERTEX_PATH_CONCATINATED(L"VertexShader1.cso"));
-    ID3DBlob* pvsbc = pvs->GetBytecode();
+    ID3DBlob* pvsbc = pvs->getBytecode();
     addSharedBind(pvs);
 
     addSharedBind(std::make_shared<PixelShader>(gfx, PIXEL_PATH_CONCATINATED(L"PixelShader1.cso")));

@@ -1,8 +1,6 @@
 #include "../lib/lib_header.h"
 #include "example_engine.h"
 
-#define MS_PER_FRAME 1000
-
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try
 	{
@@ -10,7 +8,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
             std::unique_ptr<GraphicsEngine> retval = std::make_unique<ExampleEngine>(hWnd, MS_PER_FRAME);
             return retval;
         };
-		return App("Example", engineFactory).Go();
+		return App("Example", engineFactory).go();
 	}
 	catch(const WinException& e)
 	{

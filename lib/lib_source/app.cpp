@@ -6,11 +6,9 @@ App::App(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND
 App::~App() noexcept
 {}
 
-int App::Go(){
-	while( true )
-	{
-		if( const auto ecode = Window::ProcessMessages() )
-		{
+int App::go(){
+	while(true){
+		if(const auto ecode = Window::processMessages()){
 			return *ecode;
 		}
 		wnd.checkForExceptions();

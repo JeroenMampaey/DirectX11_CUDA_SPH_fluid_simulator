@@ -14,8 +14,8 @@ class VertexShader : public Bindable
 {
     public:
         VertexShader(GraphicsEngine& gfx,const std::wstring& path);
-        void Bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
-        ID3DBlob* GetBytecode() const noexcept;
+        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
+        ID3DBlob* getBytecode() const noexcept;
     protected:
         Microsoft::WRL::ComPtr<ID3DBlob> pBytecodeBlob;
         Microsoft::WRL::ComPtr<ID3D11VertexShader> pVertexShader;
