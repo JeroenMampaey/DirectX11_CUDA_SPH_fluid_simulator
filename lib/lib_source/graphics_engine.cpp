@@ -90,8 +90,6 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
         }
     }
 
-    SetWindowTextA(hWnd, (std::to_string(adapterDesc.VendorId)+" "+std::to_string(refreshRate)).c_str());
-
     GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(
         pAdapter.Get(),
         driverType,
@@ -111,6 +109,8 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
     GFX_THROW_FAILED(pDevice->QueryInterface(__uuidof(IDXGIDevice), &dxgiDevice));
     GFX_THROW_FAILED(dxgiDevice->GetAdapter(&pAdapter));
     GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
+
+    SetWindowTextA(hWnd, (std::to_string(adapterDesc.VendorId)+" "+std::to_string(refreshRate)).c_str());
 
     Microsoft::WRL::ComPtr<ID3D11Resource> pBackbuffer = nullptr;
     GFX_THROW_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackbuffer));
