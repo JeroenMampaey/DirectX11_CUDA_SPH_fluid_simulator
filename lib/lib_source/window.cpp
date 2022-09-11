@@ -107,8 +107,6 @@ LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 	return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-void Window::checkForExceptions() const{
-	if(std::exception_ptr pEx = pGfx->getThrownException()){
-		std::rethrow_exception(pEx);
-	}
+void Window::updateGraphics(){
+	pGfx->update();
 }

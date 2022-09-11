@@ -11,6 +11,6 @@ int App::go(){
 		if(const auto ecode = Window::processMessages()){
 			return *ecode;
 		}
-		wnd.checkForExceptions();
+		wnd.updateGraphics();
 	}
 }

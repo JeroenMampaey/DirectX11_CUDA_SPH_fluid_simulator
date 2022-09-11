@@ -2,15 +2,17 @@
 
 #include "../lib/lib_header.h"
 
-#define MS_PER_FRAME 30
+#define SYNCINTERVAL 4
 
 class ExampleEngine : public GraphicsEngine{
     public:
-        ExampleEngine(HWND hWnd, UINT msPerFrame);
-    protected:
+        ExampleEngine(HWND hWnd, UINT syncInterval);
         void update() override;
     private:
+        float dt = 0.0;
         SquareFactory squareFactory = SquareFactory();
+        LineFactory lineFactory = LineFactory();
         float square_velocity = 0.0f;
         std::vector<std::unique_ptr<Drawable>> squares;
+        std::vector<std::unique_ptr<Drawable>> lines;
 };

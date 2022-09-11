@@ -33,5 +33,5 @@ class Window
         Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND));
 	    ~Window() noexcept;
         static std::optional<int> processMessages() noexcept;
-        void checkForExceptions() const;
+        void updateGraphics();
 };

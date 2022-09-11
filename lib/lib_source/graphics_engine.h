@@ -8,11 +8,15 @@
 #include <d3dcompiler.h>
 #include "exports.h"
 #include <dxgi1_2.h>
+#include <d3d10.h>
+#include <d3d9.h>
 #include <vector>
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "dxgi")
+
+#define RATE_IS_INVALID(rate) (rate <= 0.0)
 
 #define HEIGHT 700
 #define WIDTH 1280
@@ -23,18 +27,17 @@ class LIBRARY_API GraphicsEngine{
     friend class Bindable;
 
     public:
-        GraphicsEngine(HWND hWnd, UINT msPerFrame);
-        virtual ~GraphicsEngine();
+        GraphicsEngine(HWND hWnd, UINT syncInterval);
+        virtual ~GraphicsEngine() = default;
         void drawIndexed(UINT count) noexcept;
         void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX getProjection() const noexcept;
-        std::exception_ptr getThrownException() const noexcept;
+        virtual void update() = 0;
     
     protected:
-        void clearBuffer(float red, float green, float blue) noexcept;
+        void beginFrame(float red, float green, float blue) noexcept;
         void endFrame();
-        virtual void update() = 0;
-        void setThrownException(std::exception_ptr thrownException) noexcept;
+        float refreshRate = -1.0f;
 
         DirectX::XMMATRIX projection;
         Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
@@ -44,7 +47,5 @@ class LIBRARY_API GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
     
     private:
-        static void CALLBACK requestUpdate(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) noexcept;
-        HWND hWnd;
-        std::exception_ptr thrownException = nullptr;
+        UINT syncInterval;
 };
