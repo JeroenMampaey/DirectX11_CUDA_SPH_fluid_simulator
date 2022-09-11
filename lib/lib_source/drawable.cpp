@@ -7,7 +7,7 @@ void Drawable::draw(GraphicsEngine& gfx) const{
         b->bind(gfx, *pState);
     }
 
-    for(std::shared_ptr<Bindable> b : sharedBinds){
+    for(auto& b : sharedBinds){
         b->bind(gfx, *pState);
     }
 

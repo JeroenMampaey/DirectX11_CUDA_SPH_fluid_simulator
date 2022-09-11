@@ -24,22 +24,73 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
 	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	sd.Flags = 0;
 
+    double refreshRate = 0.0;
     Microsoft::WRL::ComPtr<IDXGIFactory> pFactory = nullptr;
     GFX_THROW_FAILED(CreateDXGIFactory(__uuidof(IDXGIFactory) ,(void**)&pFactory));
     Microsoft::WRL::ComPtr<IDXGIAdapter> pAdapter = nullptr;
     D3D_DRIVER_TYPE driverType = D3D_DRIVER_TYPE_HARDWARE;
     DXGI_ADAPTER_DESC adapterDesc;
-    for (UINT i = 0; (hr = pFactory->EnumAdapters(i, &pAdapter)) != DXGI_ERROR_NOT_FOUND; ++i) 
+    for (UINT i = 0; (hr = pFactory->EnumAdapters(i, &pAdapter)) != DXGI_ERROR_NOT_FOUND; i++) 
     {
         if(FAILED(hr)){
-            CHWND_LAST_EXCEPT();
+            GFX_THROW_FAILED(hr);
         }
+
+        if(i==0){
+            Microsoft::WRL::ComPtr<IDXGIOutput> dxgiOutput;
+            if(hr = pAdapter->EnumOutputs(0, &dxgiOutput) != DXGI_ERROR_NOT_FOUND){
+                if(FAILED(hr)){
+                    GFX_THROW_FAILED(hr);
+                }
+                Microsoft::WRL::ComPtr<IDXGIOutput1> dxgiOutput1;
+                GFX_THROW_FAILED(dxgiOutput.As(&dxgiOutput1));
+                DXGI_OUTPUT_DESC outputDes{};
+                GFX_THROW_FAILED(dxgiOutput->GetDesc(&outputDes));
+                MONITORINFOEXW info;
+                info.cbSize = sizeof(info);
+                if(GetMonitorInfoW(outputDes.Monitor, &info)==0)
+                {
+                    CHWND_LAST_EXCEPT();
+                }
+                UINT32 requiredPaths, requiredModes;
+                if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &requiredPaths, &requiredModes) != ERROR_SUCCESS)
+                {
+                    CHWND_LAST_EXCEPT();
+                }
+                std::vector<DISPLAYCONFIG_PATH_INFO> paths(requiredPaths);
+                std::vector<DISPLAYCONFIG_MODE_INFO> modes2(requiredModes);
+                if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &requiredPaths, paths.data(), &requiredModes, modes2.data(), nullptr) != ERROR_SUCCESS)
+                {
+                    CHWND_LAST_EXCEPT();
+                }
+                for (auto& p : paths) {
+                    DISPLAYCONFIG_SOURCE_DEVICE_NAME sourceName;
+                    sourceName.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+                    sourceName.header.size = sizeof(sourceName);
+                    sourceName.header.adapterId = p.sourceInfo.adapterId;
+                    sourceName.header.id = p.sourceInfo.id;
+                    if (DisplayConfigGetDeviceInfo(&sourceName.header) == ERROR_SUCCESS)
+                    {
+                        if (wcscmp(info.szDevice, sourceName.viewGdiDeviceName) == 0) {
+                                // get the refresh rate
+                                UINT numerator = p.targetInfo.refreshRate.Numerator;
+                                UINT denominator = p.targetInfo.refreshRate.Denominator;
+                                refreshRate = (double)numerator / (double)denominator;
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
         GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
         if(adapterDesc.VendorId==NVIDIA_VENDOR_ID){
             driverType = D3D_DRIVER_TYPE_UNKNOWN;
             break;
         }
     }
+
+    SetWindowTextA(hWnd, (std::to_string(adapterDesc.VendorId)+" "+std::to_string(refreshRate)).c_str());
 
     GFX_THROW_FAILED(D3D11CreateDeviceAndSwapChain(
         pAdapter.Get(),
@@ -60,7 +111,6 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT msPerFrame) : hWnd(hWnd) {
     GFX_THROW_FAILED(pDevice->QueryInterface(__uuidof(IDXGIDevice), &dxgiDevice));
     GFX_THROW_FAILED(dxgiDevice->GetAdapter(&pAdapter));
     GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
-    SetWindowTextA(hWnd, std::to_string(adapterDesc.VendorId).c_str());
 
     Microsoft::WRL::ComPtr<ID3D11Resource> pBackbuffer = nullptr;
     GFX_THROW_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackbuffer));

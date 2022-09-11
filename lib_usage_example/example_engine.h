@@ -1,8 +1,8 @@
 #pragma once
 
-#define MS_PER_FRAME 30
-
 #include "../lib/lib_header.h"
+
+#define MS_PER_FRAME 30
 
 class ExampleEngine : public GraphicsEngine{
     public:
