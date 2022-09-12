@@ -1,7 +1,5 @@
 #include "filled_circle_factory.h"
 
-#define CIRCLE_IMAGE_RADIUS 20
-
 FilledCircleStateUpdateDesc::FilledCircleStateUpdateDesc(float new_x, float new_y) noexcept
     :
     new_x(new_x),
@@ -51,30 +49,13 @@ void FilledCircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
 
     const std::vector<Vertex> vertices =
     {
-        {{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}},
-        {{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f}},
-        {{-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}},
+        {{-1.0f, -1.0f, 0.0f}, {-1.0f, -1.0f}},
+        {{1.0f, -1.0f, 0.0f}, {1.0f, -1.0f}},
+        {{-1.0f, 1.0f, 0.0f}, {-1.0f, 1.0f}},
         {{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}}
     };
 
-    std::unique_ptr<Texture::Color[]> textureBuffer = std::make_unique<Texture::Color[]>((2*CIRCLE_IMAGE_RADIUS)*(2*CIRCLE_IMAGE_RADIUS));
-    for(int y_index=0; y_index<2*CIRCLE_IMAGE_RADIUS; y_index++){
-        for(int x_index=0; x_index<2*CIRCLE_IMAGE_RADIUS; x_index++){
-            float x = x_index+0.5f;
-            float y = y_index+0.5f;
-            if((x-CIRCLE_IMAGE_RADIUS)*(x-CIRCLE_IMAGE_RADIUS)+(y-CIRCLE_IMAGE_RADIUS)*(y-CIRCLE_IMAGE_RADIUS) < CIRCLE_IMAGE_RADIUS*CIRCLE_IMAGE_RADIUS){
-                textureBuffer[y_index*2*CIRCLE_IMAGE_RADIUS+x_index] = {255, 51, 51, 255};
-            }
-            else{
-                textureBuffer[y_index*2*CIRCLE_IMAGE_RADIUS+x_index] = {255, 51, 51, 0};
-            }
-        }
-    }
-    addSharedBind(std::make_shared<Texture>(gfx, std::move(textureBuffer), 2*CIRCLE_IMAGE_RADIUS, 2*CIRCLE_IMAGE_RADIUS));
-
     addSharedBind(std::make_shared<VertexBuffer>(gfx, vertices));
-
-    addSharedBind(std::make_shared<Sampler>(gfx));
 
     std::shared_ptr<VertexShader> pvs = std::make_shared<VertexShader>(gfx, VERTEX_PATH_CONCATINATED(L"VertexShader2.cso"));
     ID3DBlob* pvsbc = pvs->getBytecode();
@@ -90,6 +71,17 @@ void FilledCircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
 
     addSharedBind(std::make_shared<IndexBuffer>(gfx, indices));
     setSharedIndexCount(indices.size());
+
+    struct ConstantBuffer2
+    {
+        float r;
+        float g;
+        float b;
+        float a;
+    };
+    const ConstantBuffer2 cb2 = {0.2f, 0.2f, 1.0f};
+
+    addSharedBind(std::make_shared<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {

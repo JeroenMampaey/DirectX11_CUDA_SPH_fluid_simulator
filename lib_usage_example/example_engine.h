@@ -2,7 +2,7 @@
 
 #include "../lib/lib_header.h"
 
-#define SYNCINTERVAL 4
+#define SYNCINTERVAL 1
 
 class ExampleEngine : public GraphicsEngine{
     public:
