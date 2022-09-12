@@ -93,20 +93,12 @@ void LineFactory::initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const
     LineState& state = static_cast<LineState&>(drawable.getState());
     struct ConstantBuffer2
     {
-        struct
-        {
-            float r;
-            float g;
-            float b;
-            float a;
-        } face_colors[6];
+        float r;
+        float g;
+        float b;
+        float a;
     };
-    const ConstantBuffer2 cb2 =
-    {
-        {
-            {state.red, state.green, state.blue}
-        }
-    };
+    const ConstantBuffer2 cb2 = {state.red, state.green, state.blue};
 
     addUniqueBind(drawable, std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
 

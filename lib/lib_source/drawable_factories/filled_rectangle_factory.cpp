@@ -1,8 +1,8 @@
-#include "square_factory.h"
+#include "filled_rectangle_factory.h"
 
-SquareStateUpdateDesc::SquareStateUpdateDesc(float new_x, float new_y) noexcept : new_x(new_x), new_y(new_y){}
+FilledRectangleStateUpdateDesc::FilledRectangleStateUpdateDesc(float new_x, float new_y) noexcept : new_x(new_x), new_y(new_y){}
 
-SquareStateInitializerDesc::SquareStateInitializerDesc(float x, float y, float width, float height) noexcept 
+FilledRectangleStateInitializerDesc::FilledRectangleStateInitializerDesc(float x, float y, float width, float height) noexcept 
     : 
     x(x), 
     y(y),
@@ -10,7 +10,7 @@ SquareStateInitializerDesc::SquareStateInitializerDesc(float x, float y, float w
     height(height)
 {}
 
-SquareState::SquareState(float x, float y, float width, float height) noexcept 
+FilledRectangleState::FilledRectangleState(float x, float y, float width, float height) noexcept 
     : 
     x(x),
     y(y),
@@ -18,23 +18,23 @@ SquareState::SquareState(float x, float y, float width, float height) noexcept
     height(height)
 {}
 
-DirectX::XMMATRIX SquareState::getTransformXM() const noexcept{
+DirectX::XMMATRIX FilledRectangleState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }
 
-void SquareState::update(DrawableStateUpdateDesc& desc) noexcept{
-    SquareStateUpdateDesc& castedDesc = static_cast<SquareStateUpdateDesc&>(desc);
+void FilledRectangleState::update(DrawableStateUpdateDesc& desc) noexcept{
+    FilledRectangleStateUpdateDesc& castedDesc = static_cast<FilledRectangleStateUpdateDesc&>(desc);
     x = castedDesc.new_x;
     y = castedDesc.new_y;
 }
 
-std::unique_ptr<DrawableState> SquareFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
-    SquareStateInitializerDesc& castedDesc = static_cast<SquareStateInitializerDesc&>(desc);
-    return std::make_unique<SquareState>(castedDesc.x, castedDesc.y, castedDesc.width, castedDesc.height);
+std::unique_ptr<DrawableState> FilledRectangleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
+    FilledRectangleStateInitializerDesc& castedDesc = static_cast<FilledRectangleStateInitializerDesc&>(desc);
+    return std::make_unique<FilledRectangleState>(castedDesc.x, castedDesc.y, castedDesc.width, castedDesc.height);
 }
 
 
-void SquareFactory::initializeSharedBinds(GraphicsEngine& gfx){
+void FilledRectangleFactory::initializeSharedBinds(GraphicsEngine& gfx){
     struct Vertex
     {
         struct
@@ -72,21 +72,12 @@ void SquareFactory::initializeSharedBinds(GraphicsEngine& gfx){
 
     struct ConstantBuffer2
     {
-        struct
-        {
-            float r;
-            float g;
-            float b;
-            float a;
-        } face_colors[6];
+        float r;
+        float g;
+        float b;
+        float a;
     };
-    const ConstantBuffer2 cb2 =
-    {
-        {
-            {1.0f, 0.0f, 1.0f},
-            {1.0f, 0.0f, 1.0f}
-        }
-    };
+    const ConstantBuffer2 cb2 = {1.0f, 0.0f, 1.0f};
 
     addSharedBind(std::make_shared<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
 
@@ -99,6 +90,6 @@ void SquareFactory::initializeSharedBinds(GraphicsEngine& gfx){
     addSharedBind(std::make_shared<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-void SquareFactory::initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const{
+void FilledRectangleFactory::initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const{
     addUniqueBind(drawable, std::make_unique<TransformCbuf>(gfx));
 }

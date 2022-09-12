@@ -1,6 +1,6 @@
 #include "example_engine.h"
 
-ExampleEngine::ExampleEngine(HWND hWnd, UINT syncInterval) : GraphicsEngine(hWnd, syncInterval)
+ExampleEngine::ExampleEngine(HWND hWnd) : GraphicsEngine(hWnd, SYNCINTERVAL)
 {
     if(RATE_IS_INVALID(refreshRate)){
         throw std::exception("Refreshrate could not easily be found programmatically.");
@@ -10,33 +10,40 @@ ExampleEngine::ExampleEngine(HWND hWnd, UINT syncInterval) : GraphicsEngine(hWnd
         DirectX::XMMatrixScaling(2.0f/((float)WIDTH), 2.0f/((float)HEIGHT), 1.0f)*
         DirectX::XMMatrixTranslation(-1.0f, -1.0f, 0.0f));
     for(int i=0; i<20; i++){
-        SquareStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2), 50.0f, 50.0f};
-        squares.push_back(std::move(squareFactory.createDrawable(*this, desc)));
+        FilledRectangleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2), 50.0f, 50.0f};
+        filledRectangles.push_back(std::move(filledRectangleFactory.createDrawable(*this, desc)));
     }
     for(int i=0; i<10; i++){
         LineStateInitializerDesc desc = {i*100.0f, (i-2)*(i-2)*10.0f, (i+1)*100.0f, (i-1)*(i-1)*10.0f, 0.0f, 0.0f, 0.0f};
         lines.push_back(std::move(lineFactory.createDrawable(*this, desc)));
     }
     for(int i=0; i<20; i++){
-        CircleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2)+50.0f, 25.0f};
-        circles.push_back(std::move(circleFactory.createDrawable(*this, desc)));
+        FilledCircleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2)+50.0f, 25.0f};
+        filledCircles.push_back(std::move(filledCircleFactory.createDrawable(*this, desc)));
+    }
+    for(int i=0; i<10; i++){
+        HollowRectangleStateInitializerDesc desc = {(i+1)*100.0f, (i-1)*(i-1)*10.0f, 50.0f, 50.0f, 0.0f, 0.0f, 0.0f};
+        hollowRectangles.push_back(std::move(hollowRectangleFactory.createDrawable(*this, desc)));
     }
 }
 
 void ExampleEngine::update(){
-    square_velocity += 9.81f*dt;
+    velocity += 9.81f*dt;
     beginFrame(0.6f, 0.8f, 1.0f);
-    for(auto& square : squares){
-        SquareState& state = static_cast<SquareState&>(square->getState());
-        SquareStateUpdateDesc desc = {state.x, state.y-square_velocity*dt};
-        square->updateState(desc);
-        square->draw(*this);
+    for(auto& filledRectangle : filledRectangles){
+        FilledRectangleState& state = static_cast<FilledRectangleState&>(filledRectangle->getState());
+        FilledRectangleStateUpdateDesc desc = {state.x, state.y-velocity*dt};
+        filledRectangle->updateState(desc);
+        filledRectangle->draw(*this);
     }
     for(auto& line : lines){
         line->draw(*this);
     }
-    for(auto& circle : circles){
+    for(auto& circle : filledCircles){
         circle->draw(*this);
+    }
+    for(auto& hollowRectange : hollowRectangles){
+        hollowRectange->draw(*this);
     }
     endFrame();
 }

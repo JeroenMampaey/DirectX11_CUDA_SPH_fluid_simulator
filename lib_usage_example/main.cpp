@@ -5,7 +5,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	try
 	{
         std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND) = [](HWND hWnd){
-            std::unique_ptr<GraphicsEngine> retval = std::make_unique<ExampleEngine>(hWnd, SYNCINTERVAL);
+            std::unique_ptr<GraphicsEngine> retval = std::make_unique<ExampleEngine>(hWnd);
             return retval;
         };
 		return App("Example", engineFactory).go();

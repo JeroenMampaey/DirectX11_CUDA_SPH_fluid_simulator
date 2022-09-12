@@ -1,44 +1,44 @@
-#include "circle_factory.h"
+#include "filled_circle_factory.h"
 
 #define CIRCLE_IMAGE_RADIUS 20
 
-CircleStateUpdateDesc::CircleStateUpdateDesc(float new_x, float new_y) noexcept
+FilledCircleStateUpdateDesc::FilledCircleStateUpdateDesc(float new_x, float new_y) noexcept
     :
     new_x(new_x),
     new_y(new_y)
 {}
 
-CircleStateInitializerDesc::CircleStateInitializerDesc(float x, float y, float radius) noexcept
+FilledCircleStateInitializerDesc::FilledCircleStateInitializerDesc(float x, float y, float radius) noexcept
     :
     x(x),
     y(y),
     radius(radius)
 {}
 
-CircleState::CircleState(float x, float y, float radius) noexcept
+FilledCircleState::FilledCircleState(float x, float y, float radius) noexcept
     :
     x(x),
     y(y),
     radius(radius)
 {}
 
-DirectX::XMMATRIX CircleState::getTransformXM() const noexcept{
+DirectX::XMMATRIX FilledCircleState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(radius, radius, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }
 
 
-void CircleState::update(DrawableStateUpdateDesc& desc) noexcept{
-    CircleStateUpdateDesc& castedDesc = static_cast<CircleStateUpdateDesc&>(desc);
+void FilledCircleState::update(DrawableStateUpdateDesc& desc) noexcept{
+    FilledCircleStateUpdateDesc& castedDesc = static_cast<FilledCircleStateUpdateDesc&>(desc);
     x = castedDesc.new_x;
     y = castedDesc.new_y;
 }
 
-std::unique_ptr<DrawableState> CircleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
-    CircleStateInitializerDesc& castedDesc = static_cast<CircleStateInitializerDesc&>(desc);
-    return std::make_unique<CircleState>(castedDesc.x, castedDesc.y, castedDesc.radius);
+std::unique_ptr<DrawableState> FilledCircleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
+    FilledCircleStateInitializerDesc& castedDesc = static_cast<FilledCircleStateInitializerDesc&>(desc);
+    return std::make_unique<FilledCircleState>(castedDesc.x, castedDesc.y, castedDesc.radius);
 }
 
-void CircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
+void FilledCircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
     struct Vertex
     {
         DirectX::XMFLOAT3 pos;
@@ -66,7 +66,7 @@ void CircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
                 textureBuffer[y_index*2*CIRCLE_IMAGE_RADIUS+x_index] = {255, 51, 51, 255};
             }
             else{
-                textureBuffer[y_index*2*CIRCLE_IMAGE_RADIUS+x_index] = {0, 51, 51, 255};
+                textureBuffer[y_index*2*CIRCLE_IMAGE_RADIUS+x_index] = {255, 51, 51, 0};
             }
         }
     }
@@ -101,6 +101,6 @@ void CircleFactory::initializeSharedBinds(GraphicsEngine& gfx){
     addSharedBind(std::make_shared<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-void CircleFactory::initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const{
+void FilledCircleFactory::initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const{
     addUniqueBind(drawable, std::make_unique<TransformCbuf>(gfx));
 }

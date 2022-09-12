@@ -4,35 +4,33 @@
 #include "../bindables/bindables_includes.h"
 #include "../exports.h"
 
-struct LIBRARY_API SquareStateUpdateDesc : public DrawableStateUpdateDesc{
+struct LIBRARY_API FilledCircleStateUpdateDesc : public DrawableStateUpdateDesc{
     float new_x;
     float new_y;
-    SquareStateUpdateDesc(float new_x, float new_y) noexcept;
+    FilledCircleStateUpdateDesc(float new_x, float new_y) noexcept;
 };
 
-struct LIBRARY_API SquareStateInitializerDesc : public DrawableStateInitializerDesc{
+struct LIBRARY_API FilledCircleStateInitializerDesc : public DrawableStateInitializerDesc{
     float x;
     float y;
-    float width;
-    float height;
-    SquareStateInitializerDesc(float x, float y, float width, float height) noexcept;
+    float radius;
+    FilledCircleStateInitializerDesc(float x, float y, float radius) noexcept;
 };
 
-struct LIBRARY_API SquareState : public DrawableState{
+struct LIBRARY_API FilledCircleState : public DrawableState{
     float x;
     float y;
-    float width;
-    float height;
-    SquareState(float x, float y, float width, float height) noexcept;
+    float radius;
+    FilledCircleState(float x, float y, float radius) noexcept;
     DirectX::XMMATRIX getTransformXM() const noexcept override;
     void update(DrawableStateUpdateDesc& desc) noexcept override;
 };
 
-class LIBRARY_API SquareFactory : public DrawableFactory<SquareFactory>{
+class LIBRARY_API FilledCircleFactory : public DrawableFactory<FilledCircleFactory>{
     public:
         std::unique_ptr<DrawableState> getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept override;
         void initializeSharedBinds(GraphicsEngine& gfx) override;
         void initializeBinds(GraphicsEngine& gfx, Drawable& drawable) const override;
 };
 
-template class LIBRARY_API DrawableFactory<SquareFactory>;
+template class LIBRARY_API DrawableFactory<FilledCircleFactory>;

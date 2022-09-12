@@ -6,15 +6,17 @@
 
 class ExampleEngine : public GraphicsEngine{
     public:
-        ExampleEngine(HWND hWnd, UINT syncInterval);
+        ExampleEngine(HWND hWnd);
         void update() override;
     private:
         float dt = 0.0;
-        SquareFactory squareFactory = SquareFactory();
+        float velocity = 0.0f;
+        FilledRectangleFactory filledRectangleFactory = FilledRectangleFactory();
         LineFactory lineFactory = LineFactory();
-        CircleFactory circleFactory = CircleFactory();
-        float square_velocity = 0.0f;
-        std::vector<std::unique_ptr<Drawable>> squares;
+        FilledCircleFactory filledCircleFactory = FilledCircleFactory();
+        HollowRectangleFactory hollowRectangleFactory = HollowRectangleFactory();
+        std::vector<std::unique_ptr<Drawable>> filledRectangles;
         std::vector<std::unique_ptr<Drawable>> lines;
-        std::vector<std::unique_ptr<Drawable>> circles;
+        std::vector<std::unique_ptr<Drawable>> filledCircles;
+        std::vector<std::unique_ptr<Drawable>> hollowRectangles;
 };

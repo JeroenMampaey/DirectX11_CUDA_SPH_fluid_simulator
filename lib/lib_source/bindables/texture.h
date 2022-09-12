@@ -6,8 +6,11 @@
 class Texture : public Bindable{
     public:
         struct Color{
-            unsigned int dword;
-            Color(unsigned char x, unsigned char r, unsigned char g, unsigned char b) noexcept; 
+            unsigned char b;
+            unsigned char g;
+            unsigned char r;
+            unsigned char a;
+            Color(unsigned char a, unsigned char r, unsigned char g, unsigned char b) noexcept; 
             Color() noexcept; 
         };
         Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);

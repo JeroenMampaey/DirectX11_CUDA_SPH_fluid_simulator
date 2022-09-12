@@ -1,13 +1,19 @@
 #include "texture.h"
 
-Texture::Color::Color(unsigned char x, unsigned char r, unsigned char g, unsigned char b) noexcept
+Texture::Color::Color(unsigned char b, unsigned char g, unsigned char r, unsigned char a) noexcept
     :
-    dword((x<<24) | (r<<16) | (g<<8) | b)
+	b(b),
+	g(g),
+	r(r),
+	a(a)
 {}
 
 Texture::Color::Color() noexcept
     :
-    dword(0)
+	b(0),
+	g(0),
+	r(0),
+	a(0)
 {}
 
 Texture::Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height){
