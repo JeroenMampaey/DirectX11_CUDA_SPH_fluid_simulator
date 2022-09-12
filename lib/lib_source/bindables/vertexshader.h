@@ -10,8 +10,7 @@
 
 #define VERTEX_PATH_CONCATINATED(original) DEFAULT_VERTEX_SHADERS_DIRECTORY original
 
-class VertexShader : public Bindable
-{
+class VertexShader : public Bindable{
     public:
         VertexShader(GraphicsEngine& gfx,const std::wstring& path);
         void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;

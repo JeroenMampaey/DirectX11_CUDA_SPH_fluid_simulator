@@ -43,8 +43,7 @@ class ConstantBuffer : public Bindable{
 };
 
 template<typename C>
-class VertexConstantBuffer : public ConstantBuffer<C>
-{
+class VertexConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
         using Bindable::getContext;
     public:
@@ -55,8 +54,7 @@ class VertexConstantBuffer : public ConstantBuffer<C>
 };
 
 template<typename C>
-class PixelConstantBuffer : public ConstantBuffer<C>
-{
+class PixelConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
         using Bindable::getContext;
     public:

@@ -4,8 +4,7 @@
 #include <wrl/client.h>
 #include <vector>
 
-class InputLayout : public Bindable
-{
+class InputLayout : public Bindable{
     public:
         InputLayout(GraphicsEngine& gfx, const std::vector<D3D11_INPUT_ELEMENT_DESC>& layout, ID3DBlob* pVertexShaderBytecode);
         void bind(GraphicsEngine& gfx, DrawableState& DrawableState) override;

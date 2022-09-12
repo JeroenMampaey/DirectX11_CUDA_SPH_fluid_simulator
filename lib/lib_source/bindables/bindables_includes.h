@@ -8,3 +8,5 @@
 #include "../bindables/inputlayout.h"
 #include "../bindables/topology.h"
 #include "../bindables/constantbuffers.h"
+#include "../bindables/texture.h"
+#include "../bindables/sampler.h"

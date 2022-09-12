@@ -17,11 +17,15 @@ ExampleEngine::ExampleEngine(HWND hWnd, UINT syncInterval) : GraphicsEngine(hWnd
         LineStateInitializerDesc desc = {i*100.0f, (i-2)*(i-2)*10.0f, (i+1)*100.0f, (i-1)*(i-1)*10.0f, 0.0f, 0.0f, 0.0f};
         lines.push_back(std::move(lineFactory.createDrawable(*this, desc)));
     }
+    for(int i=0; i<20; i++){
+        CircleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2)+50.0f, 25.0f};
+        circles.push_back(std::move(circleFactory.createDrawable(*this, desc)));
+    }
 }
 
 void ExampleEngine::update(){
     square_velocity += 9.81f*dt;
-    beginFrame(0.2f, 0.2f, 1.0f);
+    beginFrame(0.6f, 0.8f, 1.0f);
     for(auto& square : squares){
         SquareState& state = static_cast<SquareState&>(square->getState());
         SquareStateUpdateDesc desc = {state.x, state.y-square_velocity*dt};
@@ -30,6 +34,9 @@ void ExampleEngine::update(){
     }
     for(auto& line : lines){
         line->draw(*this);
+    }
+    for(auto& circle : circles){
+        circle->draw(*this);
     }
     endFrame();
 }

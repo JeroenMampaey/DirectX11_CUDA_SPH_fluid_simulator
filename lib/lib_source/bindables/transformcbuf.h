@@ -5,8 +5,7 @@
 #include "../bindable.h"
 #include <DirectXMath.h>
 
-class TransformCbuf : public Bindable
-{
+class TransformCbuf : public Bindable{
     public:
         TransformCbuf(GraphicsEngine& gfx);
         void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
