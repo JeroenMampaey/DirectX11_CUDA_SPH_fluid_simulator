@@ -12,6 +12,6 @@ Sampler::Sampler(GraphicsEngine& gfx){
     GFX_THROW_FAILED(getDevice(gfx)->CreateSamplerState(&samplerDesc, &pSampler));
 }
 
-void Sampler::bind(GraphicsEngine& gfx, DrawableState& drawableState){
+void Sampler::bind(const GraphicsEngine& gfx, DrawableState& drawableState){
     getContext(gfx)->PSSetSamplers(0, 1, pSampler.GetAddressOf());
 }

@@ -10,7 +10,7 @@
 #pragma comment(lib,"gdi32.lib")
 #pragma comment(lib, "ole32.lib")
 
-class Window
+class LIBRARY_API Window
 {
     private:
         class WindowClass
@@ -33,8 +33,9 @@ class Window
         std::unique_ptr<GraphicsEngine> pGfx;
 
     public:
-        Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND,std::shared_ptr<EventBus>));
+        Window(const char* name, UINT syncInterval);
 	    ~Window() noexcept;
         static std::optional<int> processMessages() noexcept;
-        void updateGraphics();
+        std::shared_ptr<EventBus> getEventBus() const noexcept;
+        GraphicsEngine& getGraphicsEngine() const noexcept;
 };

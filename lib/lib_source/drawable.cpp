@@ -1,17 +1,15 @@
 #include "drawable.h"
 
-void Drawable::draw(GraphicsEngine& gfx) const{
-    if(indexCount==-1) return;
+const std::vector<std::unique_ptr<Bindable>>& Drawable::getBinds() const noexcept{
+    return binds;
+}
 
-    for(auto& b : binds){
-        b->bind(gfx, *pState);
-    }
+const std::vector<std::shared_ptr<Bindable>>& Drawable::getSharedBinds() const noexcept{
+    return sharedBinds;
+}
 
-    for(auto& b : sharedBinds){
-        b->bind(gfx, *pState);
-    }
-
-    gfx.drawIndexed(indexCount);
+const int Drawable::getIndexCount() const noexcept{
+    return indexCount;
 }
 
 void Drawable::updateState(DrawableStateUpdateDesc& desc) noexcept{

@@ -8,7 +8,7 @@ TransformCbuf::TransformCbuf(GraphicsEngine& gfx){
     }
 }
 
-void TransformCbuf::bind(GraphicsEngine& gfx, DrawableState& drawableState){
+void TransformCbuf::bind(const GraphicsEngine& gfx, DrawableState& drawableState){
     pVcbuf->update(gfx,
         DirectX::XMMatrixTranspose(
             drawableState.getTransformXM() * gfx.getProjection()

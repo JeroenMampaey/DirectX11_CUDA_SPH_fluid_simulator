@@ -1,4 +1,5 @@
 #include "graphics_engine.h"
+#include "drawable.h"
 
 GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(syncInterval) {
     if(syncInterval<1 || syncInterval>4){
@@ -159,14 +160,14 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	pContext->RSSetViewports(1, &vp);
 }
 
-void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
+void GraphicsEngine::beginFrame(float red, float green, float blue) const noexcept{
     pContext->OMSetRenderTargets(1, pTarget.GetAddressOf(), pDSV.Get());
     const float color[] = {red, green, blue, 1.0};
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
 
-void GraphicsEngine::endFrame(){
+void GraphicsEngine::endFrame() const{
     HRESULT hr;
     if(FAILED(hr = pSwap->Present(syncInterval, 0))){
         if(hr == DXGI_ERROR_DEVICE_REMOVED){
@@ -178,14 +179,31 @@ void GraphicsEngine::endFrame(){
     }
 }
 
-void GraphicsEngine::drawIndexed(UINT count) noexcept{
-	pContext->DrawIndexed(count, 0, 0);
-}
-
 void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept{
 	projection = proj;
 }
 
 DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
+}
+
+void GraphicsEngine::draw(Drawable& drawable) const{
+    int indexCount = drawable.getIndexCount();
+    if(indexCount==-1) return;
+
+    DrawableState& state = drawable.getState();
+
+    for(auto& b : drawable.getBinds()){
+        b->bind(*this, state);
+    }
+
+    for(auto& b : drawable.getSharedBinds()){
+        b->bind(*this, state);
+    }
+
+    pContext->DrawIndexed(indexCount, 0, 0);
+}
+
+float GraphicsEngine::getRefreshRate() const noexcept{
+    return refreshRate;
 }

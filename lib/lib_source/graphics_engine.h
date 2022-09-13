@@ -23,29 +23,26 @@
 #define GRAPHICS_ENGINE_UPDATE_TIMER_ID 101
 #define NVIDIA_VENDOR_ID 4318
 
-class LIBRARY_API GraphicsEngine{
-    friend class Bindable;
+class Drawable;
 
+class LIBRARY_API GraphicsEngine{
+        friend class Bindable;
     public:
         GraphicsEngine(HWND hWnd, UINT syncInterval);
-        virtual ~GraphicsEngine() = default;
-        void drawIndexed(UINT count) noexcept;
         void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX getProjection() const noexcept;
-        virtual void update() = 0;
-    
-    protected:
-        void beginFrame(float red, float green, float blue) noexcept;
-        void endFrame();
-        float refreshRate = -1.0f;
+        void beginFrame(float red, float green, float blue) const noexcept;
+        void endFrame() const;
+        void draw(Drawable& drawable) const;
+        float getRefreshRate() const noexcept;
 
+    private:
         DirectX::XMMATRIX projection;
         Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
         Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
-    
-    private:
         UINT syncInterval;
+        float refreshRate = -1.0f;
 };

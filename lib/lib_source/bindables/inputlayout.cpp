@@ -5,6 +5,6 @@ InputLayout::InputLayout(GraphicsEngine& gfx, const std::vector<D3D11_INPUT_ELEM
 	GFX_THROW_FAILED(getDevice(gfx)->CreateInputLayout(layout.data(), (UINT)layout.size(), pVertexShaderBytecode->GetBufferPointer(), pVertexShaderBytecode->GetBufferSize(), &pInputLayout));
 }
 
-void InputLayout::bind(GraphicsEngine& gfx, DrawableState& drawableState){
+void InputLayout::bind(const GraphicsEngine& gfx, DrawableState& drawableState){
 	getContext(gfx)->IASetInputLayout(pInputLayout.Get());
 }

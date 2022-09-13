@@ -13,7 +13,7 @@
 class VertexShader : public Bindable{
     public:
         VertexShader(GraphicsEngine& gfx,const std::wstring& path);
-        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override;
         ID3DBlob* getBytecode() const noexcept;
     protected:
         Microsoft::WRL::ComPtr<ID3DBlob> pBytecodeBlob;

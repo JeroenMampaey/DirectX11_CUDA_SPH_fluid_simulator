@@ -32,7 +32,7 @@ HINSTANCE Window::WindowClass::getInstance() noexcept{
 }
 
 // Window Stuff
-Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND,std::shared_ptr<EventBus>)){
+Window::Window(const char* name, UINT syncInterval){
 	RECT wr;
 	wr.left = 100;
 	wr.right = WIDTH + wr.left;
@@ -60,7 +60,7 @@ Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory
 
 	pEventBus = std::make_shared<EventBus>();
 
-    pGfx = engineFactory(hWnd, pEventBus);
+    pGfx = std::make_unique<GraphicsEngine>(hWnd, syncInterval);
 }
 
 Window::~Window() noexcept{
@@ -121,6 +121,10 @@ LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 	return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 
-void Window::updateGraphics(){
-	pGfx->update();
+std::shared_ptr<EventBus> Window::getEventBus() const noexcept{
+	return pEventBus;
+}
+
+GraphicsEngine& Window::getGraphicsEngine() const noexcept{
+	return *pGfx;
 }

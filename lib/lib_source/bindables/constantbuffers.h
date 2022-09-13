@@ -6,7 +6,7 @@
 template<typename C>
 class ConstantBuffer : public Bindable{
     public:
-        void update(GraphicsEngine& gfx, const C& consts){
+        void update(const GraphicsEngine& gfx, const C& consts){
 			HRESULT hr;
 			D3D11_MAPPED_SUBRESOURCE msr;
 			GFX_THROW_FAILED(getContext(gfx)->Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
@@ -48,7 +48,7 @@ class VertexConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
+        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override{
             getContext(gfx)->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };
@@ -59,7 +59,7 @@ class PixelConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override{
+        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override{
             getContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };

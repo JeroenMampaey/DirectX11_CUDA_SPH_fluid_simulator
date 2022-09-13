@@ -14,6 +14,6 @@ IndexBuffer::IndexBuffer(GraphicsEngine& gfx, const std::vector<unsigned short>&
 	GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&ibd, &isd, &pIndexBuffer));
 }
 
-void IndexBuffer::bind(GraphicsEngine& gfx, DrawableState& DrawableState){
+void IndexBuffer::bind(const GraphicsEngine& gfx, DrawableState& DrawableState){
     getContext(gfx)->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 }

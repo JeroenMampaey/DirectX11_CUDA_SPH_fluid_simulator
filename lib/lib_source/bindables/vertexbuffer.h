@@ -20,7 +20,7 @@ class VertexBuffer : public Bindable{
             sd.pSysMem = vertices.data();
             GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&bd, &sd, &pVertexBuffer));
         }
-        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override;
     protected:
         UINT stride;
         Microsoft::WRL::ComPtr<ID3D11Buffer> pVertexBuffer;

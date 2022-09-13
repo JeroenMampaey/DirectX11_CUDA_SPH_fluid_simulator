@@ -10,7 +10,9 @@
 class LIBRARY_API Drawable{
         friend DrawableFactoryBase;
     public:
-        void draw(GraphicsEngine& gfx) const;
+        const std::vector<std::unique_ptr<Bindable>>& getBinds() const noexcept;
+        const std::vector<std::shared_ptr<Bindable>>& getSharedBinds() const noexcept;
+        const int getIndexCount() const noexcept;
         void updateState(DrawableStateUpdateDesc& desc) noexcept;
         DrawableState& getState() const noexcept;
         ~Drawable() noexcept;

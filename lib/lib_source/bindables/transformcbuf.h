@@ -8,7 +8,7 @@
 class TransformCbuf : public Bindable{
     public:
         TransformCbuf(GraphicsEngine& gfx);
-        void bind(GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override;
     private:
         static std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };
