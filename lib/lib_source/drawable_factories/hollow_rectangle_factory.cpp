@@ -1,11 +1,5 @@
 #include "hollow_rectangle_factory.h"
 
-HollowRectangleStateUpdateDesc::HollowRectangleStateUpdateDesc(float new_x, float new_y) noexcept
-    :
-    new_x(new_x),
-    new_y(new_y)
-{}
-
 HollowRectangleStateInitializerDesc::HollowRectangleStateInitializerDesc(float x, float y, float width, float height, float red, float green, float blue) noexcept
     :
     x(x),
@@ -30,12 +24,6 @@ HollowRectangleState::HollowRectangleState(float x, float y, float width, float 
 
 DirectX::XMMATRIX HollowRectangleState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
-}
-
-void HollowRectangleState::update(DrawableStateUpdateDesc& desc) noexcept{
-    HollowRectangleStateUpdateDesc& castedDesc = static_cast<HollowRectangleStateUpdateDesc&>(desc);
-    x = castedDesc.new_x;
-    y = castedDesc.new_y;
 }
 
 std::unique_ptr<DrawableState> HollowRectangleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{

@@ -38,8 +38,7 @@ void App::showFrame(){
     wnd.getGraphicsEngine().beginFrame(0.6f, 0.8f, 1.0f);
     for(auto& filledRectangle : filledRectangles){
         FilledRectangleState& state = static_cast<FilledRectangleState&>(filledRectangle->getState());
-        FilledRectangleStateUpdateDesc desc = {state.x, state.y-velocity*dt};
-        filledRectangle->updateState(desc);
+        state.y -= velocity*dt;
         wnd.getGraphicsEngine().draw(*filledRectangle);
     }
     for(auto& line : lines){
@@ -59,15 +58,13 @@ void App::handleEvent(const Event& event) noexcept{
         case EventType::MOUSE_LEFT_CLICK_EVENT:
             for(auto& circle : filledCircles){
                 FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
-                FilledCircleStateUpdateDesc desc = {state.x, state.y+50.0f};
-                circle->updateState(desc);
+                state.y += 50.0f;
             }
             break;
         case EventType::MOUSE_RIGHT_CLICK_EVENT:
             for(auto& circle : filledCircles){
                 FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
-                FilledCircleStateUpdateDesc desc = {state.x, state.y-50.0f};
-                circle->updateState(desc);
+                state.y -= 50.0f;
             }
             break;
         default:

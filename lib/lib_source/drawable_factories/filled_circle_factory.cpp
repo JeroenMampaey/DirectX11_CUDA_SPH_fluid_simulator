@@ -1,11 +1,5 @@
 #include "filled_circle_factory.h"
 
-FilledCircleStateUpdateDesc::FilledCircleStateUpdateDesc(float new_x, float new_y) noexcept
-    :
-    new_x(new_x),
-    new_y(new_y)
-{}
-
 FilledCircleStateInitializerDesc::FilledCircleStateInitializerDesc(float x, float y, float radius) noexcept
     :
     x(x),
@@ -22,13 +16,6 @@ FilledCircleState::FilledCircleState(float x, float y, float radius) noexcept
 
 DirectX::XMMATRIX FilledCircleState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(radius, radius, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
-}
-
-
-void FilledCircleState::update(DrawableStateUpdateDesc& desc) noexcept{
-    FilledCircleStateUpdateDesc& castedDesc = static_cast<FilledCircleStateUpdateDesc&>(desc);
-    x = castedDesc.new_x;
-    y = castedDesc.new_y;
 }
 
 std::unique_ptr<DrawableState> FilledCircleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{

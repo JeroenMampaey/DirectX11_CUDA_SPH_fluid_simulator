@@ -12,10 +12,6 @@ const int Drawable::getIndexCount() const noexcept{
     return indexCount;
 }
 
-void Drawable::updateState(DrawableStateUpdateDesc& desc) noexcept{
-    pState->update(desc);
-}
-
 DrawableState& Drawable::getState() const noexcept{
     return *pState;
 }

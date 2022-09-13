@@ -4,12 +4,6 @@
 #include "../bindables/bindables_includes.h"
 #include "../exports.h"
 
-struct LIBRARY_API HollowRectangleStateUpdateDesc : public DrawableStateUpdateDesc{
-    float new_x;
-    float new_y;
-    HollowRectangleStateUpdateDesc(float new_x, float new_y) noexcept;
-};
-
 struct LIBRARY_API HollowRectangleStateInitializerDesc : public DrawableStateInitializerDesc{
     float x;
     float y;
@@ -31,7 +25,6 @@ struct LIBRARY_API HollowRectangleState : public DrawableState{
     float blue;
     HollowRectangleState(float x, float y, float width, float height, float red, float green, float blue) noexcept;
     DirectX::XMMATRIX getTransformXM() const noexcept override;
-    void update(DrawableStateUpdateDesc& desc) noexcept override;
 };
 
 class LIBRARY_API HollowRectangleFactory : public DrawableFactory<HollowRectangleFactory>{

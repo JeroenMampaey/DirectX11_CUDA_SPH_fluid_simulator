@@ -1,7 +1,5 @@
 #include "filled_rectangle_factory.h"
 
-FilledRectangleStateUpdateDesc::FilledRectangleStateUpdateDesc(float new_x, float new_y) noexcept : new_x(new_x), new_y(new_y){}
-
 FilledRectangleStateInitializerDesc::FilledRectangleStateInitializerDesc(float x, float y, float width, float height) noexcept 
     : 
     x(x), 
@@ -20,12 +18,6 @@ FilledRectangleState::FilledRectangleState(float x, float y, float width, float 
 
 DirectX::XMMATRIX FilledRectangleState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
-}
-
-void FilledRectangleState::update(DrawableStateUpdateDesc& desc) noexcept{
-    FilledRectangleStateUpdateDesc& castedDesc = static_cast<FilledRectangleStateUpdateDesc&>(desc);
-    x = castedDesc.new_x;
-    y = castedDesc.new_y;
 }
 
 std::unique_ptr<DrawableState> FilledRectangleFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{

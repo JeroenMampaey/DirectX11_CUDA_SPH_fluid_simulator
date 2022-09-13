@@ -1,13 +1,5 @@
 #include "line_factory.h"
 
-LineStateUpdateDesc::LineStateUpdateDesc(float x1, float y1, float x2, float y2) noexcept
-    : 
-    new_x1(x1), 
-    new_y1(y1), 
-    new_x2(x2), 
-    new_y2(y2)
-{}
-
 LineStateInitializerDesc::LineStateInitializerDesc(float x1, float y1, float x2, float y2, float red, float green, float blue) noexcept
     :
     x1(x1), 
@@ -32,14 +24,6 @@ LineState::LineState(float x1, float y1, float x2, float y2, float red, float gr
 
 DirectX::XMMATRIX LineState::getTransformXM() const noexcept{
     return DirectX::XMMatrixScaling(x2-x1, y2-y1, 1.0f)*DirectX::XMMatrixTranslation(x1, y1, 0.0f);
-}
-
-void LineState::update(DrawableStateUpdateDesc& desc) noexcept{
-    LineStateUpdateDesc& castedDesc = static_cast<LineStateUpdateDesc&>(desc);
-    x1 = castedDesc.new_x1;
-    y1 = castedDesc.new_y1;
-    x2 = castedDesc.new_x2;
-    y2 = castedDesc.new_y2;
 }
 
 std::unique_ptr<DrawableState> LineFactory::getInitialDrawableState(DrawableStateInitializerDesc& desc) const noexcept{
