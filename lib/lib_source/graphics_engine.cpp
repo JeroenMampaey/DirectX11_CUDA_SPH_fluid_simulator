@@ -72,7 +72,6 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
                     if (DisplayConfigGetDeviceInfo(&sourceName.header) == ERROR_SUCCESS)
                     {
                         if (wcscmp(info.szDevice, sourceName.viewGdiDeviceName) == 0) {
-                                // get the refresh rate
                                 UINT numerator = p.targetInfo.refreshRate.Numerator;
                                 UINT denominator = p.targetInfo.refreshRate.Denominator;
                                 refreshRate = (float)numerator / (float)(syncInterval*denominator);
@@ -190,3 +189,11 @@ void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept{
 DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
 }
+
+void GraphicsEngine::mouseMoveEvent(int x, int y) noexcept{}
+
+void GraphicsEngine::mouseLeftClickEvent(int x, int y) noexcept{}
+
+void GraphicsEngine::mouseRightClickEvent(int x, int y) noexcept{}
+
+void GraphicsEngine::keyEvent(WPARAM charCode) noexcept{}

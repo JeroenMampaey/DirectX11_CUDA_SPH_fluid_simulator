@@ -102,6 +102,18 @@ LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 		case WM_CLOSE:
 			PostQuitMessage(0);
 			return 0;
+		case WM_MOUSEMOVE:
+			pGfx->mouseMoveEvent(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_LBUTTONDOWN:
+			pGfx->mouseLeftClickEvent(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_RBUTTONDOWN:
+			pGfx->mouseRightClickEvent(LOWORD(lParam), HIWORD(lParam));
+			break;
+		case WM_KEYDOWN:
+			pGfx->keyEvent(wParam);
+			break;
 	}
 
 	return DefWindowProcW(hWnd, msg, wParam, lParam);
