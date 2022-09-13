@@ -6,9 +6,6 @@
 #include <algorithm>
 #include "exports.h"
 
-class Dispatcher;
-class EventListener;
-
 enum EventType{
     MOUSE_MOVE_EVENT = 0,
     MOUSE_LEFT_CLICK_EVENT = 1,
@@ -20,6 +17,8 @@ struct LIBRARY_API Event{
     virtual ~Event() = default;
     virtual EventType type() const noexcept = 0;
 };
+
+class EventListener;
 
 class LIBRARY_API EventBus{
     public:
