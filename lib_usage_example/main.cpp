@@ -4,8 +4,8 @@
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try
 	{
-        std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND) = [](HWND hWnd){
-            std::unique_ptr<GraphicsEngine> retval = std::make_unique<ExampleEngine>(hWnd);
+        std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND,std::shared_ptr<EventBus>) = [](HWND hWnd, std::shared_ptr<EventBus> pEventBus){
+            std::unique_ptr<GraphicsEngine> retval = std::make_unique<ExampleEngine>(hWnd, pEventBus);
             return retval;
         };
 		return App("Example", engineFactory).go();

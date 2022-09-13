@@ -2,8 +2,10 @@
 
 #include <windows.h>
 #include <optional>
-#include "graphics_engine.h"
 #include <memory>
+#include "graphics_engine.h"
+#include "event.h"
+#include "events/events_includes.h"
 #pragma comment(lib,"user32.lib")
 #pragma comment(lib,"gdi32.lib")
 #pragma comment(lib, "ole32.lib")
@@ -27,10 +29,11 @@ class Window
 	    static LRESULT CALLBACK handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	    LRESULT handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
         HWND hWnd;
+        std::shared_ptr<EventBus> pEventBus;
         std::unique_ptr<GraphicsEngine> pGfx;
 
     public:
-        Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND));
+        Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND,std::shared_ptr<EventBus>));
 	    ~Window() noexcept;
         static std::optional<int> processMessages() noexcept;
         void updateGraphics();

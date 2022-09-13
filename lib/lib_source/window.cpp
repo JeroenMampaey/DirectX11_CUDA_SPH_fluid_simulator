@@ -32,7 +32,7 @@ HINSTANCE Window::WindowClass::getInstance() noexcept{
 }
 
 // Window Stuff
-Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND)){
+Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory)(HWND,std::shared_ptr<EventBus>)){
 	RECT wr;
 	wr.left = 100;
 	wr.right = WIDTH + wr.left;
@@ -58,7 +58,9 @@ Window::Window(const char* name, std::unique_ptr<GraphicsEngine> (*engineFactory
 
 	SetWindowTextA(hWnd, "Binding graphics to the window...");
 
-    pGfx = engineFactory(hWnd);
+	pEventBus = std::make_shared<EventBus>();
+
+    pGfx = engineFactory(hWnd, pEventBus);
 }
 
 Window::~Window() noexcept{
@@ -103,16 +105,16 @@ LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 			PostQuitMessage(0);
 			return 0;
 		case WM_MOUSEMOVE:
-			pGfx->mouseMoveEvent(LOWORD(lParam), HIWORD(lParam));
+			pEventBus->post(MouseMoveEvent{LOWORD(lParam), HIWORD(lParam)});
 			break;
 		case WM_LBUTTONDOWN:
-			pGfx->mouseLeftClickEvent(LOWORD(lParam), HIWORD(lParam));
+			pEventBus->post(MouseLeftClickEvent{LOWORD(lParam), HIWORD(lParam)});
 			break;
 		case WM_RBUTTONDOWN:
-			pGfx->mouseRightClickEvent(LOWORD(lParam), HIWORD(lParam));
+			pEventBus->post(MouseRightClickEvent{LOWORD(lParam), HIWORD(lParam)});
 			break;
 		case WM_KEYDOWN:
-			pGfx->keyEvent(wParam);
+			pEventBus->post(KeyboardKeydownEvent{wParam});
 			break;
 	}
 

@@ -33,10 +33,6 @@ class LIBRARY_API GraphicsEngine{
         void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX getProjection() const noexcept;
         virtual void update() = 0;
-        virtual void mouseMoveEvent(int x, int y) noexcept;
-        virtual void mouseLeftClickEvent(int x, int y) noexcept;
-        virtual void mouseRightClickEvent(int x, int y) noexcept;
-        virtual void keyEvent(WPARAM charCode) noexcept;
     
     protected:
         void beginFrame(float red, float green, float blue) noexcept;

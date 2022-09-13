@@ -7,6 +7,3 @@ simulation_layout/*.txt
 .vscode
 .vscode/*
 .vscode/
-lib/lib_source/boost
-lib/lib_source/boost/*
-lib/lib_source/boost/

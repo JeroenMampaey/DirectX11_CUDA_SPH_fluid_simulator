@@ -1,6 +1,6 @@
 #include "example_engine.h"
 
-ExampleEngine::ExampleEngine(HWND hWnd) : GraphicsEngine(hWnd, SYNCINTERVAL)
+ExampleEngine::ExampleEngine(HWND hWnd, std::shared_ptr<EventBus> pEventBus) : GraphicsEngine(hWnd, SYNCINTERVAL), EventListener(pEventBus)
 {
     if(RATE_IS_INVALID(refreshRate)){
         throw std::exception("Refreshrate could not easily be found programmatically.");
@@ -25,6 +25,8 @@ ExampleEngine::ExampleEngine(HWND hWnd) : GraphicsEngine(hWnd, SYNCINTERVAL)
         HollowRectangleStateInitializerDesc desc = {(i+1)*100.0f, (i-1)*(i-1)*10.0f, 50.0f, 50.0f, 0.0f, 0.0f, 0.0f};
         hollowRectangles.push_back(std::move(hollowRectangleFactory.createDrawable(*this, desc)));
     }
+    pEventBus->subscribe(EventType::MOUSE_LEFT_CLICK_EVENT, this);
+    pEventBus->subscribe(EventType::MOUSE_RIGHT_CLICK_EVENT, this);
 }
 
 void ExampleEngine::update(){
@@ -46,4 +48,25 @@ void ExampleEngine::update(){
         hollowRectange->draw(*this);
     }
     endFrame();
+}
+
+void ExampleEngine::handleEvent(const Event& event) noexcept{
+    switch(event.type()){
+        case EventType::MOUSE_LEFT_CLICK_EVENT:
+            for(auto& circle : filledCircles){
+                FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
+                FilledCircleStateUpdateDesc desc = {state.x, state.y+50.0f};
+                circle->updateState(desc);
+            }
+            break;
+        case EventType::MOUSE_RIGHT_CLICK_EVENT:
+            for(auto& circle : filledCircles){
+                FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
+                FilledCircleStateUpdateDesc desc = {state.x, state.y-50.0f};
+                circle->updateState(desc);
+            }
+            break;
+        default:
+            break;
+    }
 }

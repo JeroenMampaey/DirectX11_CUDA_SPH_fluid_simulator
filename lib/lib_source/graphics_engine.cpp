@@ -189,11 +189,3 @@ void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept{
 DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
 }
-
-void GraphicsEngine::mouseMoveEvent(int x, int y) noexcept{}
-
-void GraphicsEngine::mouseLeftClickEvent(int x, int y) noexcept{}
-
-void GraphicsEngine::mouseRightClickEvent(int x, int y) noexcept{}
-
-void GraphicsEngine::keyEvent(WPARAM charCode) noexcept{}

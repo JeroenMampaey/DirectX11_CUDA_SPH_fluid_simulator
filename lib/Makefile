@@ -1,9 +1,9 @@
-CPP_SOURCES = $(wildcard lib_source/*.cpp lib_source/bindables/*.cpp lib_source/drawable_factories/*.cpp)
+CPP_SOURCES = $(wildcard lib_source/*.cpp lib_source/bindables/*.cpp lib_source/drawable_factories/*.cpp lib_source/events/*.cpp)
 PIXELSHADERS = $(patsubst lib_source/pixelshaders/%.hlsl, binaries/pixelshaders/%.cso, $(wildcard lib_source/pixelshaders/*.hlsl))
 VERTEXSHADERS = $(patsubst lib_source/vertexshaders/%.hlsl, binaries/vertexshaders/%.cso, $(wildcard lib_source/vertexshaders/*.hlsl))
 current_dir := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 
-all: lib_source/boost/signal2.hpp ${PIXELSHADERS} ${VERTEXSHADERS} binaries/graphics.dll
+all: ${PIXELSHADERS} ${VERTEXSHADERS} binaries/graphics.dll
 	@powershell '(Write-Host "Library build successfully" -ForegroundColor green)'
 
 binaries/graphics.dll:
@@ -20,11 +20,6 @@ binaries/vertexshaders/%.cso: lib_source/vertexshaders/%.hlsl binaries/vertexsha
 
 binaries/vertexshaders:
 	@powershell '(mkdir binaries/vertexshaders)'
-
-lib_source/boost/signal2.hpp:
-	git clone https://github.com/boostorg/signals2 -b master ./temp
-	@powershell '(Move-Item -Path ./temp/include/boost -Destination ./lib_source/boost)'
-	@powershell '(Remove-Item ./temp -Recurse -Force)'
 
 clean:
 	@powershell '(Remove-Item -ErrorAction Ignore binaries/vertexshaders/*.cso)'
