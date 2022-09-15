@@ -61,6 +61,8 @@ Window::Window(const char* name, UINT syncInterval){
 	pEventBus = std::make_shared<EventBus>();
 
     pGfx = std::make_unique<GraphicsEngine>(hWnd, syncInterval);
+
+	SetWindowTextA(hWnd, "Window setup was succesfull");
 }
 
 Window::~Window() noexcept{
@@ -99,26 +101,32 @@ LRESULT CALLBACK Window::handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPAR
 }
 
 LRESULT Window::handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept{
-	switch(msg)
-	{
-		case WM_CLOSE:
-			PostQuitMessage(0);
-			return 0;
-		case WM_MOUSEMOVE:
-			pEventBus->post(MouseMoveEvent{LOWORD(lParam), HIWORD(lParam)});
-			break;
-		case WM_LBUTTONDOWN:
-			pEventBus->post(MouseLeftClickEvent{LOWORD(lParam), HIWORD(lParam)});
-			break;
-		case WM_RBUTTONDOWN:
-			pEventBus->post(MouseRightClickEvent{LOWORD(lParam), HIWORD(lParam)});
-			break;
-		case WM_KEYDOWN:
-			pEventBus->post(KeyboardKeydownEvent{wParam});
-			break;
-	}
+	try{
+		switch(msg)
+		{
+			case WM_CLOSE:
+				PostQuitMessage(0);
+				return 0;
+			case WM_MOUSEMOVE:
+				pEventBus->post(MouseMoveEvent{LOWORD(lParam), HIWORD(lParam)});
+				break;
+			case WM_LBUTTONDOWN:
+				pEventBus->post(MouseLeftClickEvent{LOWORD(lParam), HIWORD(lParam)});
+				break;
+			case WM_RBUTTONDOWN:
+				pEventBus->post(MouseRightClickEvent{LOWORD(lParam), HIWORD(lParam)});
+				break;
+			case WM_KEYDOWN:
+				pEventBus->post(KeyboardKeydownEvent{wParam});
+				break;
+		}
 
-	return DefWindowProcW(hWnd, msg, wParam, lParam);
+		return DefWindowProcW(hWnd, msg, wParam, lParam);
+	}
+	catch(...){
+		thrownException = std::current_exception();
+		return 0;
+	}
 }
 
 std::shared_ptr<EventBus> Window::getEventBus() const noexcept{
@@ -127,4 +135,10 @@ std::shared_ptr<EventBus> Window::getEventBus() const noexcept{
 
 GraphicsEngine& Window::getGraphicsEngine() const noexcept{
 	return *pGfx;
+}
+
+void Window::checkForThrownExceptions() const{
+	if(thrownException){
+		std::rethrow_exception(thrownException);
+	}
 }

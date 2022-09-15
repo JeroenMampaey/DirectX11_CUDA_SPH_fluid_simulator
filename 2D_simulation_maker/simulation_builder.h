@@ -12,7 +12,6 @@
 #define LEFT 0
 
 #define RADIUS 7.5
-#define MOVEMENTS_PER_PARTICLE 8
 
 #define MOUSE_CLICK 0
 #define MOUSE_MOVE 1

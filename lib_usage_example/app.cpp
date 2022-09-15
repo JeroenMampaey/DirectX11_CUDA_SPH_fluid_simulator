@@ -12,62 +12,63 @@ App::App(Window& wnd)
     wnd.getGraphicsEngine().setProjection(DirectX::XMMatrixIdentity()* 
         DirectX::XMMatrixScaling(2.0f/((float)WIDTH), 2.0f/((float)HEIGHT), 1.0f)*
         DirectX::XMMatrixTranslation(-1.0f, -1.0f, 0.0f));
+
     for(int i=0; i<20; i++){
-        FilledRectangleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2), 50.0f, 50.0f};
-        filledRectangles.push_back(std::move(filledRectangleFactory.createDrawable(wnd.getGraphicsEngine(), desc)));
+        FilledRectangleInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2), 50.0f, 50.0f};
+        Drawable* filledRectangle = wnd.getGraphicsEngine().createDrawable(DrawableType::FILLED_RECTANGLE, desc);
+        filledRectangles.push_back(reinterpret_cast<FilledRectangle*>(filledRectangle));
     }
     for(int i=0; i<10; i++){
-        LineStateInitializerDesc desc = {i*100.0f, (i-2)*(i-2)*10.0f, (i+1)*100.0f, (i-1)*(i-1)*10.0f, 0.0f, 0.0f, 0.0f};
-        lines.push_back(std::move(lineFactory.createDrawable(wnd.getGraphicsEngine(), desc)));
+        LineInitializerDesc desc = {i*100.0f, (i-2)*(i-2)*10.0f, (i+1)*100.0f, (i-1)*(i-1)*10.0f, 0.0f, 0.0f, 0.0f};
+        wnd.getGraphicsEngine().createDrawable(DrawableType::LINE, desc);
     }
     for(int i=0; i<20; i++){
-        FilledCircleStateInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2)+50.0f, 25.0f};
-        filledCircles.push_back(std::move(filledCircleFactory.createDrawable(wnd.getGraphicsEngine(), desc)));
+        FilledCircleInitializerDesc desc = {50.0f+50.0f*i, (float)(HEIGHT/2)+50.0f, 25.0f};
+        Drawable* filledCircle = wnd.getGraphicsEngine().createDrawable(DrawableType::FILLED_CIRCLE, desc);
+        filledCircles.push_back(reinterpret_cast<FilledCircle*>(filledCircle));
     }
     for(int i=0; i<10; i++){
-        HollowRectangleStateInitializerDesc desc = {(i+1)*100.0f, (i-1)*(i-1)*10.0f, 50.0f, 50.0f, 0.0f, 0.0f, 0.0f};
-        hollowRectangles.push_back(std::move(hollowRectangleFactory.createDrawable(wnd.getGraphicsEngine(), desc)));
+        HollowRectangleInitializerDesc desc = {(i+1)*100.0f, (i-1)*(i-1)*10.0f, 50.0f, 50.0f, 0.0f, 0.0f, 0.0f};
+        wnd.getGraphicsEngine().createDrawable(DrawableType::HOLLOW_RECTANGLE, desc);
     }
+
+    TextInitializerDesc desc = {0.0f, 0.0f, 100.0f, 100.0f, "0123456789012"};
+    wnd.getGraphicsEngine().createDrawable(DrawableType::TEXT, desc);
 
     wnd.getEventBus()->subscribe(EventType::MOUSE_LEFT_CLICK_EVENT, this);
     wnd.getEventBus()->subscribe(EventType::MOUSE_RIGHT_CLICK_EVENT, this);
-}
-
-void App::showFrame(){
-    velocity += 9.81f*dt;
-    wnd.getGraphicsEngine().beginFrame(0.6f, 0.8f, 1.0f);
-    for(auto& filledRectangle : filledRectangles){
-        FilledRectangleState& state = static_cast<FilledRectangleState&>(filledRectangle->getState());
-        state.y -= velocity*dt;
-        wnd.getGraphicsEngine().draw(*filledRectangle);
-    }
-    for(auto& line : lines){
-        wnd.getGraphicsEngine().draw(*line);
-    }
-    for(auto& circle : filledCircles){
-        wnd.getGraphicsEngine().draw(*circle);
-    }
-    for(auto& hollowRectange : hollowRectangles){
-        wnd.getGraphicsEngine().draw(*hollowRectange);
-    }
-    wnd.getGraphicsEngine().endFrame();
+    wnd.getEventBus()->subscribe(EventType::KEYBOARD_KEYDOWN_EVENT, this);
 }
 
 void App::handleEvent(const Event& event) noexcept{
     switch(event.type()){
         case EventType::MOUSE_LEFT_CLICK_EVENT:
-            for(auto& circle : filledCircles){
-                FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
-                state.y += 50.0f;
+            for(FilledCircle* circle : filledCircles){
+                circle->y += 50.0f;
             }
             break;
         case EventType::MOUSE_RIGHT_CLICK_EVENT:
-            for(auto& circle : filledCircles){
-                FilledCircleState& state = static_cast<FilledCircleState&>(circle->getState());
-                state.y -= 50.0f;
+            for(FilledCircle* circle : filledCircles){
+                circle->y -= 50.0f;
             }
             break;
-        default:
+        case EventType::KEYBOARD_KEYDOWN_EVENT:
+            {
+                const KeyboardKeydownEvent& castedEvent = static_cast<const KeyboardKeydownEvent&>(event);
+                if(castedEvent.key=='A' && filledCircles.size()>0){
+                    Drawable* circle = reinterpret_cast<Drawable*>(filledCircles.back());
+                    if(wnd.getGraphicsEngine().removeDrawable(DrawableType::FILLED_CIRCLE, circle)){
+                        filledCircles.pop_back();
+                    }
+                }
+            }
             break;
+    }
+}
+
+void App::periodicCallback() noexcept{
+    velocity += 9.81f*dt;
+    for(FilledRectangle* filledRectange : filledRectangles){
+        filledRectange->y -= velocity*dt;
     }
 }

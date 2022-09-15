@@ -1,6 +1,5 @@
 #pragma once
 
-#include <wrl/client.h>
 #include "../bindable.h"
 
 class Texture : public Bindable{
@@ -14,7 +13,7 @@ class Texture : public Bindable{
             Color() noexcept; 
         };
         Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);
-        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(const GraphicsEngine& gfx) override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView;
 };

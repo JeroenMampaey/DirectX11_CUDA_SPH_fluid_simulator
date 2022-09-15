@@ -1,6 +1,6 @@
 #include "app.h"
 
-#define SYNCINTERVAL 1
+#define SYNCINTERVAL 4
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try{
@@ -10,9 +10,8 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			if(const std::optional<int> ecode = Window::processMessages()){
 				return *ecode;
 			}
-			wnd.checkForThrownExceptions();
+            wnd.checkForThrownExceptions();
 			wnd.getGraphicsEngine().updateFrame(0.6f, 0.8f, 1.0f);
-			app.periodicCallback();
 		}
 	}
 	catch(const WinException& e){

@@ -25,7 +25,7 @@ class LIBRARY_API EventBus{
         void subscribe(const EventType& descriptor, EventListener* listener) noexcept;
         void unsubscribe(const EventType& descriptor, EventListener* listener) noexcept;
         void unsubscribe(EventListener* listener) noexcept;
-        void post(const Event& event) const noexcept;
+        void post(const Event& event) const;
     private:
         std::map<EventType, std::vector<EventListener*>> listeners;
 };
@@ -34,7 +34,7 @@ class LIBRARY_API EventListener{
     public:
         EventListener(std::shared_ptr<EventBus> pEventBus) noexcept;
         virtual ~EventListener() noexcept;
-        virtual void handleEvent(const Event& event) noexcept = 0;
+        virtual void handleEvent(const Event& event) = 0;
     private:
         std::shared_ptr<EventBus> pEventBus;
 };

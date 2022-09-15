@@ -2,8 +2,8 @@
 
 #include <exception>
 #include <string>
-#include <windows.h>
 #include "exports.h"
+#include "windows_includes.h"
 
 class LIBRARY_API WinException : public std::exception
 {

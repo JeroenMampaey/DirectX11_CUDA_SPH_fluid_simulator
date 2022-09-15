@@ -1,5 +1,6 @@
 #include "graphics_engine.h"
-#include "drawable.h"
+#include "drawables/drawable_includes.h"
+#include <sstream>
 
 GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(syncInterval) {
     if(syncInterval<1 || syncInterval>4){
@@ -9,8 +10,9 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     HRESULT hr;
 
     DXGI_SWAP_CHAIN_DESC sd = {};
-    sd.BufferDesc.Width = 0;
-	sd.BufferDesc.Height = 0;
+    ZeroMemory(&sd, sizeof(DXGI_SWAP_CHAIN_DESC));
+    sd.BufferDesc.Width = WIDTH;
+	sd.BufferDesc.Height = HEIGHT;
 	sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	sd.BufferDesc.RefreshRate.Numerator = 0;
 	sd.BufferDesc.RefreshRate.Denominator = 0;
@@ -110,8 +112,24 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     GFX_THROW_FAILED(dxgiDevice->GetAdapter(&pAdapter));
     GFX_THROW_FAILED(pAdapter->GetDesc(&adapterDesc));
 
-    SetWindowTextA(hWnd, ("Vendor id: "+std::to_string(adapterDesc.VendorId)+", DirectX pipeline refreshrate: "+std::to_string(refreshRate)).c_str());
-
+    std::ostringstream specifications;
+    specifications.precision(6);
+    switch(adapterDesc.VendorId){
+        case NVIDIA_VENDOR_ID:
+            specifications << "NVIDIA";
+            break;
+        case AMD_VENDOR_ID:
+            specifications << "AMD";
+            break;
+        case INTEL_VENDOR_ID:
+            specifications << "INTEL";
+            break;
+        default:
+            specifications << "UNKNOWN";
+    }
+    specifications << ", " << refreshRate << " Hz";
+    std::string specString = specifications.str();
+    
     Microsoft::WRL::ComPtr<ID3D11Resource> pBackbuffer = nullptr;
     GFX_THROW_FAILED(pSwap->GetBuffer(0, __uuidof(ID3D11Resource), &pBackbuffer));
     GFX_THROW_FAILED(pDevice->CreateRenderTargetView(
@@ -121,6 +139,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     ));
 
     D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+    ZeroMemory(&dsDesc, sizeof(D3D11_DEPTH_STENCIL_DESC));
 	dsDesc.DepthEnable = TRUE;
 	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
@@ -131,6 +150,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 
     Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStensil;
 	D3D11_TEXTURE2D_DESC descDepth = {};
+    ZeroMemory(&descDepth, sizeof(D3D11_TEXTURE2D_DESC));
 	descDepth.Width = WIDTH;
 	descDepth.Height = HEIGHT;
 	descDepth.MipLevels = 1;
@@ -143,6 +163,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	GFX_THROW_FAILED(pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStensil));
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+    ZeroMemory(&descDSV, sizeof(D3D11_DEPTH_STENCIL_VIEW_DESC));
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
 	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	descDSV.Texture2D.MipSlice = 0;
@@ -151,6 +172,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	pContext->OMSetRenderTargets(1, pTarget.GetAddressOf(), pDSV.Get());
 
 	D3D11_VIEWPORT vp;
+    ZeroMemory(&vp, sizeof(D3D11_VIEWPORT));
 	vp.Width = WIDTH;
 	vp.Height = HEIGHT;
 	vp.MinDepth = 0.0f;
@@ -158,11 +180,20 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	vp.TopLeftX = 0.0f;
 	vp.TopLeftY = 0.0f;
 	pContext->RSSetViewports(1, &vp);
+
+    managers.insert({DrawableType::LINE, std::make_unique<DrawableManager<Line>>(*this)});
+    managers.insert({DrawableType::FILLED_CIRCLE, std::make_unique<DrawableManager<FilledCircle>>(*this)});
+    managers.insert({DrawableType::FILLED_RECTANGLE, std::make_unique<DrawableManager<FilledRectangle>>(*this)});
+    managers.insert({DrawableType::HOLLOW_RECTANGLE, std::make_unique<DrawableManager<HollowRectangle>>(*this)});
+    managers.insert({DrawableType::TEXT, std::make_unique<DrawableManager<Text>>(*this)});
+
+    TextInitializerDesc desc = {0.0f, (float)(HEIGHT-30), 20.0f, 30.0f, specString};
+    createDrawable(DrawableType::TEXT, desc);
 }
 
 void GraphicsEngine::beginFrame(float red, float green, float blue) const noexcept{
     pContext->OMSetRenderTargets(1, pTarget.GetAddressOf(), pDSV.Get());
-    const float color[] = {red, green, blue, 1.0};
+    const float color[] = {red, green, blue, 1.0f};
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 }
@@ -187,23 +218,36 @@ DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
 }
 
-void GraphicsEngine::draw(Drawable& drawable) const{
-    int indexCount = drawable.getIndexCount();
-    if(indexCount==-1) return;
+float GraphicsEngine::getRefreshRate() const noexcept{
+    return refreshRate;
+}
 
-    DrawableState& state = drawable.getState();
-
-    for(auto& b : drawable.getBinds()){
-        b->bind(*this, state);
-    }
-
-    for(auto& b : drawable.getSharedBinds()){
-        b->bind(*this, state);
-    }
-
+void GraphicsEngine::drawIndexed(int indexCount) const noexcept{
     pContext->DrawIndexed(indexCount, 0, 0);
 }
 
-float GraphicsEngine::getRefreshRate() const noexcept{
-    return refreshRate;
+Drawable* GraphicsEngine::createDrawable(DrawableType type, DrawableInitializerDesc& desc){
+    if(managers.find(type)==managers.end()){
+        throw std::exception("Tried to create a Drawable in GraphicsEngine using an invalid type");
+    }
+
+    std::unique_ptr<DrawableManagerBase>& manager = managers.at(type);
+    return manager->createDrawable(desc);
+}
+
+int GraphicsEngine::removeDrawable(DrawableType type, Drawable* drawable){
+    if(managers.find(type)==managers.end()){
+        throw std::exception("Tried to remove a Drawable in GraphicsEngine using an invalid type");
+    }
+
+    std::unique_ptr<DrawableManagerBase>& manager = managers.at(type);
+    return manager->removeDrawable(drawable);
+}
+
+void GraphicsEngine::updateFrame(float red, float green, float blue) const{
+    beginFrame(red, green, blue);
+    for(const std::pair<const DrawableType, std::unique_ptr<DrawableManagerBase>>& pair : managers){
+        pair.second->drawAll();
+    }
+    endFrame();
 }

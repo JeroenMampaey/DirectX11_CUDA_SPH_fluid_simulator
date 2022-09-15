@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../bindable.h"
-#include <wrl/client.h>
 
 template<typename C>
 class ConstantBuffer : public Bindable{
@@ -48,7 +47,7 @@ class VertexConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override{
+        void bind(const GraphicsEngine& gfx) override{
             getContext(gfx)->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };
@@ -59,7 +58,7 @@ class PixelConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override{
+        void bind(const GraphicsEngine& gfx) override{
             getContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 };

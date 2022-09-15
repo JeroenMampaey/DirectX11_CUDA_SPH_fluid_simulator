@@ -2,7 +2,6 @@
 
 #include "../bindable.h"
 #include <string>
-#include <wrl/client.h>
 
 #ifndef DEFAULT_PIXEL_SHADERS_DIRECTORY
 #define DEFAULT_PIXEL_SHADERS_DIRECTORY L"pixelshaders/"
@@ -13,7 +12,7 @@
 class PixelShader : public Bindable{
     public:
         PixelShader(GraphicsEngine& gfx, const std::wstring& path);
-        void bind(const GraphicsEngine& gfx, DrawableState& drawableState) override;
+        void bind(const GraphicsEngine& gfx) override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
 };

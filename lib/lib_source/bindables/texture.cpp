@@ -45,6 +45,6 @@ Texture::Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned
     GFX_THROW_FAILED(getDevice(gfx)->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
 }
 
-void Texture::bind(const GraphicsEngine& gfx, DrawableState& drawableState){
+void Texture::bind(const GraphicsEngine& gfx){
     getContext(gfx)->PSSetShaderResources(0, 1, pTextureView.GetAddressOf());
 }

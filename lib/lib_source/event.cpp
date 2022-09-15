@@ -15,7 +15,7 @@ void EventBus::unsubscribe(EventListener* listener) noexcept{
     }
 }
 
-void EventBus::post(const Event& event) const noexcept{
+void EventBus::post(const Event& event) const{
     EventType type = event.type();
 
     if(listeners.find(type)==listeners.end()){

@@ -1,14 +1,10 @@
 #pragma once
 
-#include <windows.h>
 #include <optional>
 #include <memory>
 #include "graphics_engine.h"
 #include "event.h"
 #include "events/events_includes.h"
-#pragma comment(lib,"user32.lib")
-#pragma comment(lib,"gdi32.lib")
-#pragma comment(lib, "ole32.lib")
 
 class LIBRARY_API Window
 {
@@ -31,6 +27,7 @@ class LIBRARY_API Window
         HWND hWnd;
         std::shared_ptr<EventBus> pEventBus;
         std::unique_ptr<GraphicsEngine> pGfx;
+        std::exception_ptr thrownException = nullptr;
 
     public:
         Window(const char* name, UINT syncInterval);
@@ -38,4 +35,5 @@ class LIBRARY_API Window
         static std::optional<int> processMessages() noexcept;
         std::shared_ptr<EventBus> getEventBus() const noexcept;
         GraphicsEngine& getGraphicsEngine() const noexcept;
+        void checkForThrownExceptions() const;
 };
