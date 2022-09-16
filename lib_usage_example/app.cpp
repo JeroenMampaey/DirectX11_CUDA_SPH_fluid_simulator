@@ -71,7 +71,7 @@ void App::handleKeyEvent(LPARAM key) noexcept{
     switch(key){
         case 'A':
             if(filledCircles.size()>0){
-                Drawable* circle = reinterpret_cast<Drawable*>(filledCircles.back());
+                FilledCircle* circle =  filledCircles.back();
                 if(wnd.getGraphicsEngine().removeDrawable(DrawableType::FILLED_CIRCLE, circle)){
                     filledCircles.pop_back();
                 }
