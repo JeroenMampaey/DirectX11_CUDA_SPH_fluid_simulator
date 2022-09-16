@@ -14,6 +14,7 @@ class App : public EventListener{
         Window& wnd;
         std::vector<FilledCircle*> particles;
         std::vector<Line*> boundaries;
+        std::vector<Line*> boundary_normals;
         std::vector<HollowRectangle*> pumps;
         std::vector<Line*> pumpDirections;
 

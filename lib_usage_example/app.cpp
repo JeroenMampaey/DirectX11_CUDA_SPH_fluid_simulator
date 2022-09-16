@@ -2,7 +2,6 @@
 
 App::App(Window& wnd) 
 	:
-    EventListener(wnd.getEventBus()),
 	wnd(wnd)
 {
     if(RATE_IS_INVALID(wnd.getGraphicsEngine().getRefreshRate())){
@@ -35,9 +34,9 @@ App::App(Window& wnd)
     TextInitializerDesc desc = {0.0f, 0.0f, 100.0f, 100.0f, "0123456789012"};
     wnd.getGraphicsEngine().createDrawable(DrawableType::TEXT, desc);
 
-    wnd.getEventBus()->subscribe(EventType::MOUSE_LEFT_CLICK_EVENT, this);
-    wnd.getEventBus()->subscribe(EventType::MOUSE_RIGHT_CLICK_EVENT, this);
-    wnd.getEventBus()->subscribe(EventType::KEYBOARD_KEYDOWN_EVENT, this);
+    subscribeTo(wnd.getEventBus(), EventType::MOUSE_LEFT_CLICK_EVENT);
+    subscribeTo(wnd.getEventBus(), EventType::MOUSE_RIGHT_CLICK_EVENT);
+    subscribeTo(wnd.getEventBus(), EventType::KEYBOARD_KEYDOWN_EVENT);
 }
 
 void App::handleEvent(const Event& event) noexcept{
@@ -55,12 +54,7 @@ void App::handleEvent(const Event& event) noexcept{
         case EventType::KEYBOARD_KEYDOWN_EVENT:
             {
                 const KeyboardKeydownEvent& castedEvent = static_cast<const KeyboardKeydownEvent&>(event);
-                if(castedEvent.key=='A' && filledCircles.size()>0){
-                    Drawable* circle = reinterpret_cast<Drawable*>(filledCircles.back());
-                    if(wnd.getGraphicsEngine().removeDrawable(DrawableType::FILLED_CIRCLE, circle)){
-                        filledCircles.pop_back();
-                    }
-                }
+                handleKeyEvent(castedEvent.key);
             }
             break;
     }
@@ -70,5 +64,26 @@ void App::periodicCallback() noexcept{
     velocity += 9.81f*dt;
     for(FilledRectangle* filledRectange : filledRectangles){
         filledRectange->y -= velocity*dt;
+    }
+}
+
+void App::handleKeyEvent(LPARAM key) noexcept{
+    switch(key){
+        case 'A':
+            if(filledCircles.size()>0){
+                Drawable* circle = reinterpret_cast<Drawable*>(filledCircles.back());
+                if(wnd.getGraphicsEngine().removeDrawable(DrawableType::FILLED_CIRCLE, circle)){
+                    filledCircles.pop_back();
+                }
+            }
+            break;
+        case VK_LEFT:
+            cameraPositionX -= 30.0f;
+            wnd.getGraphicsEngine().setView(DirectX::XMMatrixTranslation(-cameraPositionX, 0.0f, 0.0f));
+            break;
+        case VK_RIGHT:
+            cameraPositionX += 30.0f;
+            wnd.getGraphicsEngine().setView(DirectX::XMMatrixTranslation(-cameraPositionX, 0.0f, 0.0f));
+            break;
     }
 }

@@ -15,7 +15,7 @@ class LIBRARY_API Drawable{
         int Drawable::getIndexCount() const noexcept;
 
         virtual void initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const = 0;
-        virtual DirectX::XMMATRIX getTransformXM() const noexcept = 0;
+        virtual DirectX::XMMATRIX getModel() const noexcept = 0;
     
     private:
         std::vector<std::unique_ptr<Bindable>> binds;

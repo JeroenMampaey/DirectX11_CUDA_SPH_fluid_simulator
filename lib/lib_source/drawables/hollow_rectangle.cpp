@@ -30,9 +30,9 @@ HollowRectangle::HollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& 
     };
     const ConstantBuffer2 cb2 = {red, green, blue};
 
-    addUniqueBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
+    addUniqueBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, gfx, cb2));
 
-    addUniqueBind(std::make_unique<TransformCbuf>(gfx, *this));
+    addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
 void HollowRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
@@ -83,6 +83,6 @@ void HollowRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 }
 
-DirectX::XMMATRIX HollowRectangle::getTransformXM() const noexcept{
+DirectX::XMMATRIX HollowRectangle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

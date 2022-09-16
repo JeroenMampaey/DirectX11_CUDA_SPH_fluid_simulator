@@ -9,6 +9,8 @@ class App : public EventListener{
         void handleEvent(const Event& event) noexcept;
     
     private:
+        void handleKeyEvent(LPARAM key) noexcept;
+        float cameraPositionX = 0.0f;
         Window& wnd;
         float dt = 0.0;
         float velocity = 0.0f;

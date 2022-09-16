@@ -1,225 +1,27 @@
-#ifndef UNICODE
-#define UNICODE
-#endif
+#include "app.h"
 
-#include <windows.h>
-#include <d2d1.h>
+#define SYNCINTERVAL 4
 
-#include "../extra_code/basewin.h"
-#include "simulation_builder.h"
-
-class MainWindow : public BaseWindow<MainWindow>
-{
-    ID2D1Factory            *pFactory;
-    ID2D1HwndRenderTarget   *pRenderTarget;
-    ID2D1SolidColorBrush    *pBrush;
-
-    HRESULT CreateGraphicsResources();
-    void    DiscardGraphicsResources();
-    void    OnPaint();
-
-    SimulationBuilder simulation_builder;
-
-
-public:
-
-    MainWindow() : pFactory(NULL), pRenderTarget(NULL), pBrush(NULL), simulation_builder(NULL){}
-    PCWSTR  ClassName() const { return L"SPH Window Class"; }
-    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
-};
-
-HRESULT MainWindow::CreateGraphicsResources()
-{
-    // Make sure that the graphics resources have been created
-    HRESULT hr = S_OK;
-    if (pRenderTarget == NULL)
-    {
-        RECT rc;
-        GetClientRect(m_hwnd, &rc);
-
-        D2D1_SIZE_U size = D2D1::SizeU(rc.right, rc.bottom);
-
-        hr = pFactory->CreateHwndRenderTarget(
-            D2D1::RenderTargetProperties(),
-            D2D1::HwndRenderTargetProperties(m_hwnd, size),
-            &pRenderTarget);
-
-        if (SUCCEEDED(hr))
-        {
-            const D2D1_COLOR_F color = D2D1::ColorF(1.0f, 1.0f, 0);
-            hr = pRenderTarget->CreateSolidColorBrush(color, &pBrush);
-        }
-    }
-    return hr;
-}
-
-void MainWindow::DiscardGraphicsResources()
-{
-    SafeRelease(&pRenderTarget);
-    SafeRelease(&pBrush);
-}
-
-void MainWindow::OnPaint()
-{
-    // first make sure graphics resources are created already
-    HRESULT hr = CreateGraphicsResources();
-    if (SUCCEEDED(hr))
-    {
-        PAINTSTRUCT ps;
-        BeginPaint(m_hwnd, &ps);
-     
-        pRenderTarget->BeginDraw();
-
-        pRenderTarget->Clear( D2D1::ColorF(D2D1::ColorF::SkyBlue) );
-
-        pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Blue));
-
-        // Draw all particles
-        std::vector<D2D1_ELLIPSE> &particles = simulation_builder.getParticles();
-        for (D2D1_ELLIPSE particle : particles)
-        {
-            pRenderTarget->FillEllipse(particle, pBrush);
-        }
-
-        // Draw all boundaries
-        std::vector<std::pair<D2D1_POINT_2F, D2D1_POINT_2F>> &lines = simulation_builder.getLines();
-        for (std::pair<D2D1_POINT_2F, D2D1_POINT_2F> line : lines)
-        {
-            if(line.second.x!=line.first.x || line.second.y!=line.first.y){
-                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
-                pRenderTarget->DrawLine(line.first, line.second, pBrush);
-
-                // Also draw for each boundary a normal vector (simply a small red line)
-                float length = sqrt((line.second.x-line.first.x)*(line.second.x-line.first.x)+(line.second.y-line.first.y)*(line.second.y-line.first.y));
-                float nx = (line.second.y-line.first.y)/length;
-                float ny = (line.first.x-line.second.x)/length;
-                D2D1_POINT_2F first_point = D2D1::Point2F(line.first.x+(line.second.x-line.first.x)/2, line.first.y+(line.second.y-line.first.y)/2);
-                D2D1_POINT_2F second_point = D2D1::Point2F(first_point.x+nx*30, first_point.y+ny*30);
-                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Red));
-                pRenderTarget->DrawLine(first_point, second_point, pBrush);
-            }
-        }
-
-        // Draw all the boxes
-        std::vector<std::pair<D2D1_RECT_F, D2D1_POINT_2F>> &boxes = simulation_builder.getBoxes();
-        for (std::pair<D2D1_RECT_F, D2D1_POINT_2F> box : boxes){
-            if(box.first.right!=box.first.left && box.first.bottom!=box.first.top){
-                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Green));
-                pRenderTarget->DrawRectangle(box.first, pBrush);
-
-                // Also draw for each box a velocity vector (simply a small orange line)
-                D2D1_POINT_2F center_point = D2D1::Point2F((box.first.left+box.first.right)/2, (box.first.top+box.first.bottom)/2);
-                D2D1_POINT_2F other_point = D2D1::Point2F(center_point.x+box.second.x, center_point.y+box.second.y);
-                pBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Orange));
-                pRenderTarget->DrawLine(center_point, other_point, pBrush);
-            }
-        }
-        
-        hr = pRenderTarget->EndDraw();
-        if (FAILED(hr) || hr == D2DERR_RECREATE_TARGET)
-        {
-            DiscardGraphicsResources();
-        }
-        EndPaint(m_hwnd, &ps);
-    }
-}
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow)
-{
-    MainWindow win;
-
-    if (!win.Create(L"SPH", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU, 0, CW_USEDEFAULT, CW_USEDEFAULT, RIGHT-LEFT, FLOOR-CEILING))
-    {
-        return 0;
-    }
-
-    ShowWindow(win.Window(), nCmdShow);
-
-    // Run the message loop.
-    MSG msg = { };
-    while (GetMessage(&msg, NULL, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
-
-    return 0;
-}
-
-LRESULT MainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_CREATE:
-        if (FAILED(D2D1CreateFactory(
-                D2D1_FACTORY_TYPE_SINGLE_THREADED, &pFactory)))
-        {
-            return -1;
-        }
-        
-        simulation_builder = SimulationBuilder(m_hwnd);
-
-        return 0;
-
-    case WM_DESTROY:
-        DiscardGraphicsResources();
-        SafeRelease(&pFactory);
-        PostQuitMessage(0);
-
-        return 0;
-
-    case WM_PAINT:
-        // Repaint the screen
-        OnPaint();
-        break;
-    
-    case WM_LBUTTONDOWN:
-        // Signal the mouse position with the SimulationBuilder
-        simulation_builder.updateMousePosition(LOWORD(lParam), HIWORD(lParam));
-
-        // Signal the event with the SimulationBuilder
-        simulation_builder.event(MOUSE_CLICK);
-        break;
-    
-    case WM_MOUSEMOVE:
-        // Signal the mouse position with the SimulationBuilder
-        simulation_builder.updateMousePosition(LOWORD(lParam), HIWORD(lParam));
-
-        // Signal the event with the SimulationBuilder
-        simulation_builder.event(MOUSE_MOVE);
-        break;
-    
-    case WM_KEYDOWN:
-        // Signal the event with the SimulationBuilder
-        switch(wParam){
-            case 'W':
-                simulation_builder.event(W_CLICK);
-                break;
-            case 'B':
-                simulation_builder.event(B_CLICK);
-                break;
-            case 'P':
-                simulation_builder.event(P_CLICK);
-                break;
-            case 'A':
-                simulation_builder.event(A_CLICK);
-                break;
-            case VK_LEFT:
-                simulation_builder.event(LEFT_KEY_CLICK);
-                break;
-            case VK_RIGHT:
-                simulation_builder.event(RIGHT_KEY_CLICK);
-                break;
-            case VK_UP:
-                simulation_builder.event(UP_KEY_CLICK);
-                break;
-            case VK_DOWN:
-                simulation_builder.event(DOWN_KEY_CLICK);
-                break;
-            default:
-                break;
-        }
-        break;
-    }
-    return DefWindowProc(m_hwnd, uMsg, wParam, lParam);
+int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
+	try{
+		Window wnd = Window("Example", SYNCINTERVAL);
+		App app = App(wnd);
+		while(true){
+			if(const std::optional<int> ecode = Window::processMessages()){
+				return *ecode;
+			}
+            wnd.checkForThrownExceptions();
+			wnd.getGraphicsEngine().updateFrame(0.6f, 0.8f, 1.0f);
+		}
+	}
+	catch(const WinException& e){
+		MessageBoxA(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);
+	}
+	catch(const std::exception& e){
+		MessageBoxA(nullptr, e.what(), "Standard Exception", MB_OK | MB_ICONEXCLAMATION);
+	}
+	catch(...){
+		MessageBoxA(nullptr, "No details available", "Unknown Exception", MB_OK | MB_ICONEXCLAMATION);
+	}
+	return -1;
 }

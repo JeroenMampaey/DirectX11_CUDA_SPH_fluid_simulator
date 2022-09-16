@@ -47,9 +47,21 @@ class VertexConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
+		VertexConstantBuffer(UINT startSlot, GraphicsEngine& gfx, const C& consts)
+			:
+			ConstantBuffer<C>(gfx, consts),
+			startSlot(startSlot)
+		{}
+		VertexConstantBuffer(UINT startSlot, GraphicsEngine& gfx)
+			:
+			ConstantBuffer<C>(gfx),
+			startSlot(startSlot)
+		{}
         void bind(const GraphicsEngine& gfx) override{
-            getContext(gfx)->VSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+            getContext(gfx)->VSSetConstantBuffers(startSlot, 1, pConstantBuffer.GetAddressOf());
         }
+	private:
+		UINT startSlot;
 };
 
 template<typename C>
@@ -58,7 +70,19 @@ class PixelConstantBuffer : public ConstantBuffer<C>{
         using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
+		PixelConstantBuffer(UINT startSlot, GraphicsEngine& gfx, const C& consts)
+			:
+			ConstantBuffer<C>(gfx, consts),
+			startSlot(startSlot)
+		{}
+		PixelConstantBuffer(UINT startSlot, GraphicsEngine& gfx)
+			:
+			ConstantBuffer<C>(gfx),
+			startSlot(startSlot)
+		{}
         void bind(const GraphicsEngine& gfx) override{
             getContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
+	private:
+		UINT startSlot;
 };

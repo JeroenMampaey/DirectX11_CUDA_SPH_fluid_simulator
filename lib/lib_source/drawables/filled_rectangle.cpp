@@ -15,7 +15,7 @@ FilledRectangle::FilledRectangle(DrawableInitializerDesc& desc, GraphicsEngine& 
     width = castedDesc.width;
     height = castedDesc.height;
 
-    addUniqueBind(std::make_unique<TransformCbuf>(gfx, *this));
+    addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
 void FilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
@@ -63,7 +63,7 @@ void FilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std
     };
     const ConstantBuffer2 cb2 = {1.0f, 0.0f, 1.0f};
 
-    sharedBinds.push_back(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
+    sharedBinds.push_back(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, gfx, cb2));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
@@ -74,6 +74,6 @@ void FilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX FilledRectangle::getTransformXM() const noexcept{
+DirectX::XMMATRIX FilledRectangle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

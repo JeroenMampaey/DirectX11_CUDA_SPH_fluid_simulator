@@ -4,9 +4,9 @@
 #include "../drawable.h"
 #include "../bindable.h"
 
-class TransformCbuf : public Bindable{
+class TransformCbufM : public Bindable{
     public:
-        TransformCbuf(GraphicsEngine& gfx, const Drawable& parent);
+        TransformCbufM(GraphicsEngine& gfx, const Drawable& parent);
         void bind(const GraphicsEngine& gfx) override;
     private:
         static std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;

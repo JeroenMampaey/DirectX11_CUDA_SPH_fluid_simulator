@@ -13,7 +13,7 @@ FilledCircle::FilledCircle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     y = castedDesc.y;
     radius = castedDesc.radius;
 
-    addUniqueBind(std::make_unique<TransformCbuf>(gfx, *this));
+    addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
 void FilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
@@ -61,7 +61,7 @@ void FilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::u
     };
     const ConstantBuffer2 cb2 = {0.2f, 0.2f, 1.0f};
 
-    sharedBinds.push_back(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
+    sharedBinds.push_back(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, gfx, cb2));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
@@ -73,6 +73,6 @@ void FilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::u
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX FilledCircle::getTransformXM() const noexcept{
+DirectX::XMMATRIX FilledCircle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(radius, radius, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

@@ -28,6 +28,8 @@ class LIBRARY_API GraphicsEngine{
         GraphicsEngine(HWND hWnd, UINT syncInterval);
         void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX getProjection() const noexcept;
+        void setView(DirectX::FXMMATRIX v) noexcept;
+	    DirectX::XMMATRIX getView() const noexcept;
         float getRefreshRate() const noexcept;
         void drawIndexed(int indexCount) const noexcept;
         Drawable* createDrawable(DrawableType type, DrawableInitializerDesc& desc);
@@ -39,6 +41,8 @@ class LIBRARY_API GraphicsEngine{
         void endFrame() const;
 
         DirectX::XMMATRIX projection;
+        DirectX::XMMATRIX view;
+
         Microsoft::WRL::ComPtr<ID3D11Device> pDevice;
         Microsoft::WRL::ComPtr<IDXGISwapChain> pSwap;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> pContext;

@@ -30,9 +30,9 @@ Line::Line(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     };
     const ConstantBuffer2 cb2 = {red, green, blue};
 
-    addUniqueBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(gfx, cb2));
+    addUniqueBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, gfx, cb2));
 
-    addUniqueBind(std::make_unique<TransformCbuf>(gfx, *this));
+    addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
 void Line::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
@@ -77,6 +77,6 @@ void Line::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_pt
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST));
 }
 
-DirectX::XMMATRIX Line::getTransformXM() const noexcept{
+DirectX::XMMATRIX Line::getModel() const noexcept{
     return DirectX::XMMatrixScaling(x2-x1, y2-y1, 1.0f)*DirectX::XMMatrixTranslation(x1, y1, 0.0f);
 }

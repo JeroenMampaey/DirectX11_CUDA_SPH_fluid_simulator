@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include "exports.h"
+#include <set>
 
 enum EventType{
     MOUSE_MOVE_EVENT = 0,
@@ -18,23 +19,24 @@ struct LIBRARY_API Event{
     virtual EventType type() const noexcept = 0;
 };
 
-class EventListener;
-
 class LIBRARY_API EventBus{
+        friend class EventListener;
     public:
-        void subscribe(const EventType& descriptor, EventListener* listener) noexcept;
-        void unsubscribe(const EventType& descriptor, EventListener* listener) noexcept;
-        void unsubscribe(EventListener* listener) noexcept;
         void post(const Event& event) const;
     private:
-        std::map<EventType, std::vector<EventListener*>> listeners;
+        bool subscribe(const EventType& descriptor, EventListener* listener) noexcept;
+        bool unsubscribe(const EventType& descriptor, EventListener* listener) noexcept;
+        bool unsubscribe(EventListener* listener) noexcept;
+        std::map<EventType, std::set<EventListener*>> listeners;
 };
 
 class LIBRARY_API EventListener{
     public:
-        EventListener(std::shared_ptr<EventBus> pEventBus) noexcept;
+        void subscribeTo(std::shared_ptr<EventBus> pEventBus, const EventType& descriptor) noexcept;
+        void unsubscribeFrom(std::shared_ptr<EventBus> pEventBus, const EventType& descriptor) noexcept;
+        void unsubscribeFrom(std::shared_ptr<EventBus> pEventBus) noexcept;
         virtual ~EventListener() noexcept;
         virtual void handleEvent(const Event& event) = 0;
     private:
-        std::shared_ptr<EventBus> pEventBus;
+        std::map<std::shared_ptr<EventBus>, int> subscribedEventBusses;
 };

@@ -6,13 +6,10 @@
 #include <vector>
 #include "drawable_manager_base.h"
 
+// https://stackoverflow.com/questions/18939882/raw-pointer-lookup-for-sets-of-unique-ptrs
 template<class T>
 struct pointer_comp {
   typedef std::true_type is_transparent;
-  // helper does some magic in order to reduce the number of
-  // pairs of types we need to know how to compare: it turns
-  // everything into a pointer, and then uses `std::less<T*>`
-  // to do the comparison:
   struct helper {
     T* ptr;
     helper():ptr(nullptr) {}
@@ -20,16 +17,10 @@ struct pointer_comp {
     helper(T* p):ptr(p) {}
     template<class U, class...Ts>
     helper( std::unique_ptr<U, Ts...> const& up ):ptr(up.get()) {}
-    // && optional: enforces rvalue use only
     bool operator<( helper o ) const {
       return std::less<T*>()( ptr, o.ptr );
     }
   };
-  // without helper, we would need 2^n different overloads, where
-  // n is the number of types we want to support (so, 8 with
-  // raw pointers, unique pointers, and shared pointers).  That
-  // seems silly:
-  // && helps enforce rvalue use only
   bool operator()( helper const&& lhs, helper const&& rhs ) const {
     return lhs < rhs;
   }
@@ -39,7 +30,6 @@ template<typename T, typename std::enable_if<std::is_base_of<Drawable, T>::value
 class LIBRARY_API DrawableManager : public DrawableManagerBase{
     private:
         GraphicsEngine& gfx;
-        //std::set<std::unique_ptr<Drawable>> drawables;
         std::set<std::unique_ptr<Drawable>, pointer_comp<Drawable>> drawables;
         std::vector<std::unique_ptr<Bindable>> sharedBinds;
         int sharedIndexCount = -1;

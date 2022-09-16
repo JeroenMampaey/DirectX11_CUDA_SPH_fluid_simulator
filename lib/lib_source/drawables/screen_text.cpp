@@ -1,4 +1,4 @@
-#include "text.h"
+#include "screen_text.h"
 #include <stdexcept>
 
 #define NUM_USEFUL_ASCII_CHARS 96
@@ -6,7 +6,7 @@
 #define CHAR_PIXEL_WIDTH 8
 #define CHAR_PIXEL_HEIGHT 12
 
-TextInitializerDesc::TextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
+ScreenTextInitializerDesc::ScreenTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
     :
     left_down_x(left_down_x),
     left_down_y(left_down_y),
@@ -15,8 +15,8 @@ TextInitializerDesc::TextInitializerDesc(float left_down_x, float left_down_y, f
     text(text)
 {}
 
-Text::Text(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    TextInitializerDesc& castedDesc = static_cast<TextInitializerDesc&>(desc);
+ScreenText::ScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    ScreenTextInitializerDesc& castedDesc = static_cast<ScreenTextInitializerDesc&>(desc);
     left_down_x = castedDesc.left_down_x;
     left_down_y = castedDesc.left_down_y;
     character_width = castedDesc.character_width;
@@ -66,10 +66,10 @@ Text::Text(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
 
     addUniqueBind(std::make_unique<VertexBuffer>(gfx, vertices));
 
-    addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
+    addUniqueBind(std::make_unique<TransformCbufM>(gfx, *this));
 }
 
-void Text::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void ScreenText::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     // copied from http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
     unsigned char bitmap[NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_HEIGHT] = {
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,	//  
@@ -203,6 +203,6 @@ void Text::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_pt
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX Text::getModel() const noexcept{
+DirectX::XMMATRIX ScreenText::getModel() const noexcept{
     return DirectX::XMMatrixScaling(character_width, character_height, 1.0f)*DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f);
 }

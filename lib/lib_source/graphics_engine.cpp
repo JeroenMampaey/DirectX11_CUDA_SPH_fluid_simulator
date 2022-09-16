@@ -186,9 +186,13 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     managers.insert({DrawableType::FILLED_RECTANGLE, std::make_unique<DrawableManager<FilledRectangle>>(*this)});
     managers.insert({DrawableType::HOLLOW_RECTANGLE, std::make_unique<DrawableManager<HollowRectangle>>(*this)});
     managers.insert({DrawableType::TEXT, std::make_unique<DrawableManager<Text>>(*this)});
+    managers.insert({DrawableType::SCREEN_TEXT, std::make_unique<DrawableManager<ScreenText>>(*this)});
 
-    TextInitializerDesc desc = {0.0f, (float)(HEIGHT-30), 20.0f, 30.0f, specString};
-    createDrawable(DrawableType::TEXT, desc);
+    ScreenTextInitializerDesc desc = {-1.0f, 0.9f, 0.05f, 0.1f, specString};
+    createDrawable(DrawableType::SCREEN_TEXT, desc);
+
+    projection = DirectX::XMMatrixIdentity();
+    view = DirectX::XMMatrixIdentity();
 }
 
 void GraphicsEngine::beginFrame(float red, float green, float blue) const noexcept{
@@ -216,6 +220,14 @@ void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept{
 
 DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
+}
+
+void GraphicsEngine::setView(DirectX::FXMMATRIX v) noexcept{
+    view = v;
+}
+
+DirectX::XMMATRIX GraphicsEngine::getView() const noexcept{
+    return view;
 }
 
 float GraphicsEngine::getRefreshRate() const noexcept{

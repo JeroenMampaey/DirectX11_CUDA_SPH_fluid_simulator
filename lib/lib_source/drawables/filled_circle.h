@@ -15,7 +15,7 @@ class LIBRARY_API FilledCircle : public Drawable{
     public:
         FilledCircle(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
         void initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const override;
-        DirectX::XMMATRIX getTransformXM() const noexcept override;
+        DirectX::XMMATRIX getModel() const noexcept override;
 
         float x;
         float y;
