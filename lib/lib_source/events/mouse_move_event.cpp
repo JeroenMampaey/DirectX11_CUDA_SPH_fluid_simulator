@@ -1,4 +1,5 @@
 #include "mouse_move_event.h"
+#include "events_includes.h"
 
 MouseMoveEvent::MouseMoveEvent(int new_x, int new_y) noexcept
     :
@@ -6,6 +7,6 @@ MouseMoveEvent::MouseMoveEvent(int new_x, int new_y) noexcept
     new_y(new_y)
 {}
 
-EventType MouseMoveEvent::type() const noexcept{
-    return EventType::MOUSE_MOVE_EVENT;
+int MouseMoveEvent::type() const noexcept{
+    return WindowEventType::MOUSE_MOVE_EVENT;
 }

@@ -4,33 +4,14 @@
 #include "graphics_engine.h"
 #include <set>
 #include <vector>
+#include <algorithm>
 #include "drawable_manager_base.h"
-
-// https://stackoverflow.com/questions/18939882/raw-pointer-lookup-for-sets-of-unique-ptrs
-template<class T>
-struct pointer_comp {
-  typedef std::true_type is_transparent;
-  struct helper {
-    T* ptr;
-    helper():ptr(nullptr) {}
-    helper(helper const&) = default;
-    helper(T* p):ptr(p) {}
-    template<class U, class...Ts>
-    helper( std::unique_ptr<U, Ts...> const& up ):ptr(up.get()) {}
-    bool operator<( helper o ) const {
-      return std::less<T*>()( ptr, o.ptr );
-    }
-  };
-  bool operator()( helper const&& lhs, helper const&& rhs ) const {
-    return lhs < rhs;
-  }
-};
 
 template<typename T, typename std::enable_if<std::is_base_of<Drawable, T>::value>::type* = nullptr>
 class LIBRARY_API DrawableManager : public DrawableManagerBase{
     private:
         GraphicsEngine& gfx;
-        std::set<std::unique_ptr<Drawable>, pointer_comp<Drawable>> drawables;
+        std::vector<std::unique_ptr<Drawable>> drawables;
         std::vector<std::unique_ptr<Bindable>> sharedBinds;
         int sharedIndexCount = -1;
 
@@ -40,17 +21,18 @@ class LIBRARY_API DrawableManager : public DrawableManagerBase{
         DrawableManager(GraphicsEngine& gfx) : gfx(gfx) {};
         
         Drawable* createDrawable(DrawableInitializerDesc& desc) override{
-            auto retval = drawables.insert(std::make_unique<T>(desc, gfx));
+            drawables.push_back(std::make_unique<T>(desc, gfx));
+            auto final_val = --drawables.end();
 
             if(drawables.size()==1){
-                (*retval.first)->initializeSharedBinds(gfx, sharedBinds, sharedIndexCount);
+                (*final_val)->initializeSharedBinds(gfx, sharedBinds, sharedIndexCount);
             }
 
-            return retval.first->get();
+            return final_val->get();
         }
 
         int removeDrawable(Drawable* drawable) noexcept override{
-            auto it = drawables.find(drawable);
+            auto it = std::find_if(drawables.begin(), drawables.end(), [&](std::unique_ptr<Drawable>& p) { return p.get() == drawable;});
             if(it != drawables.end()){
                 drawables.erase(it);
                 if(drawables.size()==0){

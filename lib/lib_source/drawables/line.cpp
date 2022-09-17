@@ -1,6 +1,6 @@
 #include "line.h"
 
-LineInitializerDesc::LineInitializerDesc(float x1, float y1, float x2, float y2, float red, float green, float blue) noexcept
+DXLineInitializerDesc::DXLineInitializerDesc(float x1, float y1, float x2, float y2, float red, float green, float blue) noexcept
     :
     x1(x1), 
     y1(y1), 
@@ -11,8 +11,8 @@ LineInitializerDesc::LineInitializerDesc(float x1, float y1, float x2, float y2,
     blue(blue)
 {}
 
-Line::Line(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    LineInitializerDesc& castedDesc = static_cast<LineInitializerDesc&>(desc);
+DXLine::DXLine(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXLineInitializerDesc& castedDesc = static_cast<DXLineInitializerDesc&>(desc);
     x1 = castedDesc.x1; 
     y1 = castedDesc.y1; 
     x2 = castedDesc.x2; 
@@ -35,7 +35,7 @@ Line::Line(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
-void Line::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXLine::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     struct Vertex
     {
         struct
@@ -77,6 +77,6 @@ void Line::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_pt
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_LINELIST));
 }
 
-DirectX::XMMATRIX Line::getModel() const noexcept{
+DirectX::XMMATRIX DXLine::getModel() const noexcept{
     return DirectX::XMMatrixScaling(x2-x1, y2-y1, 1.0f)*DirectX::XMMatrixTranslation(x1, y1, 0.0f);
 }

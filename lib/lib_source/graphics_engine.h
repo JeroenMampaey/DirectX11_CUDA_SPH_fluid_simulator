@@ -5,7 +5,7 @@
 #include <vector>
 #include "windows_includes.h"
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include "drawable_manager_base.h"
 
 #define RATE_IS_INVALID(rate) (rate <= 0.0)
@@ -49,7 +49,8 @@ class LIBRARY_API GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 
-        std::map<DrawableType, std::unique_ptr<DrawableManagerBase>> managers;
+        //std::unordered_map<DrawableType, std::unique_ptr<DrawableManagerBase>> managers;
+        std::unique_ptr<std::unique_ptr<DrawableManagerBase>[]> managers;
         UINT syncInterval;
         float refreshRate = -1.0f;
 };

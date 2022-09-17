@@ -1,6 +1,6 @@
 #include "filled_rectangle.h"
 
-FilledRectangleInitializerDesc::FilledRectangleInitializerDesc(float x, float y, float width, float height) noexcept
+DXFilledRectangleInitializerDesc::DXFilledRectangleInitializerDesc(float x, float y, float width, float height) noexcept
     :
     x(x), 
     y(y),
@@ -8,8 +8,8 @@ FilledRectangleInitializerDesc::FilledRectangleInitializerDesc(float x, float y,
     height(height)
 {}
 
-FilledRectangle::FilledRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    FilledRectangleInitializerDesc& castedDesc = static_cast<FilledRectangleInitializerDesc&>(desc);
+DXFilledRectangle::DXFilledRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXFilledRectangleInitializerDesc& castedDesc = static_cast<DXFilledRectangleInitializerDesc&>(desc);
     x = castedDesc.x;
     y = castedDesc.y;
     width = castedDesc.width;
@@ -18,7 +18,7 @@ FilledRectangle::FilledRectangle(DrawableInitializerDesc& desc, GraphicsEngine& 
     addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
-void FilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXFilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     struct Vertex
     {
         struct
@@ -74,6 +74,6 @@ void FilledRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX FilledRectangle::getModel() const noexcept{
+DirectX::XMMATRIX DXFilledRectangle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

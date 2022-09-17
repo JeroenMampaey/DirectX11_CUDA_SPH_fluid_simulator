@@ -6,7 +6,7 @@
 #define CHAR_PIXEL_WIDTH 8
 #define CHAR_PIXEL_HEIGHT 12
 
-ScreenTextInitializerDesc::ScreenTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
+DXScreenTextInitializerDesc::DXScreenTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
     :
     left_down_x(left_down_x),
     left_down_y(left_down_y),
@@ -15,8 +15,8 @@ ScreenTextInitializerDesc::ScreenTextInitializerDesc(float left_down_x, float le
     text(text)
 {}
 
-ScreenText::ScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    ScreenTextInitializerDesc& castedDesc = static_cast<ScreenTextInitializerDesc&>(desc);
+DXScreenText::DXScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXScreenTextInitializerDesc& castedDesc = static_cast<DXScreenTextInitializerDesc&>(desc);
     left_down_x = castedDesc.left_down_x;
     left_down_y = castedDesc.left_down_y;
     character_width = castedDesc.character_width;
@@ -69,7 +69,7 @@ ScreenText::ScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     addUniqueBind(std::make_unique<TransformCbufM>(gfx, *this));
 }
 
-void ScreenText::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXScreenText::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     // copied from http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
     unsigned char bitmap[NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_HEIGHT] = {
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,	//  
@@ -203,6 +203,6 @@ void ScreenText::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::uni
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX ScreenText::getModel() const noexcept{
+DirectX::XMMATRIX DXScreenText::getModel() const noexcept{
     return DirectX::XMMatrixScaling(character_width, character_height, 1.0f)*DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f);
 }

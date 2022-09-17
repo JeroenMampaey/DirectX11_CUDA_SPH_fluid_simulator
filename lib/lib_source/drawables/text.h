@@ -4,18 +4,18 @@
 #include "../drawable_manager.h"
 #include "../bindables/bindables_includes.h"
 
-struct LIBRARY_API TextInitializerDesc : public DrawableInitializerDesc{
+struct LIBRARY_API DXTextInitializerDesc : public DrawableInitializerDesc{
     float left_down_x;
     float left_down_y;
     float character_width;
     float character_height;
     std::string text;
-    TextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept;
+    DXTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept;
 };
 
-class LIBRARY_API Text : public Drawable{
+class LIBRARY_API DXText : public Drawable{
     public:
-        Text(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
+        DXText(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
         void initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const override;
         DirectX::XMMATRIX getModel() const noexcept override;
 
@@ -26,4 +26,4 @@ class LIBRARY_API Text : public Drawable{
         std::string text;
 };
 
-template class LIBRARY_API DrawableManager<Text>;
+template class LIBRARY_API DrawableManager<DXText>;

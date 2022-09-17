@@ -1,10 +1,10 @@
 #include "event.h"
 
-bool EventBus::subscribe(const EventType& descriptor, EventListener* listener) noexcept{
+bool EventBus::subscribe(const int descriptor, EventListener* listener) noexcept{
     return listeners[descriptor].insert(listener).second;
 }
 
-bool EventBus::unsubscribe(const EventType& descriptor, EventListener* listener) noexcept{
+bool EventBus::unsubscribe(const int descriptor, EventListener* listener) noexcept{
     auto it = listeners.find(descriptor);
     if(it != listeners.end()){
         auto it2 = it->second.find(listener);
@@ -18,14 +18,14 @@ bool EventBus::unsubscribe(const EventType& descriptor, EventListener* listener)
 
 bool EventBus::unsubscribe(EventListener* listener) noexcept{
     bool retval = false;
-    for(std::pair<const EventType,std::set<EventListener*>>& pair : listeners){
+    for(std::pair<const int,std::set<EventListener*>>& pair : listeners){
         retval = retval || unsubscribe(pair.first, listener);
     }
     return retval;
 }
 
 void EventBus::post(const Event& event) const{
-    EventType type = event.type();
+    int type = event.type();
 
     if(listeners.find(type)==listeners.end()){
         return;
@@ -38,14 +38,14 @@ void EventBus::post(const Event& event) const{
     }
 }
 
-void EventListener::subscribeTo(std::shared_ptr<EventBus> pEventBus, const EventType& descriptor) noexcept{
+void EventListener::subscribeTo(std::shared_ptr<EventBus> pEventBus, const int descriptor) noexcept{
     bool wasNotAlreadySubscribed = pEventBus->subscribe(descriptor, this);
     if(wasNotAlreadySubscribed){
         subscribedEventBusses[pEventBus]++;
     }
 }
 
-void EventListener::unsubscribeFrom(std::shared_ptr<EventBus> pEventBus, const EventType& descriptor) noexcept{
+void EventListener::unsubscribeFrom(std::shared_ptr<EventBus> pEventBus, const int descriptor) noexcept{
     bool wasSubscribedToThis = pEventBus->unsubscribe(descriptor, this);
     if(wasSubscribedToThis){
         int counter = --subscribedEventBusses[pEventBus];

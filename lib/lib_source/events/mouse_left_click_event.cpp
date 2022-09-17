@@ -1,4 +1,5 @@
 #include "mouse_left_click_event.h"
+#include "events_includes.h"
 
 MouseLeftClickEvent::MouseLeftClickEvent(int x, int y) noexcept
     :
@@ -6,6 +7,6 @@ MouseLeftClickEvent::MouseLeftClickEvent(int x, int y) noexcept
     y(y)
 {}
 
-EventType MouseLeftClickEvent::type() const noexcept{
-    return EventType::MOUSE_LEFT_CLICK_EVENT;
+int MouseLeftClickEvent::type() const noexcept{
+    return WindowEventType::MOUSE_LEFT_CLICK_EVENT;
 }

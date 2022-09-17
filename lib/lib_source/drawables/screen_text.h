@@ -4,18 +4,18 @@
 #include "../drawable_manager.h"
 #include "../bindables/bindables_includes.h"
 
-struct LIBRARY_API ScreenTextInitializerDesc : public DrawableInitializerDesc{
+struct LIBRARY_API DXScreenTextInitializerDesc : public DrawableInitializerDesc{
     float left_down_x;
     float left_down_y;
     float character_width;
     float character_height;
     std::string text;
-    ScreenTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept;
+    DXScreenTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept;
 };
 
-class LIBRARY_API ScreenText : public Drawable{
+class LIBRARY_API DXScreenText : public Drawable{
     public:
-        ScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
+        DXScreenText(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
         void initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const override;
         DirectX::XMMATRIX getModel() const noexcept override;
 
@@ -26,4 +26,4 @@ class LIBRARY_API ScreenText : public Drawable{
         std::string text;
 };
 
-template class LIBRARY_API DrawableManager<ScreenText>;
+template class LIBRARY_API DrawableManager<DXScreenText>;

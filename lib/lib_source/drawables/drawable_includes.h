@@ -8,10 +8,11 @@
 #include "screen_text.h"
 
 enum DrawableType{
-    LINE = 0,
-    FILLED_CIRCLE = 1,
-    FILLED_RECTANGLE = 2,
-    HOLLOW_RECTANGLE = 3,
-    TEXT = 4,
-    SCREEN_TEXT = 5
+    LINE,
+    FILLED_CIRCLE,
+    FILLED_RECTANGLE,
+    HOLLOW_RECTANGLE,
+    TEXT,
+    SCREEN_TEXT,
+    Count
 };

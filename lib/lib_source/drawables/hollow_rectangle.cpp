@@ -1,6 +1,6 @@
 #include "hollow_rectangle.h"
 
-HollowRectangleInitializerDesc::HollowRectangleInitializerDesc(float x, float y, float width, float height, float red, float green, float blue) noexcept
+DXHollowRectangleInitializerDesc::DXHollowRectangleInitializerDesc(float x, float y, float width, float height, float red, float green, float blue) noexcept
     :
     x(x),
     y(y),
@@ -11,8 +11,8 @@ HollowRectangleInitializerDesc::HollowRectangleInitializerDesc(float x, float y,
     blue(blue)
 {}
 
-HollowRectangle::HollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    HollowRectangleInitializerDesc& castedDesc = static_cast<HollowRectangleInitializerDesc&>(desc);
+DXHollowRectangle::DXHollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXHollowRectangleInitializerDesc& castedDesc = static_cast<DXHollowRectangleInitializerDesc&>(desc);
     x = castedDesc.x;
     y = castedDesc.y;
     width = castedDesc.width;
@@ -35,7 +35,7 @@ HollowRectangle::HollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& 
     addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
-void HollowRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXHollowRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     struct Vertex
     {
         struct
@@ -83,6 +83,6 @@ void HollowRectangle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 }
 
-DirectX::XMMATRIX HollowRectangle::getModel() const noexcept{
+DirectX::XMMATRIX DXHollowRectangle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(width, height, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

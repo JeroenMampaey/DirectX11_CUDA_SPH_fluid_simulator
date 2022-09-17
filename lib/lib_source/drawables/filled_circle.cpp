@@ -1,14 +1,15 @@
 #include "filled_circle.h"
+#include "drawable_includes.h"
 
-FilledCircleInitializerDesc::FilledCircleInitializerDesc(float x, float y, float radius) noexcept
+DXFilledCircleInitializerDesc::DXFilledCircleInitializerDesc(float x, float y, float radius) noexcept
     :
     x(x),
     y(y),
     radius(radius)
 {}
 
-FilledCircle::FilledCircle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    FilledCircleInitializerDesc castedDesc = static_cast<FilledCircleInitializerDesc&>(desc);
+DXFilledCircle::DXFilledCircle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXFilledCircleInitializerDesc castedDesc = static_cast<DXFilledCircleInitializerDesc&>(desc);
     x = castedDesc.x;
     y = castedDesc.y;
     radius = castedDesc.radius;
@@ -16,7 +17,7 @@ FilledCircle::FilledCircle(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
-void FilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXFilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     struct Vertex
     {
         DirectX::XMFLOAT3 pos;
@@ -73,6 +74,6 @@ void FilledCircle::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::u
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX FilledCircle::getModel() const noexcept{
+DirectX::XMMATRIX DXFilledCircle::getModel() const noexcept{
     return DirectX::XMMatrixScaling(radius, radius, 1.0f)*DirectX::XMMatrixTranslation(x, y, 0.0f);
 }

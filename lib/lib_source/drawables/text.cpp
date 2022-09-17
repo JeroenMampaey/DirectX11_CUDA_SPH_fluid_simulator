@@ -6,7 +6,7 @@
 #define CHAR_PIXEL_WIDTH 8
 #define CHAR_PIXEL_HEIGHT 12
 
-TextInitializerDesc::TextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
+DXTextInitializerDesc::DXTextInitializerDesc(float left_down_x, float left_down_y, float character_width, float character_height, std::string text) noexcept
     :
     left_down_x(left_down_x),
     left_down_y(left_down_y),
@@ -15,8 +15,8 @@ TextInitializerDesc::TextInitializerDesc(float left_down_x, float left_down_y, f
     text(text)
 {}
 
-Text::Text(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
-    TextInitializerDesc& castedDesc = static_cast<TextInitializerDesc&>(desc);
+DXText::DXText(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
+    DXTextInitializerDesc& castedDesc = static_cast<DXTextInitializerDesc&>(desc);
     left_down_x = castedDesc.left_down_x;
     left_down_y = castedDesc.left_down_y;
     character_width = castedDesc.character_width;
@@ -69,7 +69,7 @@ Text::Text(DrawableInitializerDesc& desc, GraphicsEngine& gfx){
     addUniqueBind(std::make_unique<TransformCbufMVP>(gfx, *this));
 }
 
-void Text::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
+void DXText::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const{
     // copied from http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
     unsigned char bitmap[NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_HEIGHT] = {
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,	//  
@@ -203,6 +203,6 @@ void Text::initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_pt
     sharedBinds.push_back(std::make_unique<Topology>(gfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 }
 
-DirectX::XMMATRIX Text::getModel() const noexcept{
+DirectX::XMMATRIX DXText::getModel() const noexcept{
     return DirectX::XMMatrixScaling(character_width, character_height, 1.0f)*DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f);
 }

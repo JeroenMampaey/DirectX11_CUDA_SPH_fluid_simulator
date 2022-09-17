@@ -4,7 +4,7 @@
 #include "../drawable_manager.h"
 #include "../bindables/bindables_includes.h"
 
-struct LIBRARY_API HollowRectangleInitializerDesc : public DrawableInitializerDesc{
+struct LIBRARY_API DXHollowRectangleInitializerDesc : public DrawableInitializerDesc{
     float x;
     float y;
     float width;
@@ -12,12 +12,12 @@ struct LIBRARY_API HollowRectangleInitializerDesc : public DrawableInitializerDe
     float red;
     float green;
     float blue;
-    HollowRectangleInitializerDesc(float x, float y, float width, float height, float red, float green, float blue) noexcept;
+    DXHollowRectangleInitializerDesc(float x, float y, float width, float height, float red, float green, float blue) noexcept;
 };
 
-class LIBRARY_API HollowRectangle : public Drawable{
+class LIBRARY_API DXHollowRectangle : public Drawable{
     public:
-        HollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
+        DXHollowRectangle(DrawableInitializerDesc& desc, GraphicsEngine& gfx);
         void initializeSharedBinds(GraphicsEngine& gfx, std::vector<std::unique_ptr<Bindable>>& sharedBinds, int& sharedIndexCount) const override;
         DirectX::XMMATRIX getModel() const noexcept override;
 
@@ -30,4 +30,4 @@ class LIBRARY_API HollowRectangle : public Drawable{
         float blue;
 };
 
-template class LIBRARY_API DrawableManager<HollowRectangle>;
+template class LIBRARY_API DrawableManager<DXHollowRectangle>;

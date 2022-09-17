@@ -181,14 +181,16 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	vp.TopLeftY = 0.0f;
 	pContext->RSSetViewports(1, &vp);
 
-    managers.insert({DrawableType::LINE, std::make_unique<DrawableManager<Line>>(*this)});
-    managers.insert({DrawableType::FILLED_CIRCLE, std::make_unique<DrawableManager<FilledCircle>>(*this)});
-    managers.insert({DrawableType::FILLED_RECTANGLE, std::make_unique<DrawableManager<FilledRectangle>>(*this)});
-    managers.insert({DrawableType::HOLLOW_RECTANGLE, std::make_unique<DrawableManager<HollowRectangle>>(*this)});
-    managers.insert({DrawableType::TEXT, std::make_unique<DrawableManager<Text>>(*this)});
-    managers.insert({DrawableType::SCREEN_TEXT, std::make_unique<DrawableManager<ScreenText>>(*this)});
+    managers = std::make_unique<std::unique_ptr<DrawableManagerBase>[]>(DrawableType::Count);
+    
+    managers[DrawableType::LINE] = std::make_unique<DrawableManager<DXLine>>(*this);
+    managers[DrawableType::FILLED_CIRCLE] = std::make_unique<DrawableManager<DXFilledCircle>>(*this);
+    managers[DrawableType::FILLED_RECTANGLE] = std::make_unique<DrawableManager<DXFilledRectangle>>(*this);
+    managers[DrawableType::HOLLOW_RECTANGLE] = std::make_unique<DrawableManager<DXHollowRectangle>>(*this);
+    managers[DrawableType::TEXT] = std::make_unique<DrawableManager<DXText>>(*this);
+    managers[DrawableType::SCREEN_TEXT] = std::make_unique<DrawableManager<DXScreenText>>(*this);
 
-    ScreenTextInitializerDesc desc = {-1.0f, 0.9f, 0.05f, 0.1f, specString};
+    DXScreenTextInitializerDesc desc = {-1.0f, 0.9f, 0.05f, 0.1f, specString};
     createDrawable(DrawableType::SCREEN_TEXT, desc);
 
     projection = DirectX::XMMatrixIdentity();
@@ -239,27 +241,27 @@ void GraphicsEngine::drawIndexed(int indexCount) const noexcept{
 }
 
 Drawable* GraphicsEngine::createDrawable(DrawableType type, DrawableInitializerDesc& desc){
-    if(managers.find(type)==managers.end()){
+    if(type < 0 || type >= DrawableType::Count){
         throw std::exception("Tried to create a Drawable in GraphicsEngine using an invalid type");
     }
 
-    std::unique_ptr<DrawableManagerBase>& manager = managers.at(type);
+    std::unique_ptr<DrawableManagerBase>& manager = managers[type];
     return manager->createDrawable(desc);
 }
 
 int GraphicsEngine::removeDrawable(DrawableType type, Drawable* drawable){
-    if(managers.find(type)==managers.end()){
+    if(type < 0 || type >= DrawableType::Count){
         throw std::exception("Tried to remove a Drawable in GraphicsEngine using an invalid type");
     }
 
-    std::unique_ptr<DrawableManagerBase>& manager = managers.at(type);
+    std::unique_ptr<DrawableManagerBase>& manager = managers[type];
     return manager->removeDrawable(drawable);
 }
 
 void GraphicsEngine::updateFrame(float red, float green, float blue) const{
     beginFrame(red, green, blue);
-    for(const std::pair<const DrawableType, std::unique_ptr<DrawableManagerBase>>& pair : managers){
-        pair.second->drawAll();
+    for(int i=0; i<DrawableType::Count; i++){
+        managers[i]->drawAll();
     }
     endFrame();
 }
