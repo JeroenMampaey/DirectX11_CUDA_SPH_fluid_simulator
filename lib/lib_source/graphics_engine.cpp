@@ -1,6 +1,6 @@
 #include "graphics_engine.h"
-#include "drawables/drawable_includes.h"
 #include <sstream>
+#include "drawers/drawers_includes.h"
 
 GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(syncInterval) {
     if(syncInterval<1 || syncInterval>4){
@@ -181,30 +181,23 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
 	vp.TopLeftY = 0.0f;
 	pContext->RSSetViewports(1, &vp);
 
-    managers = std::make_unique<std::unique_ptr<DrawableManagerBase>[]>(DrawableType::Count);
-    
-    managers[DrawableType::LINE] = std::make_unique<DrawableManager<DXLine>>(*this);
-    managers[DrawableType::FILLED_CIRCLE] = std::make_unique<DrawableManager<DXFilledCircle>>(*this);
-    managers[DrawableType::FILLED_RECTANGLE] = std::make_unique<DrawableManager<DXFilledRectangle>>(*this);
-    managers[DrawableType::HOLLOW_RECTANGLE] = std::make_unique<DrawableManager<DXHollowRectangle>>(*this);
-    managers[DrawableType::TEXT] = std::make_unique<DrawableManager<DXText>>(*this);
-    managers[DrawableType::SCREEN_TEXT] = std::make_unique<DrawableManager<DXScreenText>>(*this);
-
-    DXScreenTextInitializerDesc desc = {-1.0f, 0.9f, 0.05f, 0.1f, specString};
-    createDrawable(DrawableType::SCREEN_TEXT, desc);
-
     projection = DirectX::XMMatrixIdentity();
     view = DirectX::XMMatrixIdentity();
+
+    StaticScreenTextDrawerInitializationArgs args = {specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f};
+    screenDrawer = createNewDrawer<StaticScreenTextDrawer>(args);
 }
 
-void GraphicsEngine::beginFrame(float red, float green, float blue) const noexcept{
+void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
     pContext->OMSetRenderTargets(1, pTarget.GetAddressOf(), pDSV.Get());
     const float color[] = {red, green, blue, 1.0f};
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+    lastDrawer = -1;
 }
 
 void GraphicsEngine::endFrame() const{
+    screenDrawer->drawStaticScreenText();
     HRESULT hr;
     if(FAILED(hr = pSwap->Present(syncInterval, 0))){
         if(hr == DXGI_ERROR_DEVICE_REMOVED){
@@ -236,32 +229,9 @@ float GraphicsEngine::getRefreshRate() const noexcept{
     return refreshRate;
 }
 
-void GraphicsEngine::drawIndexed(int indexCount) const noexcept{
-    pContext->DrawIndexed(indexCount, 0, 0);
-}
-
-Drawable* GraphicsEngine::createDrawable(DrawableType type, DrawableInitializerDesc& desc){
-    if(type < 0 || type >= DrawableType::Count){
-        throw std::exception("Tried to create a Drawable in GraphicsEngine using an invalid type");
+GraphicsEngine::~GraphicsEngine() noexcept{
+    for(auto& drawer : drawers){
+        drawer->unbindGraphicsEngine();
     }
-
-    std::unique_ptr<DrawableManagerBase>& manager = managers[type];
-    return manager->createDrawable(desc);
-}
-
-int GraphicsEngine::removeDrawable(DrawableType type, Drawable* drawable){
-    if(type < 0 || type >= DrawableType::Count){
-        throw std::exception("Tried to remove a Drawable in GraphicsEngine using an invalid type");
-    }
-
-    std::unique_ptr<DrawableManagerBase>& manager = managers[type];
-    return manager->removeDrawable(drawable);
-}
-
-void GraphicsEngine::updateFrame(float red, float green, float blue) const{
-    beginFrame(red, green, blue);
-    for(int i=0; i<DrawableType::Count; i++){
-        managers[i]->drawAll();
-    }
-    endFrame();
+    drawers.clear();
 }

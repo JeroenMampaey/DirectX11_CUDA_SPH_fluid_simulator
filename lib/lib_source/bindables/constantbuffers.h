@@ -19,7 +19,7 @@ class ConstantBuffer : public Bindable{
 			cbd.Usage = D3D11_USAGE_DYNAMIC;
 			cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 			cbd.MiscFlags = 0;
-			cbd.ByteWidth = sizeof( consts );
+			cbd.ByteWidth = sizeof(consts);
 			cbd.StructureByteStride = 0;
 
 			D3D11_SUBRESOURCE_DATA csd = {};

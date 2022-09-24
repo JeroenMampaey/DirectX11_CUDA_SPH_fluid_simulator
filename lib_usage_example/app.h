@@ -1,19 +1,20 @@
 #pragma once
 
-#include "../lib/lib_header.h"
+#include "physics_system.h"
+#include "render_system.h"
+#include "event_handler_system.h"
 
-class App : public EventListener{
+class App{
     public:
-        App(Window& wnd);
-        void periodicCallback() noexcept;
-        void handleEvent(const Event& event) noexcept;
+        App();
+        int go();
     
     private:
-        void handleKeyEvent(LPARAM key) noexcept;
-        float cameraPositionX = 0.0f;
-        Window& wnd;
-        float dt = 0.0;
-        float velocity = 0.0f;
-        std::vector<FilledRectangle*> filledRectangles;
-        std::vector<FilledCircle*> filledCircles;
+        void updateSystems();
+
+        Window wnd;
+        EntityManager entityManager;
+        PhysicsSystem physicsSystem;
+        RenderSystem renderSystem;
+        EventHandlerSystem eventHandlerSystem;
 };

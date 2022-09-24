@@ -6,7 +6,6 @@
 #include "windows_includes.h"
 #include <memory>
 #include <unordered_map>
-#include "drawable_manager_base.h"
 
 #define RATE_IS_INVALID(rate) (rate <= 0.0)
 
@@ -17,28 +16,34 @@
 #define AMD_VENDOR_ID 4098
 #define INTEL_VENDOR_ID 32902
 
-enum DrawableType;
-
 class LIBRARY_API GraphicsEngine{
         friend class Bindable;
+        friend class Drawer;
     public:
         GraphicsEngine& operator=(const GraphicsEngine& copy) = delete;
         GraphicsEngine& operator=(GraphicsEngine&& copy) = delete;
         
         GraphicsEngine(HWND hWnd, UINT syncInterval);
+        ~GraphicsEngine() noexcept;
         void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    DirectX::XMMATRIX getProjection() const noexcept;
         void setView(DirectX::FXMMATRIX v) noexcept;
 	    DirectX::XMMATRIX getView() const noexcept;
         float getRefreshRate() const noexcept;
-        void drawIndexed(int indexCount) const noexcept;
-        Drawable* createDrawable(DrawableType type, DrawableInitializerDesc& desc);
-        int removeDrawable(DrawableType type, Drawable* drawable);
-        void updateFrame(float red, float green, float blue) const;
+        void beginFrame(float red, float green, float blue) noexcept;
+        void endFrame() const;
+
+        //TODO: T should inherit drawer
+        template<class T, class V>
+        std::shared_ptr<T> createNewDrawer(V& args){
+            std::shared_ptr<T> newDrawer =  std::shared_ptr<T>(new T(this, drawerUidCounter, args));
+            drawerUidCounter++;
+            drawers.push_back(newDrawer);
+            return newDrawer;
+        };
 
     private:
-        void beginFrame(float red, float green, float blue) const noexcept;
-        void endFrame() const;
+        std::shared_ptr<class StaticScreenTextDrawer> screenDrawer;
 
         DirectX::XMMATRIX projection;
         DirectX::XMMATRIX view;
@@ -49,8 +54,10 @@ class LIBRARY_API GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 
-        //std::unordered_map<DrawableType, std::unique_ptr<DrawableManagerBase>> managers;
-        std::unique_ptr<std::unique_ptr<DrawableManagerBase>[]> managers;
+        std::vector<std::shared_ptr<Drawer>> drawers;
+
         UINT syncInterval;
         float refreshRate = -1.0f;
+        int lastDrawer = -1;
+        int drawerUidCounter = 0;
 };

@@ -1,19 +1,9 @@
 #include "app.h"
 
-#define SYNCINTERVAL 1
-
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try{
-		Window wnd = Window("Example", SYNCINTERVAL);
-		App app = App(wnd);
-		while(true){
-			if(const std::optional<int> ecode = Window::processMessages()){
-				return *ecode;
-			}
-			wnd.checkForThrownExceptions();
-			wnd.getGraphicsEngine().updateFrame(0.6f, 0.8f, 1.0f);
-			app.periodicCallback();
-		}
+		App app = App();
+		return app.go();
 	}
 	catch(const WinException& e){
 		MessageBoxA(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);

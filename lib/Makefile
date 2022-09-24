@@ -1,4 +1,4 @@
-CPP_SOURCES = $(wildcard lib_source/*.cpp lib_source/bindables/*.cpp lib_source/drawables/*.cpp lib_source/events/*.cpp)
+CPP_SOURCES = $(wildcard lib_source/*.cpp lib_source/bindables/*.cpp lib_source/drawers/*.cpp lib_source/events/*.cpp)
 PIXELSHADERS = $(patsubst lib_source/pixelshaders/%.hlsl, binaries/pixelshaders/%.cso, $(wildcard lib_source/pixelshaders/*.hlsl))
 VERTEXSHADERS = $(patsubst lib_source/vertexshaders/%.hlsl, binaries/vertexshaders/%.cso, $(wildcard lib_source/vertexshaders/*.hlsl))
 current_dir := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
