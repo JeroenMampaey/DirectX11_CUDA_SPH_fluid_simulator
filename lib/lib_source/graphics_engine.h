@@ -6,6 +6,8 @@
 #include "windows_includes.h"
 #include <memory>
 #include <unordered_map>
+#include <type_traits>
+
 
 #define RATE_IS_INVALID(rate) (rate <= 0.0)
 
@@ -33,8 +35,7 @@ class LIBRARY_API GraphicsEngine{
         void beginFrame(float red, float green, float blue) noexcept;
         void endFrame() const;
 
-        //TODO: T should inherit drawer
-        template<class T, class V>
+        template<class T, class V, class=std::enable_if_t<std::is_base_of_v<Drawer,T>>>
         std::shared_ptr<T> createNewDrawer(V& args){
             std::shared_ptr<T> newDrawer =  std::shared_ptr<T>(new T(this, drawerUidCounter, args));
             drawerUidCounter++;
