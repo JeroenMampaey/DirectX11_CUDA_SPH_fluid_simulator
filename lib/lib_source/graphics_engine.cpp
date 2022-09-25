@@ -230,8 +230,9 @@ float GraphicsEngine::getRefreshRate() const noexcept{
 }
 
 GraphicsEngine::~GraphicsEngine() noexcept{
-    for(auto& drawer : drawers){
-        drawer->unbindGraphicsEngine();
+    for(const std::pair<int, std::weak_ptr<Drawer>>& drawerPair : drawersMap){
+        if(std::shared_ptr<Drawer> drawer = drawerPair.second.lock()){
+            drawer->unbindGraphicsEngine();
+        }
     }
-    drawers.clear();
 }

@@ -32,3 +32,11 @@ void Drawer::draw() const{
 
     pGfx->pContext->DrawIndexed(indexCount, 0, 0);
 }
+
+Drawer::~Drawer() noexcept{
+    if(pGfx==nullptr){
+        return;
+    }
+
+    pGfx->drawersMap.erase(uid);
+}

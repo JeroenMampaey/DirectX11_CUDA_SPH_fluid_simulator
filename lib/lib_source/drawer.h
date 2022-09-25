@@ -7,7 +7,7 @@
 
 class LIBRARY_API Drawer{
     public:
-        virtual ~Drawer() = default;
+        virtual ~Drawer() noexcept;
         void unbindGraphicsEngine() noexcept;
 
         Drawer& operator=(const Drawer& copy) = delete;

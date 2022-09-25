@@ -38,8 +38,8 @@ class LIBRARY_API GraphicsEngine{
         template<class T, class V, class=std::enable_if_t<std::is_base_of_v<Drawer,T>>>
         std::shared_ptr<T> createNewDrawer(V& args){
             std::shared_ptr<T> newDrawer =  std::shared_ptr<T>(new T(this, drawerUidCounter, args));
+            drawersMap.insert({drawerUidCounter, newDrawer});
             drawerUidCounter++;
-            drawers.push_back(newDrawer);
             return newDrawer;
         };
 
@@ -55,7 +55,7 @@ class LIBRARY_API GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 
-        std::vector<std::shared_ptr<Drawer>> drawers;
+        std::unordered_map<int, std::weak_ptr<Drawer>> drawersMap;
 
         UINT syncInterval;
         float refreshRate = -1.0f;

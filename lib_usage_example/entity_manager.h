@@ -56,6 +56,7 @@ class EntityManager{
         std::vector<CircleEntity>& getCircles() noexcept;
         std::vector<HollowRectangleEntity>& getHollowRectangles() noexcept;
         SpecificTextFieldEntity& getSpecificTextField() noexcept;
+    
     private:
         CameraEntity camera;
         std::vector<FilledRectangleEntity> filledRectangles;
