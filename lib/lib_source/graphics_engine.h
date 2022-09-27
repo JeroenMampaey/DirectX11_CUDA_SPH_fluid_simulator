@@ -9,7 +9,7 @@
 #include <type_traits>
 
 
-#define RATE_IS_INVALID(rate) (rate <= 0.0)
+#define RATE_IS_INVALID(rate) ((rate) <= 0.0)
 
 #define HEIGHT 700
 #define WIDTH 1280
