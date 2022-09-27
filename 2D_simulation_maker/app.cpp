@@ -16,6 +16,6 @@ int App::go(){
             return *ecode;
         }
         wnd.checkForThrownExceptions();
-        renderSystem.update(wnd.getGraphicsEngine(), entityManager);
+        renderSystem.update(entityManager);
     }
 }

@@ -5,9 +5,10 @@
 class RenderSystem{
     public:
         RenderSystem(GraphicsEngine& gfx);
-        void update(GraphicsEngine& gfx, EntityManager& manager) const;
+        void update(EntityManager& manager) const;
 
     private:
+        GraphicsEngine& gfx;
         std::shared_ptr<FilledRectangleDrawer> filledRectangleDrawer;
         std::shared_ptr<LineDrawer> lineDrawer;
         std::shared_ptr<FilledCircleDrawer> circleDrawer;

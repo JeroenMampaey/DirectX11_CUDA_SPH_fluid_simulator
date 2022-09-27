@@ -4,7 +4,10 @@
 #define RECTANGLE_HEIGHT 50.0f
 #define CIRCLE_RADIUS 25.0f
 
-RenderSystem::RenderSystem(GraphicsEngine& gfx){
+RenderSystem::RenderSystem(GraphicsEngine& gfx)
+    :
+    gfx(gfx)
+{
     FilledRectangleDrawerInitializationArgs filledRectangleArgs = {1.0f, 0.0f, 1.0f};
     filledRectangleDrawer = gfx.createNewDrawer<FilledRectangleDrawer>(filledRectangleArgs);
 
@@ -25,7 +28,7 @@ RenderSystem::RenderSystem(GraphicsEngine& gfx){
         DirectX::XMMatrixTranslation(-1.0f, -1.0f, 0.0f));
 }
 
-void RenderSystem::update(GraphicsEngine& gfx, EntityManager& manager) const{
+void RenderSystem::update(EntityManager& manager) const{
     gfx.beginFrame(0.6f, 0.8f, 1.0f);
     gfx.setView(DirectX::XMMatrixTranslation(-manager.getCamera().x, -manager.getCamera().y, 0.0f));
     for(FilledRectangleEntity& rectangle : manager.getFilledRectangles()){

@@ -29,5 +29,5 @@ int App::go(){
 void App::updateSystems(){
     eventHandlerSystem.update(entityManager);
     physicsSystem.update(entityManager);
-    renderSystem.update(wnd.getGraphicsEngine(), entityManager);
+    renderSystem.update(entityManager);
 }

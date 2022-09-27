@@ -4,7 +4,10 @@
 #define RECTANGLE_HEIGHT 50.0f
 #define CIRCLE_RADIUS 25.0f
 
-RenderSystem::RenderSystem(GraphicsEngine& gfx){
+RenderSystem::RenderSystem(GraphicsEngine& gfx)
+    :
+    gfx(gfx)
+{
     FilledCircleDrawerInitializationArgs particleArgs = {0.2f, 0.2f, 1.0f};
     particleDrawer = gfx.createNewDrawer<FilledCircleDrawer>(particleArgs);
 
@@ -19,7 +22,7 @@ RenderSystem::RenderSystem(GraphicsEngine& gfx){
         DirectX::XMMatrixTranslation(-1.0f, -1.0f, 0.0f));
 }
 
-void RenderSystem::update(GraphicsEngine& gfx, EntityManager& manager) const{
+void RenderSystem::update(EntityManager& manager) const{
     gfx.beginFrame(0.6f, 0.8f, 1.0f);
     for(Particle& particle : manager.getParticles()){
         particleDrawer->drawFilledCircle(particle.pos.x, particle.pos.y, RADIUS);

@@ -1,5 +1,6 @@
 #include "app.h"
 
+// a SYNCINTERVAL that provides FPS close to 30 is optimal when processing the physics using CPU only
 #define SYNCINTERVAL 4
 
 App::App()
@@ -22,5 +23,5 @@ int App::go(){
 
 void App::updateSystems(){
     physicsSystem.update(entityManager);
-    renderSystem.update(wnd.getGraphicsEngine(), entityManager);
+    renderSystem.update(entityManager);
 }
