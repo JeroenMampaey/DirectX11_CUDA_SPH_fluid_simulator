@@ -1,0 +1,1 @@
+This is a simple graphics library used to render objects on a win32 screen using DirectX11, a simple program demonstrating how to use this library can be found [here](../lib_usage_example/). I made this library with a lot of help from [this tutorial](https://www.youtube.com/watch?v=_4FArgOX1I4&list=PLqCJpWy5Fohd3S7ICFXwUomYW0Wv67pDD).
