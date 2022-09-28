@@ -16,7 +16,6 @@
 struct Particle{
     float x;
     float y;
-    //Particle(float x, float y) noexcept;
 };
 
 struct Boundary{

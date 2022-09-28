@@ -1,0 +1,1 @@
+The code here demonstrates how to use the graphics library from the [lib](../lib/) folder to build a simple [Entity Component System](https://en.wikipedia.org/wiki/Entity_component_system) based program.
