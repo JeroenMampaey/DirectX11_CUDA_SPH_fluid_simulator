@@ -1,9 +1,18 @@
-all: run.exe
+CPP_SOURCES = $(wildcard *.cpp *.cu)
+current_dir := $(dir $(abspath $(firstword $(MAKEFILE_LIST))))
 
-run.exe: main.cu physics.cu ../extra_code/console_debug.cpp ../extra_code/basewin.h physics.h ../extra_code/console_debug.h
-	nvcc main.cu physics.cu ../extra_code/console_debug.cpp -o run.exe --resource-usage
+all: ../lib/binaries/2D_with_CUDA_run.exe
+	@powershell '(Write-Host "Executable build successfully, the executable can be found in the binaries folder in the lib directory" -ForegroundColor green)'
+
+../lib/binaries/2D_with_CUDA_run.exe: ../lib/binaries/graphics.dll main.cpp
+	nvcc ${CPP_SOURCES} -l ../lib/binaries/graphics -o ../lib/binaries/2D_with_CUDA_run.exe -D SIMULATION_LAYOUT_DIRECTORY='"${current_dir}../simulation_layout/"' -std=c++17
+
+../lib/binaries/graphics.dll:
+	@powershell '(Write-Host "The Graphics libary has not been build yet" -ForegroundColor red)'
+	@powershell '(Write-Host "Go to the lib folder and use the Makefile to build the library first" -ForegroundColor red)'
+	@exit 1
 
 clean:
-	powershell "(Remove-Item -ErrorAction Ignore run.exe)"
-	powershell "(Remove-Item -ErrorAction Ignore run.exp)"
-	powershell "(Remove-Item -ErrorAction Ignore run.lib)"
+	@powershell '(Remove-Item -ErrorAction Ignore ../lib/binaries/2D_with_CUDA_run.exe)'
+	@powershell '(Remove-Item -ErrorAction Ignore ../lib/binaries/2D_with_CUDA_run.exp)'
+	@powershell '(Remove-Item -ErrorAction Ignore ../lib/binaries/2D_with_CUDA_run.lib)'

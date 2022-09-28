@@ -1,72 +1,146 @@
-#include "physics.h"
-#include <vector>
-#include <string>
+#include "physics_system.h"
 #include <cooperative_groups.h>
 
-//TODO:
-//  -Compare Boundary &line = ... performance to Boundary line = ...
+#define GRAVITY 9.8f
+#define PIXEL_PER_METER 100.0f
+#define SMOOTH 20.0f
+#define REST 0.2
+#define STIFF 500000.0
+#define PI 3.141592
+#define SQRT_PI 1.772453
+#define M_P REST*RADIUS*RADIUS*4
+#define VEL_LIMIT 800.0
 
-// Private declared functions
-__global__ void updateParticles(Boundary* boundaries, int numboundaries, Particle* particles, Particle* old_particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, float* pressure_density_ratios);
-cudaError_t allocateDeviceMemory(Boundary* &device_boundaries, int numboundaries, Particle* &device_particles, Particle* &old_particles, int numpoints, Pump* &device_pumps, PumpVelocity* &device_pumpvelocities, int numpumps, float* &pressure_density_ratios);
-void destroyDeviceMemory(Boundary* device_boundaries, int numboundaries, Particle* device_particles, Particle* old_particles, int numpoints, Pump* device_pumps, PumpVelocity* device_pumpvelocities, int numpumps, float* pressure_density_ratios);
-cudaError_t transferToDeviceMemory(Boundary* boundaries, Boundary* device_boundaries, int numboundaries, Particle* particles, Particle* device_particles, Particle* old_particles, int numpoints, Pump* pumps, Pump* device_pumps, PumpVelocity* pumpvelocities, PumpVelocity* device_pumpvelocities, int numpumps);
-cudaError_t setupDeviceMemory(Boundary* boundaries, Boundary* &device_boundaries, int numboundaries, Particle* particles, Particle* &device_particles, Particle* &old_particles, int numpoints, Pump* pumps, Pump* &device_pumps, PumpVelocity* pumpvelocities, PumpVelocity* &device_pumpvelocities, int numpumps, float* &pressure_density_ratios);
+#define BLOCK_SIZE 96
+#define SHARED_MEM_PER_THREAD 101
 
-void physicsBackgroundThread(std::atomic<bool> &exit, std::atomic<bool> &updateRequired, std::atomic<bool> &doneDrawing, Boundary* boundaries, int numboundaries, Particle* particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, HWND m_hwnd){
-    Boundary* device_boundaries = NULL;
-    Particle* device_particles = NULL;
-    Particle* old_particles = NULL;
-    Pump* device_pumps = NULL;
-    PumpVelocity* device_pumpvelocities = NULL;
-    float* pressure_density_ratios = NULL;
+__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, Particle* oldParticles, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps, float* pressureDensityRatios);
 
-    cudaError_t success = setupDeviceMemory(boundaries, device_boundaries, numboundaries, particles, device_particles, old_particles, numpoints, pumps, device_pumps, pumpvelocities, device_pumpvelocities, numpumps, pressure_density_ratios);
-    while(!exit.load()){
-        bool expected = true;
-        if(updateRequired.compare_exchange_weak(expected, false)){
-            // If an update is necessary, update the particles UPDATES_PER_RENDER times and then redraw the particles
-            if(success==cudaSuccess){
-                dim3 numBlocks((numpoints + BLOCK_SIZE - 1) / BLOCK_SIZE);
-                dim3 blockSize(BLOCK_SIZE);
-                int sharedMemorySize = numboundaries*sizeof(Boundary)+numpumps*sizeof(Pump)+numpumps*sizeof(PumpVelocity)+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
-                void* kernelArgs[] = {&device_boundaries, &numboundaries, &device_particles, &old_particles, &numpoints, &device_pumps, &device_pumpvelocities, &numpumps, &pressure_density_ratios};
-                cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0);
-                cudaError_t err = cudaGetLastError();
-                if(DEBUG && err!=cudaSuccess){
-                    Debugger::updateTopic(DEBUG_THREAD2_ERROR, cudaGetErrorString(err));
-                }
-                while(!doneDrawing.load()){}
-                cudaMemcpy(particles, device_particles, sizeof(Particle) * numpoints, cudaMemcpyDeviceToHost);
-            }
-            doneDrawing.store(false);
+PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
+    :
+    numBoundaries(manager.getBoundaries().size()),
+    numParticles(manager.getParticles().size()),
+    numPumps(manager.getPumps().size())
+{
+    float refreshRate;
+    if(RATE_IS_INVALID(refreshRate = gfx.getRefreshRate())){
+        throw std::exception("Refreshrate could not easily be found programmatically.");
+    }
+    dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
 
-            // Redraw the particles
-            InvalidateRect(m_hwnd, NULL, FALSE);
-        }
+    // First check whether grid sync is possible by querying the device attribute
+    cudaError_t err;
+    int dev = 0;
+    int supportsCoopLaunch = 0;
+    CUDA_THROW_FAILED(cudaDeviceGetAttribute(&supportsCoopLaunch, cudaDevAttrCooperativeLaunch, dev));
+    if(supportsCoopLaunch!=1){
+        throw std::exception("Cooperative Launch is not supported on the GPU, which is neccesary for the program");
     }
 
-    destroyDeviceMemory(device_boundaries, numboundaries, device_particles, old_particles, numpoints, device_pumps, device_pumpvelocities, numpumps, pressure_density_ratios);
+    // Next allocate memory on the GPU necessary for the kernel
+    allocateDeviceMemory(manager);
+
+    // Then transfer the information from the entitymanager to the GPU
+    transferToDeviceMemory(manager);
 }
 
-__global__ void updateParticles(Boundary* boundaries, int numboundaries, Particle* particles, Particle* old_particles, int numpoints, Pump* pumps, PumpVelocity* pumpvelocities, int numpumps, float* pressure_density_ratios){
+PhysicsSystem::~PhysicsSystem(){
+    destroyDeviceMemory();
+}
+
+void PhysicsSystem::update(EntityManager& manager){
+    cudaError_t err;
+
+    dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
+    dim3 blockSize(BLOCK_SIZE);
+    int sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
+    void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &numParticles, &pumps, &pumpVelocities, &numPumps, &pressureDensityRatios};
+    CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0));
+    CUDA_THROW_FAILED(cudaGetLastError());
+    cudaMemcpy(manager.getParticles().data(), particles, sizeof(Particle)*numParticles, cudaMemcpyDeviceToHost);
+}
+
+void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
+    cudaError_t err;
+
+    if(numBoundaries > 0){
+        CUDA_THROW_FAILED(cudaMalloc((void**)&boundaries, sizeof(Boundary)*numBoundaries));
+    }
+
+    if(numParticles > 0){
+        CUDA_THROW_FAILED(cudaMalloc((void**)&particles, sizeof(Particle)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticles, sizeof(Particle)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&pressureDensityRatios, sizeof(float)*numParticles));
+    }
+
+    if(numPumps > 0){
+        CUDA_THROW_FAILED(cudaMalloc((void**)&pumps, sizeof(Pump)*numPumps));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&pumpVelocities, sizeof(PumpVelocity)*numPumps));
+    }
+}
+
+void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
+    cudaError_t err;
+
+    if(numBoundaries > 0){
+        CUDA_THROW_FAILED(cudaMemcpy(boundaries, manager.getBoundaries().data(), sizeof(Boundary)*numBoundaries, cudaMemcpyHostToDevice));
+    }
+
+    if(numParticles > 0){
+        CUDA_THROW_FAILED(cudaMemcpy(particles, manager.getParticles().data(), sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
+        CUDA_THROW_FAILED(cudaMemcpy(oldParticles, manager.getParticles().data(), sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
+    }
+
+    if(numPumps > 0){
+        CUDA_THROW_FAILED(cudaMemcpy(pumps, manager.getPumps().data(), sizeof(Pump)*numPumps, cudaMemcpyHostToDevice));
+        CUDA_THROW_FAILED(cudaMemcpy(pumpVelocities, manager.getPumpVelocities().data(), sizeof(PumpVelocity)*numPumps, cudaMemcpyHostToDevice));
+    }
+}
+
+void PhysicsSystem::destroyDeviceMemory() noexcept{
+    if(boundaries){
+        cudaFree(boundaries);
+    }
+
+    if(particles){
+        cudaFree(particles);
+    }
+
+    if(oldParticles){
+        cudaFree(oldParticles);
+    }
+
+    if(pumps){
+        cudaFree(pumps);
+    }
+
+    if(pumpVelocities){
+        cudaFree(pumpVelocities);
+    }
+
+    if(pressureDensityRatios){
+        cudaFree(pressureDensityRatios);
+    }
+}
+
+__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, Particle* oldParticles, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps, float* pressureDensityRatios){
     // Initialize shared memory pointers
     extern __shared__ Boundary boundaries_local_pointer[];
-    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numboundaries]);
-    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numpumps]);
+    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
+    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numPumps]);
 
     // Get the grid_group because later on device wide synchronization will be necessary
     cooperative_groups::grid_group grid = cooperative_groups::this_grid();
 
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
 
-    for(int i=threadIdx.x; i<numboundaries; i+=blockDim.x){
+    for(int i=threadIdx.x; i<numBoundaries; i+=blockDim.x){
         boundaries_local_pointer[i] = boundaries[i];
     }
 
-    for(int i=threadIdx.x; i<numpumps; i+=blockDim.x){
+    for(int i=threadIdx.x; i<numPumps; i+=blockDim.x){
         pumps_local_pointer[i] = pumps[i];
-        pumpvelocities_local_pointer[i] = pumpvelocities[i];
+        pumpvelocities_local_pointer[i] = pumpVelocities[i];
     }
 
     // Wait until shared memory has been initialized
@@ -77,37 +151,37 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
     float old_y = 0.0;
     float my_x = 0.0;
     float my_y = 0.0;
-    if(thread_id < numpoints){ 
-        old_x = old_particles[thread_id].x;
-        old_y = old_particles[thread_id].y;
+    if(thread_id < numParticles){ 
+        old_x = oldParticles[thread_id].x;
+        old_y = oldParticles[thread_id].y;
         my_x = particles[thread_id].x;
         my_y = particles[thread_id].y;
     }
 
     for(int e=0; e<UPDATES_PER_RENDER; e++){
-        if(thread_id < numpoints){
-            float vel_x = (my_x - old_x) / (INTERVAL_MILI/1000.0);
-            float vel_y = (my_y - old_y) / (INTERVAL_MILI/1000.0);
+        if(thread_id < numParticles){
+            float vel_x = (my_x - old_x) / dt;
+            float vel_y = (my_y - old_y) / dt;
 
             // Update velocities based on whether the particle is in a pump or not
-            for(int i = 0; i < numpumps; i++){
-                if(my_x >= pumps_local_pointer[i].x_low && my_x <= pumps_local_pointer[i].x_high && my_y >= pumps_local_pointer[i].y_low && my_y <= pumps_local_pointer[i].y_high){
-                    vel_x = pumpvelocities_local_pointer[i].velx;
-                    vel_y = pumpvelocities_local_pointer[i].vely;
+            for(int i = 0; i < numPumps; i++){
+                if(my_x >= pumps_local_pointer[i].xLow && my_x <= pumps_local_pointer[i].xHigh && my_y >= pumps_local_pointer[i].yLow && my_y <= pumps_local_pointer[i].yHigh){
+                    vel_x = pumpvelocities_local_pointer[i].velX;
+                    vel_y = pumpvelocities_local_pointer[i].velY;
                     break;
                 }
             }
 
             // Update positional change of particles caused by gravity
-            vel_y += GRAVITY*PIXEL_PER_METER*(INTERVAL_MILI/1000.0);
+            vel_y -= GRAVITY*PIXEL_PER_METER*dt;
 
             // Update particle positions
-            my_x += vel_x*(INTERVAL_MILI/1000.0);
-            my_y += vel_y*(INTERVAL_MILI/1000.0);
+            my_x += vel_x*dt;
+            my_y += vel_y*dt;
 
 
             // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
-            for(int i=0; i<numboundaries; i++){
+            for(int i=0; i<numBoundaries; i++){
                 Boundary line = boundaries_local_pointer[i];
                 float line_nx = line.y2-line.y1;
                 float line_ny = line.x1-line.x2;
@@ -133,8 +207,8 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             }
 
             // Store the old particle positions
-            old_x = my_x - vel_x*(INTERVAL_MILI/1000.0);
-            old_y = my_y - vel_y*(INTERVAL_MILI/1000.0);
+            old_x = my_x - vel_x*dt;
+            old_y = my_y - vel_y*dt;
 
             // Also update the particle positions in global memory
             particles[thread_id] = {my_x, my_y};
@@ -143,7 +217,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
         // Synchronize the grid
         grid.sync();
 
-        unsigned char* boundary_neighbour_indexes = (unsigned char*)(&pumpvelocities_local_pointer[numpumps])+threadIdx.x*SHARED_MEM_PER_THREAD;
+        unsigned char* boundary_neighbour_indexes = (unsigned char*)(&pumpvelocities_local_pointer[numPumps])+threadIdx.x*SHARED_MEM_PER_THREAD;
         int number_of_boundary_neighbours = 0;
         unsigned short* particle_neighbour_indexes = NULL;
         int number_of_particle_neighbours = 0;
@@ -153,9 +227,9 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
         float boundary_average_nx = 0.0;
         float boundary_average_ny = 0.0;
 
-        if(thread_id < numpoints){
+        if(thread_id < numParticles){
             // Look for boundaries near the particle
-            for(unsigned char i=0; i<numboundaries; i++){
+            for(unsigned char i=0; i<numBoundaries; i++){
                 Boundary line = boundaries_local_pointer[i];
                 float line_nx = line.y2-line.y1;
                 float line_ny = line.x1-line.x2;
@@ -199,7 +273,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             float dens = 0.0;
 
             // Find particle neighbours
-            for (unsigned short i=0; i < numpoints; i++) {
+            for (unsigned short i=0; i < numParticles; i++) {
                 Particle p2 = particles[i];
                 float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
                 if (dist_squared < SMOOTH*SMOOTH) {
@@ -276,14 +350,14 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             if(dens>0.0){
                 // Calculate the pressure_density_ratio
                 my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
-                pressure_density_ratios[thread_id] = my_pressure_density_ratio;
+                pressureDensityRatios[thread_id] = my_pressure_density_ratio;
             }
         }
 
         // Synchronize the grid
         grid.sync();
 
-        if(thread_id < numpoints){
+        if(thread_id < numParticles){
             float vel_x = 0.0;
             float vel_y = 0.0;
             float boundaries_vel_x = 0.0;
@@ -291,14 +365,14 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
             for(int i=0; i<number_of_particle_neighbours; i++){
                 unsigned short particle_index = particle_neighbour_indexes[i];
                 Particle p2 = particles[particle_index];
-                float p2_pressure_density_ratio = pressure_density_ratios[particle_index];
+                float p2_pressure_density_ratio = pressureDensityRatios[particle_index];
                 float press = M_P*(my_pressure_density_ratio + p2_pressure_density_ratio);
 
                 // First calculate displacement of the particle caused by neighbours
                 {
                     float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
                     float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-                    float displace = (press * q) * (INTERVAL_MILI/1000.0);
+                    float displace = (press * q) * dt;
                     float abx = (my_x - p2.x);
                     float aby = (my_y - p2.y);
                     vel_x += displace * abx;
@@ -329,7 +403,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                     float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
                     if(dist_squared > SMOOTH*SMOOTH) continue;
                     float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-                    float displace = (press * q) * (INTERVAL_MILI/1000.0);
+                    float displace = (press * q) * dt;
                     float abx = (my_x - virtual_x);
                     float aby = (my_y - virtual_y);
                     boundaries_vel_x += displace * abx;
@@ -359,7 +433,7 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
                 if(dist_squared > SMOOTH*SMOOTH) continue;
                 float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
-                float displace = (M_P * 2.0 * my_pressure_density_ratio * q) * (INTERVAL_MILI/1000.0);
+                float displace = (M_P * 2.0 * my_pressure_density_ratio * q) * dt;
                 float abx = (my_x - virtual_x);
                 float aby = (my_y - virtual_y);
                 boundaries_vel_x += displace * abx;
@@ -381,149 +455,16 @@ __global__ void updateParticles(Boundary* boundaries, int numboundaries, Particl
                 vel_y *= multiplier;
             }
 
-            my_x += vel_x*(INTERVAL_MILI/1000.0);
-            my_y += vel_y*(INTERVAL_MILI/1000.0);
+            my_x += vel_x*dt;
+            my_y += vel_y*dt;
         }
     }
 
     grid.sync();
 
     // Store the both position and old positions in global memeory
-    if(thread_id < numpoints){
-        old_particles[thread_id] = {old_x, old_y};
+    if(thread_id < numParticles){
+        oldParticles[thread_id] = {old_x, old_y};
         particles[thread_id] = {my_x, my_y};
     }
-}
-
-void destroyDeviceMemory(Boundary* device_boundaries, int numboundaries, Particle* device_particles, Particle* old_particles, int numpoints, Pump* device_pumps, PumpVelocity* device_pumpvelocities, int numpumps, float* pressure_density_ratios){
-    if(device_boundaries){
-        cudaFree(device_boundaries);
-    }
-
-    if(device_particles){
-        cudaFree(device_particles);
-    }
-
-    if(old_particles){
-        cudaFree(old_particles);
-    }
-
-    if(device_pumps){
-        cudaFree(device_pumps);
-    }
-
-    if(device_pumpvelocities){
-        cudaFree(device_pumpvelocities);
-    }
-
-    if(pressure_density_ratios){
-        cudaFree(pressure_density_ratios);
-    }
-}
-
-cudaError_t allocateDeviceMemory(Boundary* &device_boundaries, int numboundaries, Particle* &device_particles, Particle* &old_particles, int numpoints, Pump* &device_pumps, PumpVelocity* &device_pumpvelocities, int numpumps, float* &pressure_density_ratios){
-    cudaError_t status;
-
-    if(numboundaries > 0){
-        status = cudaMalloc((void**)&device_boundaries, sizeof(Boundary) * numboundaries);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    if(numpoints > 0){
-        status = cudaMalloc((void**)&device_particles, sizeof(Particle) * numpoints);
-        if(status != cudaSuccess){
-            return status;
-        }
-        status = cudaMalloc((void**)&old_particles, sizeof(Particle) * numpoints);
-        if(status != cudaSuccess){
-            return status;
-        }
-        status = cudaMalloc((void**)&pressure_density_ratios, sizeof(float) * numpoints);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    if(numpumps > 0){
-        status = cudaMalloc((void**)&device_pumps, sizeof(Pump) * numpumps);
-        if(status != cudaSuccess){
-            return status;
-        }
-        status = cudaMalloc((void**)&device_pumpvelocities, sizeof(PumpVelocity) * numpumps);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    return cudaSuccess;
-}
-
-cudaError_t transferToDeviceMemory(Boundary* boundaries, Boundary* device_boundaries, int numboundaries, Particle* particles, Particle* device_particles, Particle* old_particles, int numpoints, Pump* pumps, Pump* device_pumps, PumpVelocity* pumpvelocities, PumpVelocity* device_pumpvelocities, int numpumps){
-    cudaError_t status;
-
-    if(numboundaries > 0){
-        status = cudaMemcpy(device_boundaries, boundaries, sizeof(Boundary) * numboundaries, cudaMemcpyHostToDevice);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    if(numpoints > 0){
-        status = cudaMemcpy(device_particles, particles, sizeof(Particle) * numpoints, cudaMemcpyHostToDevice);
-        if(status != cudaSuccess){
-            return status;
-        }
-
-        status = cudaMemcpy(old_particles, particles, sizeof(Particle) * numpoints, cudaMemcpyHostToDevice);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    if(numpumps > 0){
-        status = cudaMemcpy(device_pumps, pumps, sizeof(Pump) * numpumps, cudaMemcpyHostToDevice);
-        if(status != cudaSuccess){
-            return status;
-        }
-
-        status = cudaMemcpy(device_pumpvelocities, pumpvelocities, sizeof(PumpVelocity) * numpumps, cudaMemcpyHostToDevice);
-        if(status != cudaSuccess){
-            return status;
-        }
-    }
-
-    return cudaSuccess;
-}
-
-cudaError_t setupDeviceMemory(Boundary* boundaries, Boundary* &device_boundaries, int numboundaries, Particle* particles, Particle* &device_particles, Particle* &old_particles, int numpoints, Pump* pumps, Pump* &device_pumps, PumpVelocity* pumpvelocities, PumpVelocity* &device_pumpvelocities, int numpumps, float* &pressure_density_ratios){
-    cudaError_t success = allocateDeviceMemory(device_boundaries, numboundaries, device_particles, old_particles, numpoints, device_pumps, device_pumpvelocities, numpumps, pressure_density_ratios);
-    if(success!=cudaSuccess){
-        if(DEBUG){
-            Debugger::updateTopic(DEBUG_THREAD2_ERROR, ("Physics thread CUDA memory allocations failed, status: "+std::to_string(success)).c_str());
-        }
-        return success;
-    }
-
-    success = transferToDeviceMemory(boundaries, device_boundaries, numboundaries, particles, device_particles, old_particles, numpoints, pumps, device_pumps, pumpvelocities, device_pumpvelocities, numpumps);
-    if(success!=cudaSuccess){
-        if(DEBUG){
-            Debugger::updateTopic(DEBUG_THREAD2_ERROR, ("Physics thread CUDA memory transfer failed, status: "+std::to_string(success)).c_str());
-        }
-        return success;
-    }
-
-    // Next, first check whether grid sync is possible by querying the device attribute
-    int dev = 0;
-    int supportsCoopLaunch = 0;
-    cudaDeviceGetAttribute(&supportsCoopLaunch, cudaDevAttrCooperativeLaunch, dev);
-    if(supportsCoopLaunch!=1){
-        if(DEBUG){
-            Debugger::updateTopic(DEBUG_THREAD2_ERROR, "CUDA grid synchronization is not supported by the device");
-        }
-        return cudaErrorNotSupported;
-    }
-
-    return cudaSuccess;
 }
