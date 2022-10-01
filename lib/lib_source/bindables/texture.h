@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../bindable.h"
+#include "bindable.h"
 
 class Texture : public Bindable{
     public:
@@ -12,8 +12,8 @@ class Texture : public Bindable{
             Color(unsigned char b, unsigned char g, unsigned char r, unsigned char a) noexcept; 
             Color() noexcept; 
         };
-        Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);
-        void bind(const GraphicsEngine& gfx) override;
+        Texture(std::shared_ptr<BindableHelper> helper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);
+        void bind() override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView;
 };

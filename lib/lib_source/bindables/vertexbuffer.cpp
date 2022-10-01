@@ -1,8 +1,9 @@
 #include "vertexbuffer.h"
 #include <array>
 
-VertexBuffer::VertexBuffer(GraphicsEngine& gfx, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
+VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
 	:
+	Bindable(helper),
 	vertexBufferPs(numVertexBuffers),
 	strides(numVertexBuffers),
 	offsets(numVertexBuffers),
@@ -23,7 +24,7 @@ VertexBuffer::VertexBuffer(GraphicsEngine& gfx, const void* vertexBuffers[], con
 
 		D3D11_SUBRESOURCE_DATA sd = {};
 		sd.pSysMem = vertexBuffers[i];
-		GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&bd, &sd, &vertexBufferPs[i]));
+		GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&bd, &sd, &vertexBufferPs[i]));
 
 		strides[i] = vertexSizes[i];
 		offsets[i] = 0;
@@ -31,21 +32,21 @@ VertexBuffer::VertexBuffer(GraphicsEngine& gfx, const void* vertexBuffers[], con
 	}
 }
 
-void VertexBuffer::bind(const GraphicsEngine& gfx){
-	getContext(gfx)->IASetVertexBuffers(0, vertexBufferPs.size(), preparedBuffers.data(), strides.data(), offsets.data());
+void VertexBuffer::bind(){
+	helper->getContext().IASetVertexBuffers(0, vertexBufferPs.size(), preparedBuffers.data(), strides.data(), offsets.data());
 }
 
-ConstantVertexBuffer::ConstantVertexBuffer(GraphicsEngine& gfx, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers)
+ConstantVertexBuffer::ConstantVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers)
 	:
-	VertexBuffer(gfx, vertexBuffers, vertexSizes, std::vector<UINT>(numVertexBuffers, 0).data(), numVertices, numVertexBuffers)
+	VertexBuffer(helper, vertexBuffers, vertexSizes, std::vector<UINT>(numVertexBuffers, 0).data(), numVertices, numVertexBuffers)
 {}
 
-CpuMappableVertexBuffer::CpuMappableVertexBuffer(GraphicsEngine& gfx, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
+CpuMappableVertexBuffer::CpuMappableVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
 	:
-	MappableVertexBuffer(gfx, vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, numVertexBuffers)
+	MappableVertexBuffer(helper, vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, numVertexBuffers)
 {}
 
-void* CpuMappableVertexBuffer::getMappedAccess(const GraphicsEngine& gfx, int vertexBufferIndex) const{
+void* CpuMappableVertexBuffer::getMappedAccess(int vertexBufferIndex) const{
 	D3D11_BUFFER_DESC desc;
 	vertexBufferPs[vertexBufferIndex]->GetDesc(&desc);
 
@@ -55,10 +56,10 @@ void* CpuMappableVertexBuffer::getMappedAccess(const GraphicsEngine& gfx, int ve
 
 	HRESULT hr;
 	D3D11_MAPPED_SUBRESOURCE msr;
-	GFX_THROW_FAILED(getContext(gfx)->Map(vertexBufferPs[vertexBufferIndex].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
+	GFX_THROW_FAILED(helper->getContext().Map(vertexBufferPs[vertexBufferIndex].Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 	return msr.pData;
 }
 
-void CpuMappableVertexBuffer::unMap(const GraphicsEngine& gfx, int vertexBufferIndex) const noexcept{
-	getContext(gfx)->Unmap(vertexBufferPs[vertexBufferIndex].Get(), 0);
+void CpuMappableVertexBuffer::unMap(int vertexBufferIndex) const noexcept{
+	helper->getContext().Unmap(vertexBufferPs[vertexBufferIndex].Get(), 0);
 }

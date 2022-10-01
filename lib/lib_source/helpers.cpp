@@ -49,3 +49,24 @@ DrawerHelper::DrawerHelper(GraphicsEngine* pGfx) noexcept
     :
     Helper(pGfx)
 {}
+
+ID3D11DeviceContext& BindableHelper::getContext(){
+    if(pGfx==nullptr){
+        throw std::exception("Tried accessing a GraphicsEngine that was already destroyed from a BindableHelper");
+    }
+
+    return *pGfx->pContext.Get();
+}
+
+ID3D11Device& BindableHelper::getDevice(){
+    if(pGfx==nullptr){
+        throw std::exception("Tried accessing a GraphicsEngine that was already destroyed from a BindableHelper");
+    }
+
+    return *pGfx->pDevice.Get();
+}
+
+BindableHelper::BindableHelper(GraphicsEngine* pGfx) noexcept
+    :
+    Helper(pGfx)
+{}

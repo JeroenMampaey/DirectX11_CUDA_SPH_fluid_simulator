@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../bindable.h"
+#include "bindable.h"
 
 class Topology : public Bindable{
     public:
-        Topology(GraphicsEngine& gfx, D3D11_PRIMITIVE_TOPOLOGY type);
-        void bind(const GraphicsEngine& gfx) override;
+        Topology(std::shared_ptr<BindableHelper> helper, D3D11_PRIMITIVE_TOPOLOGY type);
+        void bind() override;
     protected:
         D3D11_PRIMITIVE_TOPOLOGY type;
 };

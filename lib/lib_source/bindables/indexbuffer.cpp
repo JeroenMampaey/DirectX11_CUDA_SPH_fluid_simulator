@@ -1,6 +1,9 @@
 #include "indexbuffer.h"
 
-IndexBuffer::IndexBuffer(GraphicsEngine& gfx, const std::vector<unsigned short>& indices){
+IndexBuffer::IndexBuffer(std::shared_ptr<BindableHelper> helper, const std::vector<unsigned short>& indices)
+	:
+	Bindable(helper)
+{
     HRESULT hr;
     D3D11_BUFFER_DESC ibd = {};
 	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -11,9 +14,9 @@ IndexBuffer::IndexBuffer(GraphicsEngine& gfx, const std::vector<unsigned short>&
 	ibd.StructureByteStride = sizeof(unsigned short);
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices.data();
-	GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&ibd, &isd, &pIndexBuffer));
+	GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&ibd, &isd, &pIndexBuffer));
 }
 
-void IndexBuffer::bind(const GraphicsEngine& gfx){
-    getContext(gfx)->IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+void IndexBuffer::bind(){
+    helper->getContext().IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 }

@@ -16,7 +16,10 @@ Texture::Color::Color() noexcept
 	a(0)
 {}
 
-Texture::Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height){
+Texture::Texture(std::shared_ptr<BindableHelper> helper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height)
+	:
+	Bindable(helper)
+{
     HRESULT hr;
 
 	D3D11_TEXTURE2D_DESC textureDesc = {};
@@ -35,16 +38,16 @@ Texture::Texture(GraphicsEngine& gfx, std::unique_ptr<Color[]> pBuffer, unsigned
 	sd.pSysMem = pBuffer.get();
 	sd.SysMemPitch = width*sizeof(Texture::Color);
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> pTexture;
-    GFX_THROW_FAILED(getDevice(gfx)->CreateTexture2D(&textureDesc, &sd, &pTexture));
+    GFX_THROW_FAILED(helper->getDevice().CreateTexture2D(&textureDesc, &sd, &pTexture));
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Format = textureDesc.Format;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
 	srvDesc.Texture2D.MipLevels = 1;
-    GFX_THROW_FAILED(getDevice(gfx)->CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
+    GFX_THROW_FAILED(helper->getDevice().CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
 }
 
-void Texture::bind(const GraphicsEngine& gfx){
-    getContext(gfx)->PSSetShaderResources(0, 1, pTextureView.GetAddressOf());
+void Texture::bind(){
+    helper->getContext().PSSetShaderResources(0, 1, pTextureView.GetAddressOf());
 }

@@ -1,10 +1,13 @@
 #include "vertexshader.h"
 
 
-VertexShader::VertexShader(GraphicsEngine& gfx,const std::wstring& path){
+VertexShader::VertexShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path)
+	:
+	Bindable(helper)
+{
     HRESULT hr;
 	GFX_THROW_FAILED(D3DReadFileToBlob(path.c_str(), &pBytecodeBlob));
-	GFX_THROW_FAILED(getDevice(gfx)->CreateVertexShader( 
+	GFX_THROW_FAILED(helper->getDevice().CreateVertexShader( 
 		pBytecodeBlob->GetBufferPointer(),
 		pBytecodeBlob->GetBufferSize(),
 		nullptr,
@@ -12,8 +15,8 @@ VertexShader::VertexShader(GraphicsEngine& gfx,const std::wstring& path){
 	));
 }
 
-void VertexShader::bind(const GraphicsEngine& gfx){
-	getContext(gfx)->VSSetShader(pVertexShader.Get(), nullptr, 0);
+void VertexShader::bind(){
+	helper->getContext().VSSetShader(pVertexShader.Get(), nullptr, 0);
 }
 
 ID3DBlob* VertexShader::getBytecode() const noexcept{

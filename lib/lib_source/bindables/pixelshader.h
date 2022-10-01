@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../bindable.h"
+#include "bindable.h"
 #include <string>
 
 #ifndef DEFAULT_PIXEL_SHADERS_DIRECTORY
@@ -11,8 +11,8 @@
 
 class PixelShader : public Bindable{
     public:
-        PixelShader(GraphicsEngine& gfx, const std::wstring& path);
-        void bind(const GraphicsEngine& gfx) override;
+        PixelShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path);
+        void bind() override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
 };

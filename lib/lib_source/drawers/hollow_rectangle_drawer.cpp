@@ -10,6 +10,8 @@ HollowRectangleDrawer::HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDraw
     :
     Drawer(pDrawerHelper)
 {
+    GraphicsEngine& gfx = helper->getGraphicsEngine();
+    
     const DirectX::XMFLOAT3 vertices[NUM_VERTICES] = {
         {-0.5f, -0.5f, 0.0f},
         {0.5f, -0.5f, 0.0f},
@@ -20,13 +22,13 @@ HollowRectangleDrawer::HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDraw
     const void* vertexBuffers[] = {(void*)vertices};
     const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3)};
     const size_t numVertices[] = {NUM_VERTICES};
-    addSharedBind(std::make_unique<ConstantVertexBuffer>(helper->getGraphicsEngine(), vertexBuffers, vertexSizes, numVertices, 1));
+    addSharedBind(gfx.createNewGraphicsBoundObject<ConstantVertexBuffer>(vertexBuffers, vertexSizes, numVertices, 1));
 
-    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(helper->getGraphicsEngine(), VERTEX_PATH_CONCATINATED(L"VertexShader1.cso"));
+    std::unique_ptr<VertexShader> pvs = gfx.createNewGraphicsBoundObject<VertexShader>(VERTEX_PATH_CONCATINATED(L"VertexShader1.cso"));
     ID3DBlob* pvsbc = pvs->getBytecode();
     addSharedBind(std::move(pvs));
 
-    addSharedBind(std::make_unique<PixelShader>(helper->getGraphicsEngine(), PIXEL_PATH_CONCATINATED(L"PixelShader1.cso")));
+    addSharedBind(gfx.createNewGraphicsBoundObject<PixelShader>(PIXEL_PATH_CONCATINATED(L"PixelShader1.cso")));
 
     const std::vector<unsigned short> indices = 
     {
@@ -37,7 +39,7 @@ HollowRectangleDrawer::HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDraw
         0
     };
 
-    addSharedBind(std::make_unique<IndexBuffer>(helper->getGraphicsEngine(), indices));
+    addSharedBind(gfx.createNewGraphicsBoundObject<IndexBuffer>(indices));
     setIndexCount(indices.size());
 
     struct ConstantBuffer2
@@ -49,28 +51,32 @@ HollowRectangleDrawer::HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDraw
     };
     const ConstantBuffer2 cb2 = {red, green, blue};
 
-    addSharedBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, helper->getGraphicsEngine(), cb2));
+    addSharedBind(gfx.createNewGraphicsBoundObject<PixelConstantBuffer<ConstantBuffer2>>(0, cb2));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
         {"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
-    addSharedBind(std::make_unique<InputLayout>(helper->getGraphicsEngine(), ied, pvsbc));
+    addSharedBind(gfx.createNewGraphicsBoundObject<InputLayout>(ied, pvsbc));
 
-    addSharedBind(std::make_unique<Topology>(helper->getGraphicsEngine(), D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
+    addSharedBind(gfx.createNewGraphicsBoundObject<Topology>(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP));
 
-    pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, helper->getGraphicsEngine());
+    pVcbuf = gfx.createNewGraphicsBoundObject<VertexConstantBuffer<DirectX::XMMATRIX>>(0);
 }
 
 void HollowRectangleDrawer::drawHollowRectangle(float x, float y, float width, float height) const{
-    pVcbuf->update(helper->getGraphicsEngine(),
+    GraphicsEngine& gfx = helper->getGraphicsEngine();
+
+    pVcbuf->update(
         DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixScaling(width, height, 1.0f) * DirectX::XMMatrixTranslation(x, y, 0.0f) * helper->getGraphicsEngine().getView() * helper->getGraphicsEngine().getProjection()
+            DirectX::XMMatrixScaling(width, height, 1.0f) * DirectX::XMMatrixTranslation(x, y, 0.0f) * gfx.getView() * gfx.getProjection()
         )
     );
 
-    pVcbuf->bind(helper->getGraphicsEngine());
+    pVcbuf->bind();
 
     bindSharedBinds(typeid(HollowRectangleDrawer));
     drawIndexed();
 }
+
+template LIBRARY_API std::unique_ptr<HollowRectangleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);

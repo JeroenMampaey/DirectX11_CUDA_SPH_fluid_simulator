@@ -36,6 +36,7 @@ class GraphicsEngine{
         friend class Bindable;
         friend class Helper;
         friend class DrawerHelper;
+        friend class BindableHelper;
         friend class Window;
     public:
         LIBRARY_API GraphicsEngine& operator=(const GraphicsEngine& copy) = delete;
@@ -50,8 +51,25 @@ class GraphicsEngine{
         LIBRARY_API void beginFrame(float red, float green, float blue) noexcept;
         LIBRARY_API void endFrame() const;
 
-        template<class T, class... Args>
-        LIBRARY_API std::unique_ptr<T> createNewGraphicsBoundObject(Args... args);
+#ifndef READ_FROM_LIB_HEADER
+    template<class T, class... Args>
+    std::unique_ptr<T> createNewGraphicsBoundObject(Args... args){
+        std::type_index typeIndex = typeid(typename T::HelperType);
+        std::shared_ptr<typename T::HelperType> pHelper;
+        auto it = helpersMap.find(typeIndex);
+        if(it !=helpersMap.end()){
+            pHelper = std::static_pointer_cast<typename T::HelperType>(it->second);
+        }
+        else{
+            pHelper = std::shared_ptr<typename T::HelperType>(new typename T::HelperType(this));
+            helpersMap.insert({typeIndex, pHelper});
+        }
+        return std::unique_ptr<T>(new T(pHelper, std::forward<Args>(args)...));
+    }
+#else
+    template<class T, class... Args>
+    LIBRARY_API std::unique_ptr<T> createNewGraphicsBoundObject(Args... args);
+#endif
 
     private:
         GraphicsEngine(HWND hWnd, UINT syncInterval);

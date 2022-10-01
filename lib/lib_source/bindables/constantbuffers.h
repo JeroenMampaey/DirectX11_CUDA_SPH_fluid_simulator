@@ -1,18 +1,21 @@
 #pragma once
 
-#include "../bindable.h"
+#include "bindable.h"
 
 template<typename C>
 class ConstantBuffer : public Bindable{
     public:
-        void update(const GraphicsEngine& gfx, const C& consts){
+        void update(const C& consts){
 			HRESULT hr;
 			D3D11_MAPPED_SUBRESOURCE msr;
-			GFX_THROW_FAILED(getContext(gfx)->Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
+			GFX_THROW_FAILED(helper->getContext().Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 			memcpy(msr.pData, &consts, sizeof(consts));
-			getContext(gfx)->Unmap(pConstantBuffer.Get(), 0);
+			helper->getContext().Unmap(pConstantBuffer.Get(), 0);
 		}
-        ConstantBuffer(GraphicsEngine& gfx, const C& consts){
+        ConstantBuffer(std::shared_ptr<BindableHelper> helper, const C& consts)
+			:
+			Bindable(helper)
+		{
 			HRESULT hr;
 			D3D11_BUFFER_DESC cbd;
 			cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -24,9 +27,12 @@ class ConstantBuffer : public Bindable{
 
 			D3D11_SUBRESOURCE_DATA csd = {};
 			csd.pSysMem = &consts;
-			GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&cbd, &csd, &pConstantBuffer));
+			GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&cbd, &csd, &pConstantBuffer));
 		}
-        ConstantBuffer(GraphicsEngine& gfx){
+        ConstantBuffer(std::shared_ptr<BindableHelper> helper)
+			:
+			Bindable(helper)
+		{
 			HRESULT hr;
 			D3D11_BUFFER_DESC cbd;
 			cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -35,7 +41,7 @@ class ConstantBuffer : public Bindable{
 			cbd.MiscFlags = 0;
 			cbd.ByteWidth = sizeof(C);
 			cbd.StructureByteStride = 0;
-			GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&cbd, nullptr, &pConstantBuffer));
+			GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&cbd, nullptr, &pConstantBuffer));
 		}
 		virtual ~ConstantBuffer() = default;
     protected:
@@ -45,21 +51,20 @@ class ConstantBuffer : public Bindable{
 template<typename C>
 class VertexConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
-        using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-		VertexConstantBuffer(UINT startSlot, GraphicsEngine& gfx, const C& consts)
+		VertexConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot, const C& consts)
 			:
-			ConstantBuffer<C>(gfx, consts),
+			ConstantBuffer<C>(helper, consts),
 			startSlot(startSlot)
 		{}
-		VertexConstantBuffer(UINT startSlot, GraphicsEngine& gfx)
+		VertexConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot)
 			:
-			ConstantBuffer<C>(gfx),
+			ConstantBuffer<C>(helper),
 			startSlot(startSlot)
 		{}
-        void bind(const GraphicsEngine& gfx) override{
-            getContext(gfx)->VSSetConstantBuffers(startSlot, 1, pConstantBuffer.GetAddressOf());
+        void bind() override{
+            helper->getContext().VSSetConstantBuffers(startSlot, 1, pConstantBuffer.GetAddressOf());
         }
 	private:
 		UINT startSlot;
@@ -68,21 +73,20 @@ class VertexConstantBuffer : public ConstantBuffer<C>{
 template<typename C>
 class PixelConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
-        using Bindable::getContext;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-		PixelConstantBuffer(UINT startSlot, GraphicsEngine& gfx, const C& consts)
+		PixelConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot, const C& consts)
 			:
-			ConstantBuffer<C>(gfx, consts),
+			ConstantBuffer<C>(helper, consts),
 			startSlot(startSlot)
 		{}
-		PixelConstantBuffer(UINT startSlot, GraphicsEngine& gfx)
+		PixelConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot)
 			:
-			ConstantBuffer<C>(gfx),
+			ConstantBuffer<C>(helper),
 			startSlot(startSlot)
 		{}
-        void bind(const GraphicsEngine& gfx) override{
-            getContext(gfx)->PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
+        void bind() override{
+            helper->getContext().PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 	private:
 		UINT startSlot;

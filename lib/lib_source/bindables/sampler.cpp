@@ -1,6 +1,9 @@
 #include "sampler.h"
 
-Sampler::Sampler(GraphicsEngine& gfx, D3D11_FILTER filter){
+Sampler::Sampler(std::shared_ptr<BindableHelper> helper, D3D11_FILTER filter)
+	:
+	Bindable(helper)
+{
 	HRESULT hr;
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -9,9 +12,9 @@ Sampler::Sampler(GraphicsEngine& gfx, D3D11_FILTER filter){
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 
-    GFX_THROW_FAILED(getDevice(gfx)->CreateSamplerState(&samplerDesc, &pSampler));
+    GFX_THROW_FAILED(helper->getDevice().CreateSamplerState(&samplerDesc, &pSampler));
 }
 
-void Sampler::bind(const GraphicsEngine& gfx){
-    getContext(gfx)->PSSetSamplers(0, 1, pSampler.GetAddressOf());
+void Sampler::bind(){
+    helper->getContext().PSSetSamplers(0, 1, pSampler.GetAddressOf());
 }

@@ -238,27 +238,3 @@ GraphicsEngine::~GraphicsEngine() noexcept{
         pair.second->pGfx = nullptr;
     }
 }
-
-template<class T, class... Args>
-std::unique_ptr<T> GraphicsEngine::createNewGraphicsBoundObject(Args... args){
-    std::type_index typeIndex = typeid(typename T::HelperType);
-    std::shared_ptr<typename T::HelperType> pHelper;
-    auto it = helpersMap.find(typeIndex);
-    if(it !=helpersMap.end()){
-        pHelper = std::static_pointer_cast<typename T::HelperType>(it->second);
-    }
-    else{
-        pHelper = std::shared_ptr<typename T::HelperType>(new typename T::HelperType(this));
-        helpersMap.insert({typeIndex, pHelper});
-    }
-    return std::unique_ptr<T>(new T(pHelper, std::forward<Args>(args)...));
-}
-
-template LIBRARY_API std::unique_ptr<FilledCircleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<FilledCircleInstanceDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<FilledRectangleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<HollowRectangleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<LineDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<DynamicTextDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<StaticScreenTextDrawer> GraphicsEngine::createNewGraphicsBoundObject(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<CpuAccessibleFilledCircleInstanceBuffer> GraphicsEngine::createNewGraphicsBoundObject(int numberOfCircles, float radius);

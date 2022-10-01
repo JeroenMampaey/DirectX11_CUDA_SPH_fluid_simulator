@@ -1,4 +1,5 @@
 #include "drawer.h"
+#include "../bindables/bindables_includes.h"
 #include "../helpers.h"
 
 Drawer::Drawer(std::shared_ptr<DrawerHelper> helper) noexcept
@@ -28,7 +29,7 @@ void Drawer::setVertexCount(int vertexCount) noexcept{
 void Drawer::bindSharedBinds(std::type_index typeIndex) const{
     if(helper->getLastDrawer()!=typeIndex){
         for(auto& bind : sharedBinds){
-            bind->bind(helper->getGraphicsEngine());
+            bind->bind();
         }
         helper->setLastDrawer(typeIndex);
     }

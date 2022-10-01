@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../bindable.h"
+#include "bindable.h"
 
 #ifndef DEFAULT_VERTEX_SHADERS_DIRECTORY
 #define DEFAULT_VERTEX_SHADERS_DIRECTORY L"vertexshaders/"
@@ -11,8 +11,8 @@
 
 class VertexShader : public Bindable{
     public:
-        VertexShader(GraphicsEngine& gfx,const std::wstring& path);
-        void bind(const GraphicsEngine& gfx) override;
+        VertexShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path);
+        void bind() override;
         ID3DBlob* getBytecode() const noexcept;
     protected:
         Microsoft::WRL::ComPtr<ID3DBlob> pBytecodeBlob;

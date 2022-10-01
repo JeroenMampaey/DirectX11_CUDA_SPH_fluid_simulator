@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bindable.h"
 #include "vertexbuffer.h"
 #include "vertexshader.h"
 #include "pixelshader.h"

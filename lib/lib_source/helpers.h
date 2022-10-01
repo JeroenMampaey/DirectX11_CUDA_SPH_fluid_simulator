@@ -1,9 +1,9 @@
 #pragma once
 
-#include "bindable.h"
 #include <vector>
 #include <memory>
 #include "exports.h"
+#include "graphics_engine.h"
 
 class Helper{
         friend class GraphicsEngine;
@@ -34,4 +34,17 @@ class DrawerHelper : public Helper{
     
     private:
         DrawerHelper(GraphicsEngine* pGfx) noexcept;
+};
+
+class BindableHelper : public Helper{
+        friend class GraphicsEngine;
+    public:
+        BindableHelper& operator=(const BindableHelper& copy) = delete;
+        BindableHelper& operator=(BindableHelper&& copy) = delete;
+
+        ID3D11DeviceContext& getContext();
+        ID3D11Device& getDevice();
+
+    private:
+        BindableHelper(GraphicsEngine* pGfx) noexcept;
 };
