@@ -1,6 +1,8 @@
 #include "graphics_engine.h"
 #include <sstream>
+#include "drawer_helper.h"
 #include "drawers/drawers_includes.h"
+#include "exceptions.h"
 
 GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(syncInterval) {
     if(syncInterval<1 || syncInterval>4){
@@ -184,8 +186,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     projection = DirectX::XMMatrixIdentity();
     view = DirectX::XMMatrixIdentity();
 
-    StaticScreenTextDrawerInitializationArgs args = {specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f};
-    screenDrawer = createNewDrawer<StaticScreenTextDrawer>(args);
+    screenDrawer = createNewDrawer<StaticScreenTextDrawer>(specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f);
 }
 
 void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
@@ -230,9 +231,25 @@ float GraphicsEngine::getRefreshRate() const noexcept{
 }
 
 GraphicsEngine::~GraphicsEngine() noexcept{
-    for(const std::pair<int, std::weak_ptr<Drawer>>& drawerPair : drawersMap){
-        if(std::shared_ptr<Drawer> drawer = drawerPair.second.lock()){
-            drawer->unbindGraphicsEngine();
+    for(const std::pair<int, std::weak_ptr<DrawerHelper>>& pair : drawerHelpersMap){
+        if(std::shared_ptr<DrawerHelper> drawerHelper = pair.second.lock()){
+            drawerHelper->pGfx = nullptr;
         }
     }
 }
+
+template<class T, class... Args>
+std::unique_ptr<T> GraphicsEngine::createNewDrawer(Args... args){
+    std::shared_ptr<DrawerHelper> pDrawerHelper = std::shared_ptr<DrawerHelper>(new DrawerHelper(this, drawerUidCounter));
+    drawerHelpersMap.insert({drawerUidCounter, pDrawerHelper});
+    drawerUidCounter++;
+    return std::unique_ptr<T>(new T(pDrawerHelper, std::forward<Args>(args)...));
+};
+
+template LIBRARY_API std::unique_ptr<FilledCircleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<FilledCircleInstanceDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<FilledRectangleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<HollowRectangleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<LineDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<DynamicTextDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<StaticScreenTextDrawer> GraphicsEngine::createNewDrawer(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue);

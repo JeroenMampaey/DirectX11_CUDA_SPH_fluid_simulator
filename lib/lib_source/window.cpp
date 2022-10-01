@@ -1,4 +1,5 @@
 #include "window.h"
+#include "exceptions.h"
 
 
 Window::WindowClass Window::WindowClass::wndClass;
@@ -31,8 +32,17 @@ HINSTANCE Window::WindowClass::getInstance() noexcept{
 	return wndClass.hInst;
 }
 
-// Window Stuff
-Window::Window(const char* name, UINT syncInterval){
+Window::Window(const char* name, UINT syncInterval)
+	:
+	hWnd(initializationHelper(this, name)),
+	gfx(GraphicsEngine(hWnd, syncInterval)),
+	pEventBus(std::make_shared<EventBus>())
+{
+	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	SetWindowTextA(hWnd, "Window setup was succesfull");
+}
+
+HWND Window::initializationHelper(Window* pWnd, const char* name){
 	RECT wr;
 	wr.left = 100;
 	wr.right = WIDTH + wr.left;
@@ -41,28 +51,18 @@ Window::Window(const char* name, UINT syncInterval){
 	if(AdjustWindowRect(&wr, WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU, FALSE)==0){
 		throw CHWND_LAST_EXCEPT();
 	}
-	
-	hWnd = CreateWindowExA(
+
+	HWND hWnd = CreateWindowExA(
 		0L, WindowClass::getName(),name,
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 		CW_USEDEFAULT,CW_USEDEFAULT,wr.right - wr.left,wr.bottom - wr.top,
-		nullptr,nullptr,WindowClass::getInstance(),this
+		nullptr,nullptr,WindowClass::getInstance(),pWnd
 	);
 	
-	if( hWnd == nullptr )
-	{
+	if(hWnd == nullptr){
 		throw CHWND_LAST_EXCEPT();
 	}
-
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
-
-	SetWindowTextA(hWnd, "Binding graphics to the window...");
-
-	pEventBus = std::make_shared<EventBus>();
-
-    pGfx = std::make_unique<GraphicsEngine>(hWnd, syncInterval);
-
-	SetWindowTextA(hWnd, "Window setup was succesfull");
+	return hWnd;
 }
 
 Window::~Window() noexcept{
@@ -133,12 +133,16 @@ std::shared_ptr<EventBus> Window::getEventBus() const noexcept{
 	return pEventBus;
 }
 
-GraphicsEngine& Window::getGraphicsEngine() const noexcept{
-	return *pGfx;
+GraphicsEngine& Window::getGraphicsEngine() noexcept{
+	return gfx;
 }
 
 void Window::checkForThrownExceptions() const{
 	if(thrownException){
 		std::rethrow_exception(thrownException);
 	}
+}
+
+Window createWindow(const char* name, UINT syncInterval){
+	return Window(name, syncInterval);
 }

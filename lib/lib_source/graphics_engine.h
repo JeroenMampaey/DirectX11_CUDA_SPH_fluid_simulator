@@ -1,6 +1,6 @@
 #pragma once
 
-#include "exceptions.h"
+#include "win_exception.h"
 #include "exports.h"
 #include <vector>
 #include "windows_includes.h"
@@ -18,33 +18,30 @@
 #define AMD_VENDOR_ID 4098
 #define INTEL_VENDOR_ID 32902
 
-class LIBRARY_API GraphicsEngine{
+class GraphicsEngine{
         friend class Bindable;
-        friend class Drawer;
+        friend class DrawerHelper;
+        friend class Window;
     public:
-        GraphicsEngine& operator=(const GraphicsEngine& copy) = delete;
-        GraphicsEngine& operator=(GraphicsEngine&& copy) = delete;
+        LIBRARY_API GraphicsEngine& operator=(const GraphicsEngine& copy) = delete;
+        LIBRARY_API GraphicsEngine& operator=(GraphicsEngine&& copy) = delete;
         
-        GraphicsEngine(HWND hWnd, UINT syncInterval);
-        ~GraphicsEngine() noexcept;
-        void setProjection(DirectX::FXMMATRIX proj) noexcept;
-	    DirectX::XMMATRIX getProjection() const noexcept;
-        void setView(DirectX::FXMMATRIX v) noexcept;
-	    DirectX::XMMATRIX getView() const noexcept;
-        float getRefreshRate() const noexcept;
-        void beginFrame(float red, float green, float blue) noexcept;
-        void endFrame() const;
+        LIBRARY_API ~GraphicsEngine() noexcept;
+        LIBRARY_API void setProjection(DirectX::FXMMATRIX proj) noexcept;
+	    LIBRARY_API DirectX::XMMATRIX getProjection() const noexcept;
+        LIBRARY_API void setView(DirectX::FXMMATRIX v) noexcept;
+	    LIBRARY_API DirectX::XMMATRIX getView() const noexcept;
+        LIBRARY_API float getRefreshRate() const noexcept;
+        LIBRARY_API void beginFrame(float red, float green, float blue) noexcept;
+        LIBRARY_API void endFrame() const;
 
-        template<class T, class V, class=std::enable_if_t<std::is_base_of_v<Drawer,T>>>
-        std::shared_ptr<T> createNewDrawer(V& args){
-            std::shared_ptr<T> newDrawer =  std::shared_ptr<T>(new T(this, drawerUidCounter, args));
-            drawersMap.insert({drawerUidCounter, newDrawer});
-            drawerUidCounter++;
-            return newDrawer;
-        };
+        template<class T, class... Args>
+        LIBRARY_API std::unique_ptr<T> createNewDrawer(Args... args);
 
     private:
-        std::shared_ptr<class StaticScreenTextDrawer> screenDrawer;
+        GraphicsEngine(HWND hWnd, UINT syncInterval);
+
+        std::unique_ptr<class StaticScreenTextDrawer> screenDrawer;
 
         DirectX::XMMATRIX projection;
         DirectX::XMMATRIX view;
@@ -55,7 +52,7 @@ class LIBRARY_API GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 
-        std::unordered_map<int, std::weak_ptr<Drawer>> drawersMap;
+        std::unordered_map<int, std::weak_ptr<DrawerHelper>> drawerHelpersMap;
 
         UINT syncInterval;
         float refreshRate = -1.0f;

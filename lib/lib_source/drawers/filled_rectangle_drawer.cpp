@@ -1,18 +1,19 @@
 #include "filled_rectangle_drawer.h"
+#include "../drawer_helper.h"
+#include "../bindables/bindables_includes.h"
 
 #define NUM_VERTICES 4
 
-FilledRectangleDrawerInitializationArgs::FilledRectangleDrawerInitializationArgs(float red, float green, float blue) noexcept
-    :
-    red(red),
-    green(green),
-    blue(blue)
-{}
+FilledRectangleDrawer::~FilledRectangleDrawer() noexcept = default;
 
-FilledRectangleDrawer::FilledRectangleDrawer(GraphicsEngine* pGfx, int uid, FilledRectangleDrawerInitializationArgs args)
+FilledRectangleDrawer::FilledRectangleDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pGfx, uid)
+    pDrawerHelper(pDrawerHelper)
 {
+    if(pDrawerHelper->pGfx==nullptr){
+        throw std::exception("Tried making a FilledRectangleDrawer with an invalid DrawerHelper.");
+    }
+
     const DirectX::XMFLOAT3 vertices[NUM_VERTICES] = {
         {-0.5f, -0.5f, 0.0f},
         {0.5f, -0.5f, 0.0f},
@@ -22,14 +23,14 @@ FilledRectangleDrawer::FilledRectangleDrawer(GraphicsEngine* pGfx, int uid, Fill
 
     const void* vertexBuffers[] = {(void*)vertices};
     const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3)};
-    const bool cpuAccessFlags[] = {false};
-    addSharedBind(std::make_unique<VertexBuffer>(*pGfx, vertexBuffers, vertexSizes, cpuAccessFlags, 1, NUM_VERTICES));
+    const size_t numVertices[] = {NUM_VERTICES};
+    pDrawerHelper->addSharedBind(std::make_unique<ConstantVertexBuffer>(*pDrawerHelper->pGfx, vertexBuffers, vertexSizes, numVertices, 1));
 
-    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader1.cso"));
+    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pDrawerHelper->pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader1.cso"));
     ID3DBlob* pvsbc = pvs->getBytecode();
-    addSharedBind(std::move(pvs));
+    pDrawerHelper->addSharedBind(std::move(pvs));
 
-    addSharedBind(std::make_unique<PixelShader>(*pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader1.cso")));
+    pDrawerHelper->addSharedBind(std::make_unique<PixelShader>(*pDrawerHelper->pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader1.cso")));
 
     const std::vector<unsigned short> indices = 
     {
@@ -37,8 +38,8 @@ FilledRectangleDrawer::FilledRectangleDrawer(GraphicsEngine* pGfx, int uid, Fill
         1, 2, 3
     };
 
-    addSharedBind(std::make_unique<IndexBuffer>(*pGfx, indices));
-    setIndexCount(indices.size());
+    pDrawerHelper->addSharedBind(std::make_unique<IndexBuffer>(*pDrawerHelper->pGfx, indices));
+    pDrawerHelper->setIndexCount(indices.size());
 
     struct ConstantBuffer2
     {
@@ -47,33 +48,34 @@ FilledRectangleDrawer::FilledRectangleDrawer(GraphicsEngine* pGfx, int uid, Fill
         float b;
         float a;
     };
-    const ConstantBuffer2 cb2 = {args.red, args.green, args.blue};
+    const ConstantBuffer2 cb2 = {red, green, blue};
 
-    addSharedBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, *pGfx, cb2));
+    pDrawerHelper->addSharedBind(std::make_unique<PixelConstantBuffer<ConstantBuffer2>>(0, *pDrawerHelper->pGfx, cb2));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
         {"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
-    addSharedBind(std::make_unique<InputLayout>(*pGfx, ied, pvsbc));
+    pDrawerHelper->addSharedBind(std::make_unique<InputLayout>(*pDrawerHelper->pGfx, ied, pvsbc));
 
-    addSharedBind(std::make_unique<Topology>(*pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+    pDrawerHelper->addSharedBind(std::make_unique<Topology>(*pDrawerHelper->pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-    pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pGfx);
+    pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pDrawerHelper->pGfx);
 }
 
 void FilledRectangleDrawer::drawFilledRectangle(float x, float y, float width, float height) const{
-    if(pGfx==nullptr){
-        throw std::exception("Tried drawing a FilledRectangle with a GraphicsEngine that was already destroyed");
+    if(pDrawerHelper->pGfx==nullptr){
+        throw std::exception("Tried drawing a FilledRectangle with an invalid DrawerHelper");
     }
 
-    pVcbuf->update(*pGfx,
+    pVcbuf->update(*pDrawerHelper->pGfx,
         DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixScaling(width, height, 1.0f) * DirectX::XMMatrixTranslation(x, y, 0.0f) * pGfx->getView() * pGfx->getProjection()
+            DirectX::XMMatrixScaling(width, height, 1.0f) * DirectX::XMMatrixTranslation(x, y, 0.0f) * pDrawerHelper->pGfx->getView() * pDrawerHelper->pGfx->getProjection()
         )
     );
 
-    pVcbuf->bind(*pGfx);
+    pVcbuf->bind(*pDrawerHelper->pGfx);
 
-    draw();
+    pDrawerHelper->bindSharedBinds();
+    pDrawerHelper->drawIndexed();
 }

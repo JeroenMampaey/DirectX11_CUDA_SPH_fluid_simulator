@@ -1,21 +1,22 @@
 #pragma once
+#include "../exports.h"
+#include <memory>
+#include "../windows_includes.h"
+#include <unordered_map>
 
-#include "../bindables/bindables_includes.h"
-#include "../drawer.h"
+class DrawerHelper;
+template<class> class VertexConstantBuffer;
 
-struct LIBRARY_API FilledRectangleDrawerInitializationArgs{
-    float red;
-    float green;
-    float blue;
-    FilledRectangleDrawerInitializationArgs(float red, float green, float blue) noexcept;
-};
-
-class LIBRARY_API FilledRectangleDrawer : public Drawer{
-        friend class GraphicsEngine;
-    private:
-        FilledRectangleDrawer(GraphicsEngine* pGfx, int uid, FilledRectangleDrawerInitializationArgs args);
-        std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
-    
+class FilledRectangleDrawer{
     public:
-        void drawFilledRectangle(float x, float y, float width, float height) const;
+        LIBRARY_API void drawFilledRectangle(float x, float y, float width, float height) const;
+        LIBRARY_API ~FilledRectangleDrawer() noexcept;
+
+#ifndef READ_FROM_LIB_HEADER
+        FilledRectangleDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue);
+#endif
+        
+    private:
+        std::shared_ptr<DrawerHelper> pDrawerHelper;
+        std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };

@@ -1,21 +1,22 @@
 #pragma once
+#include "../exports.h"
+#include <memory>
+#include "../windows_includes.h"
+#include <unordered_map>
 
-#include "../bindables/bindables_includes.h"
-#include "../drawer.h"
+class DrawerHelper;
+template<class> class VertexConstantBuffer;
 
-struct LIBRARY_API HollowRectangleDrawerInitializationArgs{
-    float red;
-    float green;
-    float blue;
-    HollowRectangleDrawerInitializationArgs(float red, float green, float blue) noexcept;
-};
-
-class LIBRARY_API HollowRectangleDrawer : public Drawer{
-        friend class GraphicsEngine;
-    private:
-        HollowRectangleDrawer(GraphicsEngine* pGfx, int uid, HollowRectangleDrawerInitializationArgs args);
-        std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
-    
+class HollowRectangleDrawer{
     public:
-        void drawHollowRectangle(float x, float y, float width, float height) const;
+        LIBRARY_API void drawHollowRectangle(float x, float y, float width, float height) const;
+        LIBRARY_API ~HollowRectangleDrawer() noexcept;
+
+#ifndef READ_FROM_LIB_HEADER
+        HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue);
+#endif
+        
+    private:
+        std::shared_ptr<DrawerHelper> pDrawerHelper;
+        std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };

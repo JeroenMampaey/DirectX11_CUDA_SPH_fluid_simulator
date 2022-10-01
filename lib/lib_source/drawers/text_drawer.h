@@ -1,45 +1,39 @@
 #pragma once
-
-#include "../bindables/bindables_includes.h"
-#include "../drawer.h"
+#include "../exports.h"
+#include <memory>
+#include "../windows_includes.h"
+#include <unordered_map>
 
 #define MAX_DYNAMIC_TEXT_DRAWER_STRLEN 256
 
-struct LIBRARY_API DynamicTextDrawerInitializationArgs{
-    float red;
-    float green;
-    float blue;
-    DynamicTextDrawerInitializationArgs(float red, float green, float blue) noexcept;
-};
+class CpuMappableVertexBuffer;
+class DrawerHelper;
+template<class> class VertexConstantBuffer;
 
-class LIBRARY_API DynamicTextDrawer : public Drawer{
-        friend class GraphicsEngine;
+class DynamicTextDrawer{
+    public:
+        LIBRARY_API void drawDynamicText(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height) const;
+        LIBRARY_API ~DynamicTextDrawer() noexcept;
+
+#ifndef READ_FROM_LIB_HEADER
+        DynamicTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue);
+#endif
+
     private:
-        DynamicTextDrawer(GraphicsEngine* pGfx, int uid, DynamicTextDrawerInitializationArgs args);
-        std::unique_ptr<VertexBuffer> pVBuf;
+        std::shared_ptr<DrawerHelper> pDrawerHelper;
+        std::unique_ptr<CpuMappableVertexBuffer> pVBuf;
         std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
+};
 
+class StaticScreenTextDrawer{
     public:
-        void drawDynamicText(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height);
-};
+        LIBRARY_API void drawStaticScreenText() const;
+        LIBRARY_API ~StaticScreenTextDrawer() noexcept;
+    
+#ifndef READ_FROM_LIB_HEADER
+        StaticScreenTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue);
+#endif
 
-struct LIBRARY_API StaticScreenTextDrawerInitializationArgs{
-    std::string text; 
-    float left_down_x; 
-    float left_down_y; 
-    float char_width; 
-    float char_height;
-    float red;
-    float green;
-    float blue;
-    StaticScreenTextDrawerInitializationArgs(std::string text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue) noexcept;
-};
-
-class LIBRARY_API StaticScreenTextDrawer : public Drawer{
-        friend class GraphicsEngine;
     private:
-        StaticScreenTextDrawer(GraphicsEngine* pGfx, int uid, StaticScreenTextDrawerInitializationArgs args);
-
-    public:
-        void drawStaticScreenText() const;
+        std::shared_ptr<DrawerHelper> pDrawerHelper;
 };

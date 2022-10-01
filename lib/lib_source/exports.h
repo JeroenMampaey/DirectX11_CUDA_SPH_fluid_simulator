@@ -1,7 +1,7 @@
 #pragma once
 
-#ifdef LIBRARY_EXPORTS
-#define LIBRARY_API __declspec(dllexport)
-#else
+#ifdef READ_FROM_LIB_HEADER
 #define LIBRARY_API __declspec(dllimport)
+#else
+#define LIBRARY_API __declspec(dllexport)
 #endif

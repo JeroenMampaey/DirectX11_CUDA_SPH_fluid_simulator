@@ -4,10 +4,10 @@
 
 App::App()
     :
-    wnd(Window("Example", SYNCINTERVAL)),
+    wnd(createWindow("Example", SYNCINTERVAL)),
     entityManager(EntityManager()),
     eventHandlerSystem(EventHandlerSystem(wnd.getEventBus())),
-    renderSystem(RenderSystem(wnd.getGraphicsEngine()))
+    renderSystem(RenderSystem(wnd.getGraphicsEngine(), entityManager))
 {
     if(RATE_IS_INVALID(wnd.getGraphicsEngine().getRefreshRate())){
         throw std::exception("Refreshrate could not easily be found programmatically.");

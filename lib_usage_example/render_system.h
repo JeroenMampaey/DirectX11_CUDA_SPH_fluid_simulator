@@ -4,14 +4,15 @@
 
 class RenderSystem{
     public:
-        RenderSystem(GraphicsEngine& gfx);
+        RenderSystem(GraphicsEngine& gfx, EntityManager& manager);
         void update(EntityManager& manager) const;
 
     private:
         GraphicsEngine& gfx;
-        std::shared_ptr<FilledRectangleDrawer> filledRectangleDrawer;
-        std::shared_ptr<LineDrawer> lineDrawer;
-        std::shared_ptr<FilledCircleDrawer> circleDrawer;
-        std::shared_ptr<HollowRectangleDrawer> hollowRectangleDrawer;
-        std::shared_ptr<DynamicTextDrawer> textDrawer;
+        std::unique_ptr<FilledCircleInstanceDrawer> filledCircleBufferDrawer;
+        std::unique_ptr<FilledRectangleDrawer> filledRectangleDrawer;
+        std::unique_ptr<LineDrawer> lineDrawer;
+        std::unique_ptr<FilledCircleDrawer> circleDrawer;
+        std::unique_ptr<HollowRectangleDrawer> hollowRectangleDrawer;
+        std::unique_ptr<DynamicTextDrawer> textDrawer;
 };

@@ -3,7 +3,7 @@
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow){
 	try{
 		App app = App();
-		return app.go();
+		app.go();
 	}
 	catch(const WinException& e){
 		MessageBoxA(nullptr, e.what(), e.GetType(), MB_OK | MB_ICONEXCLAMATION);

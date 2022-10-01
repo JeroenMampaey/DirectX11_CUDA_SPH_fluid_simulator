@@ -1,6 +1,8 @@
 #include "text_drawer.h"
 #include <stdexcept>
 #include <map>
+#include "../drawer_helper.h"
+#include "../bindables/bindables_includes.h"
 
 #define VERTICES_PER_CHARACTER 4
 #define INDICES_PER_CHARACTER 6
@@ -10,17 +12,17 @@
 #define CHAR_PIXEL_WIDTH 8
 #define CHAR_PIXEL_HEIGHT 12
 
-DynamicTextDrawerInitializationArgs::DynamicTextDrawerInitializationArgs(float red, float green, float blue) noexcept
-    :
-    red(red),
-    green(green),
-    blue(blue)
-{}
+DynamicTextDrawer::~DynamicTextDrawer() noexcept = default;
+StaticScreenTextDrawer::~StaticScreenTextDrawer() noexcept = default;
 
-DynamicTextDrawer::DynamicTextDrawer(GraphicsEngine* pGfx, int uid, DynamicTextDrawerInitializationArgs args)
+DynamicTextDrawer::DynamicTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pGfx, uid)
+    pDrawerHelper(pDrawerHelper)
 {
+    if(pDrawerHelper->pGfx==nullptr){
+        throw std::exception("Tried making a LineDrawer with an invalid DrawerHelper.");
+    }
+
     unsigned char bitmap[NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_HEIGHT] = {
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,	//  
         0x00,0x30,0x78,0x78,0x78,0x30,0x30,0x00,0x30,0x30,0x00,0x00,	// !
@@ -124,34 +126,34 @@ DynamicTextDrawer::DynamicTextDrawer(GraphicsEngine* pGfx, int uid, DynamicTextD
         for(int j=0; j<CHAR_PIXEL_HEIGHT; j++){
             for(int e=0; e<CHAR_PIXEL_WIDTH; e++){
                 if((bitmap[i*CHAR_PIXEL_HEIGHT+j] << e) & 0b10000000){
-                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH+i*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(args.blue*255.0f), (unsigned char)(args.green*255.0f), (unsigned char)(args.red*255.0f), 255};
+                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH+i*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(blue*255.0f), (unsigned char)(green*255.0f), (unsigned char)(red*255.0f), 255};
                 }
                 else{
-                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH+i*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(args.blue*255.0f), (unsigned char)(args.green*255.0f), (unsigned char)(args.red*255.0f), 0};
+                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH+i*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(blue*255.0f), (unsigned char)(green*255.0f), (unsigned char)(red*255.0f), 0};
                 }
             }
         }
     }
-    addSharedBind(std::make_unique<Texture>(*pGfx, std::move(textureBuffer), NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH, CHAR_PIXEL_HEIGHT));
+    pDrawerHelper->addSharedBind(std::make_unique<Texture>(*pDrawerHelper->pGfx, std::move(textureBuffer), NUM_USEFUL_ASCII_CHARS*CHAR_PIXEL_WIDTH, CHAR_PIXEL_HEIGHT));
 
-    addSharedBind(std::make_unique<Sampler>(*pGfx, D3D11_FILTER_MIN_MAG_MIP_POINT));
+    pDrawerHelper->addSharedBind(std::make_unique<Sampler>(*pDrawerHelper->pGfx, D3D11_FILTER_MIN_MAG_MIP_POINT));
 
-    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader2.cso"));
+    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pDrawerHelper->pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader2.cso"));
     ID3DBlob* pvsbc = pvs->getBytecode();
-    addSharedBind(std::move(pvs));
+    pDrawerHelper->addSharedBind(std::move(pvs));
 
-    addSharedBind(std::make_unique<PixelShader>(*pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader3.cso")));
+    pDrawerHelper->addSharedBind(std::make_unique<PixelShader>(*pDrawerHelper->pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader3.cso")));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
         {"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TexCoord", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
-    addSharedBind(std::make_unique<InputLayout>(*pGfx, ied, pvsbc));
+    pDrawerHelper->addSharedBind(std::make_unique<InputLayout>(*pDrawerHelper->pGfx, ied, pvsbc));
 
-    addSharedBind(std::make_unique<Topology>(*pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+    pDrawerHelper->addSharedBind(std::make_unique<Topology>(*pDrawerHelper->pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-    pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pGfx);
+    pVcbuf = std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pDrawerHelper->pGfx);
 
     std::vector<DirectX::XMFLOAT3> vertices;
     std::vector<DirectX::XMFLOAT2> texturecoords;
@@ -178,14 +180,15 @@ DynamicTextDrawer::DynamicTextDrawer(GraphicsEngine* pGfx, int uid, DynamicTextD
 
     const void* vertexBuffers[] = {(void*)vertices.data(), (void*)texturecoords.data()};
     const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3), sizeof(DirectX::XMFLOAT2)};
-    const bool cpuAccessFlags[] = {false, true};
-    pVBuf = std::make_unique<VertexBuffer>(*pGfx, vertexBuffers, vertexSizes, cpuAccessFlags, 2, VERTICES_PER_CHARACTER*MAX_DYNAMIC_TEXT_DRAWER_STRLEN);
-    addSharedBind(std::make_unique<IndexBuffer>(*pGfx, indices));
+    const UINT cpuAccessFlags[] = {0, D3D11_CPU_ACCESS_WRITE};
+    const size_t numVertices[] = {VERTICES_PER_CHARACTER*MAX_DYNAMIC_TEXT_DRAWER_STRLEN, VERTICES_PER_CHARACTER*MAX_DYNAMIC_TEXT_DRAWER_STRLEN};
+    pVBuf = std::make_unique<CpuMappableVertexBuffer>(*pDrawerHelper->pGfx, vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, 2);
+    pDrawerHelper->addSharedBind(std::make_unique<IndexBuffer>(*pDrawerHelper->pGfx, indices));
 }
 
-void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height){
-    if(pGfx==nullptr){
-        throw std::exception("Tried drawing DynamicText with a GraphicsEngine that was already destroyed");
+void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height) const{
+    if(pDrawerHelper->pGfx==nullptr){
+        throw std::exception("Tried drawing DynamicText with an invalid DrawerHelper");
     }
 
     if(text.size()==0){
@@ -201,9 +204,9 @@ void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down
     }
     unsigned int stringLength = static_cast<int>(text.size());
 
-    setIndexCount(stringLength*INDICES_PER_CHARACTER);
+    pDrawerHelper->setIndexCount(stringLength*INDICES_PER_CHARACTER);
 
-    std::vector<DirectX::XMFLOAT2> newTextureCoords = std::vector<DirectX::XMFLOAT2>(VERTICES_PER_CHARACTER*stringLength);
+    DirectX::XMFLOAT2* newTextureCoords = static_cast<DirectX::XMFLOAT2*>(pVBuf->getMappedAccess(*pDrawerHelper->pGfx, 1));
 
     for(int i=0; i<stringLength; i++){
         const char& character = text[i];
@@ -217,41 +220,35 @@ void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down
         newTextureCoords[i*VERTICES_PER_CHARACTER+2] = {((float)(unsigned char)(character-FIRST_USEFUL_ASCII_CHAR))/((float)NUM_USEFUL_ASCII_CHARS), 1.0f};
         newTextureCoords[i*VERTICES_PER_CHARACTER+3] = {((float)(unsigned char)(character+1-FIRST_USEFUL_ASCII_CHAR))/((float)NUM_USEFUL_ASCII_CHARS), 1.0f};
     }
-    pVBuf->update(*pGfx, 1, (void*)newTextureCoords.data(), newTextureCoords.size()*sizeof(DirectX::XMFLOAT2));
 
-    pVBuf->bind(*pGfx);
+    pVBuf->unMap(*pDrawerHelper->pGfx, 1);
 
-    pVcbuf->update(*pGfx,
+    pVBuf->bind(*pDrawerHelper->pGfx);
+
+    pVcbuf->update(*pDrawerHelper->pGfx,
         DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixScaling(char_width, char_height, 1.0f) * DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f) * pGfx->getView() * pGfx->getProjection()
+            DirectX::XMMatrixScaling(char_width, char_height, 1.0f) * DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f) * pDrawerHelper->pGfx->getView() * pDrawerHelper->pGfx->getProjection()
         )
     );
-    pVcbuf->bind(*pGfx);
+    pVcbuf->bind(*pDrawerHelper->pGfx);
 
-    draw();
+    pDrawerHelper->bindSharedBinds();
+    pDrawerHelper->drawIndexed();
 }
 
-StaticScreenTextDrawerInitializationArgs::StaticScreenTextDrawerInitializationArgs(std::string text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue) noexcept
+StaticScreenTextDrawer::StaticScreenTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue)
     :
-    text(text),
-    left_down_x(left_down_x),
-    left_down_y(left_down_y),
-    char_width(char_width),
-    char_height(char_height),
-    red(red),
-    green(green),
-    blue(blue)
-{}
-
-StaticScreenTextDrawer::StaticScreenTextDrawer(GraphicsEngine* pGfx, int uid, StaticScreenTextDrawerInitializationArgs args)
-    :
-    Drawer(pGfx, uid)
+    pDrawerHelper(pDrawerHelper)
 {
-    if(args.text.size()==0){
+    if(pDrawerHelper->pGfx==nullptr){
+        throw std::exception("Tried making a StaticScreenTextDrawer with an invalid DrawerHelper.");
+    }
+
+    if(text.size()==0){
         return;
     }
 
-    if(args.text.size() > INT_MAX){
+    if(text.size() > INT_MAX){
         throw std::overflow_error("StaticScreenTextDrawer was called with a text with length bigger than INT_MAX");
     }
 
@@ -354,30 +351,30 @@ StaticScreenTextDrawer::StaticScreenTextDrawer(GraphicsEngine* pGfx, int uid, St
         0x00,0x00,0x00,0x10,0x38,0x6C,0xC6,0xC6,0xFE,0x00,0x00,0x00     // DEL
     };
 
-    addSharedBind(std::make_unique<Sampler>(*pGfx, D3D11_FILTER_MIN_MAG_MIP_POINT));
+    pDrawerHelper->addSharedBind(std::make_unique<Sampler>(*pDrawerHelper->pGfx, D3D11_FILTER_MIN_MAG_MIP_POINT));
 
-    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader2.cso"));
+    std::unique_ptr<VertexShader> pvs = std::make_unique<VertexShader>(*pDrawerHelper->pGfx, VERTEX_PATH_CONCATINATED(L"VertexShader2.cso"));
     ID3DBlob* pvsbc = pvs->getBytecode();
-    addSharedBind(std::move(pvs));
+    pDrawerHelper->addSharedBind(std::move(pvs));
 
-    addSharedBind(std::make_unique<PixelShader>(*pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader3.cso")));
+    pDrawerHelper->addSharedBind(std::make_unique<PixelShader>(*pDrawerHelper->pGfx, PIXEL_PATH_CONCATINATED(L"PixelShader3.cso")));
 
     const std::vector<D3D11_INPUT_ELEMENT_DESC> ied =
     {
         {"Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
         {"TexCoord", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
     };
-    addSharedBind(std::make_unique<InputLayout>(*pGfx, ied, pvsbc));
+    pDrawerHelper->addSharedBind(std::make_unique<InputLayout>(*pDrawerHelper->pGfx, ied, pvsbc));
 
-    addSharedBind(std::make_unique<Topology>(*pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+    pDrawerHelper->addSharedBind(std::make_unique<Topology>(*pDrawerHelper->pGfx, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
 
-    addSharedBind(std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pGfx, 
+    pDrawerHelper->addSharedBind(std::make_unique<VertexConstantBuffer<DirectX::XMMATRIX>>(0, *pDrawerHelper->pGfx, 
         DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixScaling(args.char_width, args.char_height, 1.0f) * DirectX::XMMatrixTranslation(args.left_down_x, args.left_down_y, 0.0f)
+            DirectX::XMMatrixScaling(char_width, char_height, 1.0f) * DirectX::XMMatrixTranslation(left_down_x, left_down_y, 0.0f)
         )
     ));
 
-    unsigned int stringLength = static_cast<int>(args.text.size());
+    unsigned int stringLength = static_cast<int>(text.size());
 
     std::map<char, int> texturePositionMap;
 
@@ -386,7 +383,7 @@ StaticScreenTextDrawer::StaticScreenTextDrawer(GraphicsEngine* pGfx, int uid, St
     std::vector<unsigned short> indices;
 
     for (int i = 0; i < stringLength; i++){
-        const char& character = args.text[i];
+        const char& character = text[i];
 
         if(character < FIRST_USEFUL_ASCII_CHAR || character >= FIRST_USEFUL_ASCII_CHAR+NUM_USEFUL_ASCII_CHARS){
             throw std::exception("StaticScreenTextDrawer received invalid characters");
@@ -429,26 +426,27 @@ StaticScreenTextDrawer::StaticScreenTextDrawer(GraphicsEngine* pGfx, int uid, St
         for(int j=0; j<CHAR_PIXEL_HEIGHT; j++){
             for(int e=0; e<CHAR_PIXEL_WIDTH; e++){
                 if((bitmap[(it->first-FIRST_USEFUL_ASCII_CHAR)*CHAR_PIXEL_HEIGHT+j] << e) & 0b10000000){
-                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*texturePositionMap.size()*CHAR_PIXEL_WIDTH+it->second*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(args.blue*255.0f), (unsigned char)(args.green*255.0f), (unsigned char)(args.red*255.0f), 255};
+                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*texturePositionMap.size()*CHAR_PIXEL_WIDTH+it->second*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(blue*255.0f), (unsigned char)(green*255.0f), (unsigned char)(red*255.0f), 255};
                 }
                 else{
-                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*texturePositionMap.size()*CHAR_PIXEL_WIDTH+it->second*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(args.blue*255.0f), (unsigned char)(args.green*255.0f), (unsigned char)(args.red*255.0f), 0};
+                    textureBuffer[(CHAR_PIXEL_HEIGHT-1-j)*texturePositionMap.size()*CHAR_PIXEL_WIDTH+it->second*CHAR_PIXEL_WIDTH+e] = {(unsigned char)(blue*255.0f), (unsigned char)(green*255.0f), (unsigned char)(red*255.0f), 0};
                 }
             }
         }
     }
-    addSharedBind(std::make_unique<Texture>(*pGfx, std::move(textureBuffer), static_cast<int>(texturePositionMap.size())*CHAR_PIXEL_WIDTH, CHAR_PIXEL_HEIGHT));
+    pDrawerHelper->addSharedBind(std::make_unique<Texture>(*pDrawerHelper->pGfx, std::move(textureBuffer), static_cast<int>(texturePositionMap.size())*CHAR_PIXEL_WIDTH, CHAR_PIXEL_HEIGHT));
 
 
     const void* vertexBuffers[] = {(void*)vertices.data(), (void*)texturecoords.data()};
     const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3), sizeof(DirectX::XMFLOAT2)};
-    const bool cpuAccessFlags[] = {false, true};
-    addSharedBind(std::make_unique<VertexBuffer>(*pGfx, vertexBuffers, vertexSizes, cpuAccessFlags, 2, VERTICES_PER_CHARACTER*stringLength));
-    addSharedBind(std::make_unique<IndexBuffer>(*pGfx, indices));
+    const size_t numVertices[] = {VERTICES_PER_CHARACTER*stringLength, VERTICES_PER_CHARACTER*stringLength};
+    pDrawerHelper->addSharedBind(std::make_unique<ConstantVertexBuffer>(*pDrawerHelper->pGfx, vertexBuffers, vertexSizes, numVertices, 2));
+    pDrawerHelper->addSharedBind(std::make_unique<IndexBuffer>(*pDrawerHelper->pGfx, indices));
 
-    setIndexCount(stringLength*INDICES_PER_CHARACTER);
+    pDrawerHelper->setIndexCount(stringLength*INDICES_PER_CHARACTER);
 }
 
 void StaticScreenTextDrawer::drawStaticScreenText() const{
-    draw();
+    pDrawerHelper->bindSharedBinds();
+    pDrawerHelper->drawIndexed();
 }

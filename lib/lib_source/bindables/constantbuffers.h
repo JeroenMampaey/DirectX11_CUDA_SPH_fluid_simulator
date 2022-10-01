@@ -37,6 +37,7 @@ class ConstantBuffer : public Bindable{
 			cbd.StructureByteStride = 0;
 			GFX_THROW_FAILED(getDevice(gfx)->CreateBuffer(&cbd, nullptr, &pConstantBuffer));
 		}
+		virtual ~ConstantBuffer() = default;
     protected:
         Microsoft::WRL::ComPtr<ID3D11Buffer> pConstantBuffer;
 };

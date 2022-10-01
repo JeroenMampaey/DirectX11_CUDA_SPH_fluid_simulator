@@ -6,8 +6,9 @@
 
 class Bindable{
     public:
-        virtual void bind(const GraphicsEngine& gfx) = 0;
         virtual ~Bindable() = default;
+        virtual void bind(const GraphicsEngine& gfx) = 0;
+        
     protected:
         static ID3D11DeviceContext* getContext(const GraphicsEngine& gfx) noexcept;
         static ID3D11Device* getDevice(const GraphicsEngine& gfx) noexcept;

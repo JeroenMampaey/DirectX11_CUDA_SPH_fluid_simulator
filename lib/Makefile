@@ -7,7 +7,7 @@ all: ${PIXELSHADERS} ${VERTEXSHADERS} binaries/graphics.dll
 	@powershell '(Write-Host "Library build successfully" -ForegroundColor green)'
 
 binaries/graphics.dll:
-	nvcc -o binaries/graphics.dll --shared ${CPP_SOURCES} -D LIBRARY_EXPORTS=1 -D DEFAULT_VERTEX_SHADERS_DIRECTORY='L"${current_dir}binaries/vertexshaders/"' -D DEFAULT_PIXEL_SHADERS_DIRECTORY='L"${current_dir}binaries/pixelshaders/"' -std=c++17
+	nvcc -o binaries/graphics.dll --shared ${CPP_SOURCES} -D DEFAULT_VERTEX_SHADERS_DIRECTORY='L"${current_dir}binaries/vertexshaders/"' -D DEFAULT_PIXEL_SHADERS_DIRECTORY='L"${current_dir}binaries/pixelshaders/"' -std=c++17
 
 binaries/pixelshaders/%.cso: lib_source/pixelshaders/%.hlsl binaries/pixelshaders
 	fxc.exe $< -Fo $@ -T ps_4_1

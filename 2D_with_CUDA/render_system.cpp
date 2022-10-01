@@ -6,17 +6,11 @@
 
 RenderSystem::RenderSystem(GraphicsEngine& gfx)
     :
-    gfx(gfx)
+    gfx(gfx),
+    particleDrawer(gfx.createNewDrawer<FilledCircleDrawer>(0.2f, 0.2f, 1.0f)),
+    boundaryDrawer(gfx.createNewDrawer<LineDrawer>(0.0f, 0.0f, 0.0f)),
+    pumpDrawer(gfx.createNewDrawer<HollowRectangleDrawer>(0.0f, 1.0f, 0.0f))
 {
-    FilledCircleDrawerInitializationArgs particleArgs = {0.2f, 0.2f, 1.0f};
-    particleDrawer = gfx.createNewDrawer<FilledCircleDrawer>(particleArgs);
-
-    LineDrawerInitializationArgs boundaryArgs = {0.0f, 0.0f, 0.0f};
-    boundaryDrawer = gfx.createNewDrawer<LineDrawer>(boundaryArgs);
-
-    HollowRectangleDrawerInitializationArgs pumpArgs = {0.0f, 1.0f, 0.0f};
-    pumpDrawer = gfx.createNewDrawer<HollowRectangleDrawer>(pumpArgs);
-
     gfx.setProjection(DirectX::XMMatrixIdentity()* 
         DirectX::XMMatrixScaling(2.0f/((float)WIDTH), 2.0f/((float)HEIGHT), 1.0f)*
         DirectX::XMMatrixTranslation(-1.0f, -1.0f, 0.0f));

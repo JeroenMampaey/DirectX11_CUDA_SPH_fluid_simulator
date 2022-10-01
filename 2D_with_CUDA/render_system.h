@@ -9,7 +9,7 @@ class RenderSystem{
 
     private:
         GraphicsEngine& gfx;
-        std::shared_ptr<FilledCircleDrawer> particleDrawer;
-        std::shared_ptr<LineDrawer> boundaryDrawer;
-        std::shared_ptr<HollowRectangleDrawer> pumpDrawer;
+        std::unique_ptr<FilledCircleDrawer> particleDrawer;
+        std::unique_ptr<LineDrawer> boundaryDrawer;
+        std::unique_ptr<HollowRectangleDrawer> pumpDrawer;
 };

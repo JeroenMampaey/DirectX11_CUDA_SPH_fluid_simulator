@@ -6,8 +6,9 @@
 #include "event.h"
 #include "events/events_includes.h"
 
-class LIBRARY_API Window
+class Window
 {
+        friend LIBRARY_API Window createWindow(const char* name, UINT syncInterval);
     private:
         class WindowClass
         {
@@ -21,19 +22,22 @@ class LIBRARY_API Window
                 static WindowClass wndClass;
                 HINSTANCE hInst;
         };
+
+        Window(const char* name, UINT syncInterval);
+        static HWND initializationHelper(Window* pWnd, const char* name);
         static LRESULT CALLBACK handleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	    static LRESULT CALLBACK handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
 	    LRESULT handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
         HWND hWnd;
         std::shared_ptr<EventBus> pEventBus;
-        std::unique_ptr<GraphicsEngine> pGfx;
+        GraphicsEngine gfx;
         std::exception_ptr thrownException = nullptr;
 
     public:
-        Window(const char* name, UINT syncInterval);
-	    ~Window() noexcept;
-        static std::optional<int> processMessages() noexcept;
-        std::shared_ptr<EventBus> getEventBus() const noexcept;
-        GraphicsEngine& getGraphicsEngine() const noexcept;
-        void checkForThrownExceptions() const;
+	    LIBRARY_API ~Window() noexcept;
+        LIBRARY_API static std::optional<int> processMessages() noexcept;
+        LIBRARY_API std::shared_ptr<EventBus> getEventBus() const noexcept;
+        LIBRARY_API GraphicsEngine& getGraphicsEngine() noexcept;
+        LIBRARY_API void checkForThrownExceptions() const;
 };
