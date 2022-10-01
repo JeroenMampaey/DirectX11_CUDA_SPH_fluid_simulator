@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <type_traits>
+#include <typeindex>
 
 
 #define RATE_IS_INVALID(rate) ((rate) <= 0.0)
@@ -18,8 +19,22 @@
 #define AMD_VENDOR_ID 4098
 #define INTEL_VENDOR_ID 32902
 
+template<class T>
+class GraphicsBoundObject{
+    public:
+        typedef T HelperType;
+        virtual ~GraphicsBoundObject() noexcept = default;
+    
+    protected:
+        GraphicsBoundObject(std::shared_ptr<T> helper) noexcept : helper(helper) {};
+        std::shared_ptr<T> helper;
+};
+
+class InvalidDrawer{};
+
 class GraphicsEngine{
         friend class Bindable;
+        friend class Helper;
         friend class DrawerHelper;
         friend class Window;
     public:
@@ -36,10 +51,12 @@ class GraphicsEngine{
         LIBRARY_API void endFrame() const;
 
         template<class T, class... Args>
-        LIBRARY_API std::unique_ptr<T> createNewDrawer(Args... args);
+        LIBRARY_API std::unique_ptr<T> createNewGraphicsBoundObject(Args... args);
 
     private:
         GraphicsEngine(HWND hWnd, UINT syncInterval);
+
+        std::unordered_map<std::type_index, std::shared_ptr<Helper>> helpersMap;
 
         std::unique_ptr<class StaticScreenTextDrawer> screenDrawer;
 
@@ -52,10 +69,7 @@ class GraphicsEngine{
         Microsoft::WRL::ComPtr<ID3D11RenderTargetView> pTarget;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilView> pDSV;
 
-        std::unordered_map<int, std::weak_ptr<DrawerHelper>> drawerHelpersMap;
-
         UINT syncInterval;
         float refreshRate = -1.0f;
-        int lastDrawer = -1;
-        int drawerUidCounter = 0;
+        std::type_index lastDrawer = typeid(InvalidDrawer);
 };

@@ -1,10 +1,13 @@
 #include "graphics_engine.h"
 #include <sstream>
-#include "drawer_helper.h"
+#include "helpers.h"
 #include "drawers/drawers_includes.h"
 #include "exceptions.h"
 
-GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(syncInterval) {
+GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) 
+    : 
+    syncInterval(syncInterval)
+{
     if(syncInterval<1 || syncInterval>4){
         throw std::exception("GraphicsEngine constructor syncInterval parameter is invalid, parameter must be between 1 and 4.");
     }
@@ -186,7 +189,7 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval) : syncInterval(sync
     projection = DirectX::XMMatrixIdentity();
     view = DirectX::XMMatrixIdentity();
 
-    screenDrawer = createNewDrawer<StaticScreenTextDrawer>(specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f);
+    screenDrawer = createNewGraphicsBoundObject<StaticScreenTextDrawer>(specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f);
 }
 
 void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
@@ -194,7 +197,7 @@ void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
     const float color[] = {red, green, blue, 1.0f};
     pContext->ClearRenderTargetView(pTarget.Get(), color);
     pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-    lastDrawer = -1;
+    lastDrawer = typeid(InvalidDrawer);
 }
 
 void GraphicsEngine::endFrame() const{
@@ -231,25 +234,31 @@ float GraphicsEngine::getRefreshRate() const noexcept{
 }
 
 GraphicsEngine::~GraphicsEngine() noexcept{
-    for(const std::pair<int, std::weak_ptr<DrawerHelper>>& pair : drawerHelpersMap){
-        if(std::shared_ptr<DrawerHelper> drawerHelper = pair.second.lock()){
-            drawerHelper->pGfx = nullptr;
-        }
+    for(const std::pair<std::type_index, std::shared_ptr<Helper>>& pair : helpersMap){
+        pair.second->pGfx = nullptr;
     }
 }
 
 template<class T, class... Args>
-std::unique_ptr<T> GraphicsEngine::createNewDrawer(Args... args){
-    std::shared_ptr<DrawerHelper> pDrawerHelper = std::shared_ptr<DrawerHelper>(new DrawerHelper(this, drawerUidCounter));
-    drawerHelpersMap.insert({drawerUidCounter, pDrawerHelper});
-    drawerUidCounter++;
-    return std::unique_ptr<T>(new T(pDrawerHelper, std::forward<Args>(args)...));
-};
+std::unique_ptr<T> GraphicsEngine::createNewGraphicsBoundObject(Args... args){
+    std::type_index typeIndex = typeid(typename T::HelperType);
+    std::shared_ptr<typename T::HelperType> pHelper;
+    auto it = helpersMap.find(typeIndex);
+    if(it !=helpersMap.end()){
+        pHelper = std::static_pointer_cast<typename T::HelperType>(it->second);
+    }
+    else{
+        pHelper = std::shared_ptr<typename T::HelperType>(new typename T::HelperType(this));
+        helpersMap.insert({typeIndex, pHelper});
+    }
+    return std::unique_ptr<T>(new T(pHelper, std::forward<Args>(args)...));
+}
 
-template LIBRARY_API std::unique_ptr<FilledCircleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<FilledCircleInstanceDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<FilledRectangleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<HollowRectangleDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<LineDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<DynamicTextDrawer> GraphicsEngine::createNewDrawer(float red, float green, float blue);
-template LIBRARY_API std::unique_ptr<StaticScreenTextDrawer> GraphicsEngine::createNewDrawer(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<FilledCircleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<FilledCircleInstanceDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<FilledRectangleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<HollowRectangleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<LineDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<DynamicTextDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<StaticScreenTextDrawer> GraphicsEngine::createNewGraphicsBoundObject(const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue);
+template LIBRARY_API std::unique_ptr<CpuAccessibleFilledCircleInstanceBuffer> GraphicsEngine::createNewGraphicsBoundObject(int numberOfCircles, float radius);

@@ -5,7 +5,7 @@
 App::App()
     :
     wnd(createWindow("Example", SYNCINTERVAL)),
-    entityManager(EntityManager()),
+    entityManager(EntityManager(wnd.getGraphicsEngine())),
     eventHandlerSystem(EventHandlerSystem(wnd.getEventBus())),
     renderSystem(RenderSystem(wnd.getGraphicsEngine(), entityManager))
 {

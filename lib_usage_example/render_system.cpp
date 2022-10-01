@@ -7,18 +7,19 @@
 RenderSystem::RenderSystem(GraphicsEngine& gfx, EntityManager& manager)
     :
     gfx(gfx),
-    filledRectangleDrawer(gfx.createNewDrawer<FilledRectangleDrawer>(1.0f, 0.0f, 1.0f)),
-    lineDrawer(gfx.createNewDrawer<LineDrawer>(0.0f, 0.0f, 0.0f)),
-    circleDrawer(gfx.createNewDrawer<FilledCircleDrawer>(0.2f, 0.2f, 1.0f)),
-    hollowRectangleDrawer(gfx.createNewDrawer<HollowRectangleDrawer>(0.0f, 0.0f, 0.0f)),
-    textDrawer(gfx.createNewDrawer<DynamicTextDrawer>(1.0f, 1.0f, 1.0f)),
-    filledCircleBufferDrawer(gfx.createNewDrawer<FilledCircleInstanceDrawer>(0.2f, 0.2f, 1.0f))
+    filledRectangleDrawer(gfx.createNewGraphicsBoundObject<FilledRectangleDrawer>(1.0f, 0.0f, 1.0f)),
+    lineDrawer(gfx.createNewGraphicsBoundObject<LineDrawer>(0.0f, 0.0f, 0.0f)),
+    circleDrawer(gfx.createNewGraphicsBoundObject<FilledCircleDrawer>(0.2f, 0.2f, 1.0f)),
+    hollowRectangleDrawer(gfx.createNewGraphicsBoundObject<HollowRectangleDrawer>(0.0f, 0.0f, 0.0f)),
+    textDrawer(gfx.createNewGraphicsBoundObject<DynamicTextDrawer>(1.0f, 1.0f, 1.0f)),
+    filledCircleBufferDrawer(gfx.createNewGraphicsBoundObject<FilledCircleInstanceDrawer>(0.2f, 0.2f, 1.0f))
 {
-    manager.getCircleCollection() = filledCircleBufferDrawer->createCpuAccessibleBuffer(2, 50.0f);
-    DirectX::XMFLOAT3* test = manager.getCircleCollection()->getMappedAccess();
+    //manager.getCircleCollection() = gfx.createNewGraphicsBoundObject<CpuAccessibleFilledCircleInstanceBuffer>(2, 50.0f);
+    //manager.getCircleCollection() = filledCircleBufferDrawer->createCpuAccessibleBuffer(2, 50.0f);
+    DirectX::XMFLOAT3* test = manager.getCircleCollection().getMappedAccess();
     test[0] = {250.0f, 250.0f, 0.0f};
     test[1] = {450.0f, 450.0f, 0.0f};
-    manager.getCircleCollection()->unMap();
+    manager.getCircleCollection().unMap();
 
     gfx.setProjection(DirectX::XMMatrixIdentity()* 
         DirectX::XMMatrixScaling(2.0f/((float)WIDTH), 2.0f/((float)HEIGHT), 1.0f)*
@@ -42,6 +43,6 @@ void RenderSystem::update(EntityManager& manager) const{
     }
     // Notice: this drawDynamicText call will throw an exception if more than 255 characters are contained in the textfield
     textDrawer->drawDynamicText(manager.getSpecificTextField().text, 50.0f, 50.0f, 25.0f, 50.0f);
-    filledCircleBufferDrawer->drawFilledCircleBuffer(manager.getCircleCollection().get());
+    filledCircleBufferDrawer->drawFilledCircleBuffer(manager.getCircleCollection());
     gfx.endFrame();
 }

@@ -1,13 +1,10 @@
 #pragma once
-#include "../exports.h"
-#include <memory>
-#include "../windows_includes.h"
-#include <unordered_map>
+#include "drawer.h"
 
 class DrawerHelper;
 template<class> class VertexConstantBuffer;
 
-class FilledRectangleDrawer{
+class FilledRectangleDrawer : public Drawer{
     public:
         LIBRARY_API void drawFilledRectangle(float x, float y, float width, float height) const;
         LIBRARY_API ~FilledRectangleDrawer() noexcept;
@@ -17,6 +14,5 @@ class FilledRectangleDrawer{
 #endif
         
     private:
-        std::shared_ptr<DrawerHelper> pDrawerHelper;
         std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };

@@ -49,14 +49,14 @@ class SpecificTextFieldEntity{
 
 class EntityManager{
     public:
-        EntityManager() noexcept;
+        EntityManager(GraphicsEngine& gfx) noexcept;
         CameraEntity& getCamera() noexcept;
         std::vector<FilledRectangleEntity>& getFilledRectangles() noexcept;
         std::vector<LineEntity>& getLines() noexcept;
         std::vector<CircleEntity>& getCircles() noexcept;
         std::vector<HollowRectangleEntity>& getHollowRectangles() noexcept;
         SpecificTextFieldEntity& getSpecificTextField() noexcept;
-        std::shared_ptr<FilledCircleInstanceBuffer>& getCircleCollection() noexcept;
+        CpuAccessibleFilledCircleInstanceBuffer& getCircleCollection() noexcept;
     
     private:
         CameraEntity camera;
@@ -65,5 +65,5 @@ class EntityManager{
         std::vector<CircleEntity> circles;
         std::vector<HollowRectangleEntity> hollowRectangles;
         SpecificTextFieldEntity specificTextField;
-        std::shared_ptr<FilledCircleInstanceBuffer> circleCollection;
+        std::unique_ptr<CpuAccessibleFilledCircleInstanceBuffer> circleCollection;
 };
