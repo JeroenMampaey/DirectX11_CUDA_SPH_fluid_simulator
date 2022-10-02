@@ -4,8 +4,7 @@
 
 class PhysicsSystem{
     public:
-        PhysicsSystem() noexcept = default;
-        PhysicsSystem(float dt) noexcept;
+        PhysicsSystem(GraphicsEngine& gfx);
         void update(EntityManager& manager) noexcept;
     private:
         float dt;

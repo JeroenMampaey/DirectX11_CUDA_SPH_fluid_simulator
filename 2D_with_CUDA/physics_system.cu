@@ -44,7 +44,7 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     transferToDeviceMemory(manager);
 }
 
-PhysicsSystem::~PhysicsSystem(){
+PhysicsSystem::~PhysicsSystem() noexcept{
     destroyDeviceMemory();
 }
 

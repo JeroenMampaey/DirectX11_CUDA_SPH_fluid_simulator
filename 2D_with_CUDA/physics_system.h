@@ -8,7 +8,7 @@
 class PhysicsSystem{
     public:
         PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager);
-        ~PhysicsSystem();
+        ~PhysicsSystem() noexcept;
         void update(EntityManager& manager);
     private:
         void allocateDeviceMemory(EntityManager& manager);
