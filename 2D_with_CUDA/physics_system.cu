@@ -19,7 +19,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     :
     numBoundaries(manager.getBoundaries().size()),
-    numParticles(manager.getParticles().size()),
+    numParticles(manager.getParticles().numberOfCircles),
     numPumps(manager.getPumps().size())
 {
     float refreshRate;
@@ -54,10 +54,11 @@ void PhysicsSystem::update(EntityManager& manager){
     dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
     dim3 blockSize(BLOCK_SIZE);
     int sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
+    
+    Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &numParticles, &pumps, &pumpVelocities, &numPumps, &pressureDensityRatios};
     CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0));
-    CUDA_THROW_FAILED(cudaGetLastError());
-    cudaMemcpy(manager.getParticles().data(), particles, sizeof(Particle)*numParticles, cudaMemcpyDeviceToHost);
+    manager.getParticles().unMap();
 }
 
 void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
@@ -68,7 +69,6 @@ void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
     }
 
     if(numParticles > 0){
-        CUDA_THROW_FAILED(cudaMalloc((void**)&particles, sizeof(Particle)*numParticles));
         CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticles, sizeof(Particle)*numParticles));
         CUDA_THROW_FAILED(cudaMalloc((void**)&pressureDensityRatios, sizeof(float)*numParticles));
     }
@@ -86,10 +86,11 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
         CUDA_THROW_FAILED(cudaMemcpy(boundaries, manager.getBoundaries().data(), sizeof(Boundary)*numBoundaries, cudaMemcpyHostToDevice));
     }
 
+    Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     if(numParticles > 0){
-        CUDA_THROW_FAILED(cudaMemcpy(particles, manager.getParticles().data(), sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
-        CUDA_THROW_FAILED(cudaMemcpy(oldParticles, manager.getParticles().data(), sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
+        CUDA_THROW_FAILED(cudaMemcpy(oldParticles, particles, sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
     }
+    manager.getParticles().unMap();
 
     if(numPumps > 0){
         CUDA_THROW_FAILED(cudaMemcpy(pumps, manager.getPumps().data(), sizeof(Pump)*numPumps, cudaMemcpyHostToDevice));
@@ -100,10 +101,6 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
 void PhysicsSystem::destroyDeviceMemory() noexcept{
     if(boundaries){
         cudaFree(boundaries);
-    }
-
-    if(particles){
-        cudaFree(particles);
     }
 
     if(oldParticles){
@@ -211,7 +208,8 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             old_y = my_y - vel_y*dt;
 
             // Also update the particle positions in global memory
-            particles[thread_id] = {my_x, my_y};
+            particles[thread_id].x = my_x;
+            particles[thread_id].y = my_y;
         }
 
         // Synchronize the grid
@@ -464,7 +462,10 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
     // Store the both position and old positions in global memeory
     if(thread_id < numParticles){
-        oldParticles[thread_id] = {old_x, old_y};
-        particles[thread_id] = {my_x, my_y};
+        oldParticles[thread_id].x = old_x;
+        oldParticles[thread_id].y = old_y;
+
+        particles[thread_id].x = my_x;
+        particles[thread_id].y = my_y;
     }
 }

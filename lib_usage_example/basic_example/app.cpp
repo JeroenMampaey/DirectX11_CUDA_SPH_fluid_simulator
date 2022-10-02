@@ -2,6 +2,7 @@
 
 #define SYNCINTERVAL 1
 
+// TODO: member initialization list throws exception, App object won't properly be destroyed
 App::App()
     :
     wnd(createWindow("Example", SYNCINTERVAL)),

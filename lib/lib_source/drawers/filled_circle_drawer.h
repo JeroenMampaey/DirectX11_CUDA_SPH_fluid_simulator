@@ -33,11 +33,13 @@ class FilledCircleInstanceDrawer : public Drawer{
         std::unique_ptr<VertexConstantBuffer<DirectX::XMMATRIX>> pVcbuf;
 };
 
+//TODO
 class FilledCircleInstanceBuffer : public GraphicsBoundObject<Helper>{
         friend FilledCircleInstanceDrawer;
     public:
         LIBRARY_API virtual ~FilledCircleInstanceBuffer() noexcept;
-        LIBRARY_API DirectX::XMFLOAT3* getMappedAccess();
+        //LIBRARY_API DirectX::XMFLOAT3* getMappedAccess();
+        LIBRARY_API void* getMappedAccess();
         LIBRARY_API void unMap();
 
         const int numberOfCircles;
@@ -45,7 +47,8 @@ class FilledCircleInstanceBuffer : public GraphicsBoundObject<Helper>{
 
     private:
         bool isMapped = false;
-        DirectX::XMFLOAT3* mappedBuffer = nullptr;
+        //DirectX::XMFLOAT3* mappedBuffer = nullptr;
+        void* mappedBuffer = nullptr;
 
     protected:
         FilledCircleInstanceBuffer(std::shared_ptr<Helper> pHelper, int numberOfCircles, float radius) noexcept;
@@ -56,5 +59,12 @@ class CpuAccessibleFilledCircleInstanceBuffer : public FilledCircleInstanceBuffe
     public:
 #ifndef READ_FROM_LIB_HEADER
         CpuAccessibleFilledCircleInstanceBuffer(std::shared_ptr<Helper> pHelper, int numberOfCircles, float radius);
+#endif
+};
+
+class CudaAccessibleFilledCircleInstanceBuffer : public FilledCircleInstanceBuffer{
+    public:
+#ifndef READ_FROM_LIB_HEADER
+        CudaAccessibleFilledCircleInstanceBuffer(std::shared_ptr<Helper> pHelper, int numberOfCircles, float radius);
 #endif
 };

@@ -1,5 +1,6 @@
 #include "vertexbuffer.h"
 #include <array>
+#include "../exceptions.h"
 
 VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
 	:
@@ -45,7 +46,7 @@ CpuMappableVertexBuffer::CpuMappableVertexBuffer(std::shared_ptr<BindableHelper>
 	MappableVertexBuffer(std::move(pHelper), vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, numVertexBuffers)
 {}
 
-void* CpuMappableVertexBuffer::getMappedAccess(int vertexBufferIndex) const{
+void* CpuMappableVertexBuffer::getMappedAccess(int vertexBufferIndex){
 	D3D11_BUFFER_DESC desc;
 	vertexBufferPs[vertexBufferIndex]->GetDesc(&desc);
 
@@ -59,6 +60,76 @@ void* CpuMappableVertexBuffer::getMappedAccess(int vertexBufferIndex) const{
 	return msr.pData;
 }
 
-void CpuMappableVertexBuffer::unMap(int vertexBufferIndex) const noexcept{
+void CpuMappableVertexBuffer::unMap(int vertexBufferIndex){
+	D3D11_BUFFER_DESC desc;
+	vertexBufferPs[vertexBufferIndex]->GetDesc(&desc);
+
+	if(desc.CPUAccessFlags != D3D11_CPU_ACCESS_WRITE){
+		throw std::exception("Attempted to unmap a vertexbuffer that is not accessible from the CPU.");
+	}
+
 	helper->getContext().Unmap(vertexBufferPs[vertexBufferIndex].Get(), 0);
 }
+
+
+CudaMappableVertexBuffer::CudaMappableVertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const bool cudaAccessibilityMask[], const size_t numVertices[], const int numVertexBuffers)
+	:
+	MappableVertexBuffer(std::move(pHelper), vertexBuffers, vertexSizes, std::vector<UINT>(numVertexBuffers, 0).data(), numVertices, numVertexBuffers)
+{
+#if __has_include(<cuda.h>)
+	for(int i=0; i<numVertexBuffers; i++){
+		cudaResources.push_back(nullptr);
+		cudaError_t err;
+		if(cudaAccessibilityMask[i]){
+			CUDA_THROW_FAILED(cudaGraphicsD3D11RegisterResource(&cudaResources[i], vertexBufferPs[i].Get(), cudaGraphicsRegisterFlagsNone));
+		}
+	}
+#endif
+}
+
+void* CudaMappableVertexBuffer::getMappedAccess(int vertexBufferIndex){
+#if __has_include(<cuda.h>)
+	void* retval;
+
+	cudaGraphicsResource*& cudaResource = cudaResources[vertexBufferIndex];
+
+	if(cudaResource==nullptr){
+		throw std::exception("Attempted to map a vertexbuffer that is not accessible to CUDA.");
+	}
+
+	cudaError_t err;
+	CUDA_THROW_FAILED(cudaGraphicsMapResources(1, &cudaResource, 0));
+	size_t num_bytes;
+    CUDA_THROW_FAILED(cudaGraphicsResourceGetMappedPointer(&retval, &num_bytes, cudaResource));
+	return retval;
+#else
+	throw std::exception("Trying to get MappedAccess to a CudaMappableVertexBuffer but library 'cuda.h' was not found");
+#endif
+}
+
+void CudaMappableVertexBuffer::unMap(int vertexBufferIndex){
+#if __has_include(<cuda.h>)
+	void* retval;
+
+	cudaGraphicsResource*& cudaResource = cudaResources[vertexBufferIndex];
+
+	if(cudaResource==nullptr){
+		throw std::exception("Attempted to map a vertexbuffer that is not accessible to CUDA.");
+	}
+
+	cudaError_t err;
+	CUDA_THROW_FAILED(cudaGraphicsUnmapResources(1, &cudaResource, 0));
+#else
+	throw std::exception("Trying to unMap a CudaMappableVertexBuffer but library 'cuda.h' was not found");
+#endif
+}
+
+#if __has_include(<cuda.h>)
+CudaMappableVertexBuffer::~CudaMappableVertexBuffer() noexcept{
+	for(cudaGraphicsResource*& cudaResource : cudaResources){
+		if(cudaResource!=nullptr){
+			cudaGraphicsUnregisterResource(cudaResource);
+		}
+	}
+}
+#endif

@@ -18,7 +18,6 @@ class PhysicsSystem{
         float dt;    
         Boundary* boundaries = nullptr;
         int numBoundaries;
-        Particle* particles = nullptr;
         int numParticles;
         Particle* oldParticles = nullptr;
         Pump* pumps = nullptr;

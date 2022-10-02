@@ -4,6 +4,7 @@
 #include <vector>
 #include <utility>
 #include <cmath>
+#include "exceptions.h"
 
 #ifndef SIMULATION_LAYOUT_DIRECTORY
 #define SIMULATION_LAYOUT_DIRECTORY "../../simulation_layout/"
@@ -13,10 +14,7 @@
 
 #define RADIUS 7.5f
 
-struct Particle{
-    float x;
-    float y;
-};
+#define Particle DirectX::XMFLOAT4
 
 struct Boundary{
     unsigned short x1;
@@ -39,19 +37,19 @@ struct PumpVelocity{
 
 class EntityManager{
     public:
-        EntityManager();
+        EntityManager(GraphicsEngine& gfx);
 
-        std::vector<Particle>& getParticles() noexcept;
+        CudaAccessibleFilledCircleInstanceBuffer& getParticles() noexcept;
         std::vector<Boundary>& getBoundaries() noexcept;
         std::vector<Pump>& getPumps() noexcept;
         std::vector<PumpVelocity>& getPumpVelocities() noexcept;
     
     private:
-        void buildDefaultSimulationLayout();
-        void buildSimulationLayoutFromFile(char* buffer);
+        void buildDefaultSimulationLayout(GraphicsEngine& gfx);
+        void buildSimulationLayoutFromFile(GraphicsEngine& gfx, char* buffer);
 
         std::vector<Boundary> boundaries;
         std::vector<Pump> pumps;
-        std::vector<Particle> particles;
+        std::unique_ptr<CudaAccessibleFilledCircleInstanceBuffer> pParticles;
         std::vector<PumpVelocity> pumpVelocities;
 };

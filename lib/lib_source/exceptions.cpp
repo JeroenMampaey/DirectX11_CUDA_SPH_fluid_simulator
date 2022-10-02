@@ -23,7 +23,10 @@ std::string Exception::TranslateErrorCode(HRESULT hr) noexcept
 	return errorString;	
 }
 
-HrException::HrException( int line,const char* file,HRESULT hr ) noexcept : Exception( line,file ), hr( hr )
+HrException::HrException( int line,const char* file,HRESULT hr ) noexcept 
+	: 
+	Exception(line, file), 
+	hr(hr)
 {}
 
 const char* HrException::what() const noexcept{
@@ -52,3 +55,40 @@ std::string HrException::GetErrorDescription() const noexcept{
 const char* DeviceRemovedException::GetType() const noexcept{
 	return "Graphics Exception (DXGI_ERROR_DEVICE_REMOVED)";
 }
+
+#if __has_include (<cuda.h>)
+std::string Exception::TranslateErrorCode(cudaError_t err) noexcept{
+	const char* pMsgBuf = cudaGetErrorString(err);
+	std::string errorString = pMsgBuf;
+	return errorString;
+}
+
+CudaException::CudaException(int line, const char* file, cudaError_t err) noexcept
+	:
+	Exception(line, file),
+    err(err)
+{}
+
+const char* CudaException::what() const noexcept{
+	std::ostringstream oss;
+	oss << GetType() << std::endl
+		<< "[Error Code] 0x" << std::hex << std::uppercase << GetErrorCode()
+		<< std::dec << " (" << (unsigned long)GetErrorCode() << ")" << std::endl
+		<< "[Description] " << GetErrorDescription() << std::endl
+		<< GetOriginString();
+	whatBuffer = oss.str();
+	return whatBuffer.c_str();
+}
+
+const char* CudaException::GetType() const noexcept{
+	return "Window Cuda Exception";
+}
+
+cudaError_t CudaException::GetErrorCode() const noexcept{
+	return err;
+}
+
+std::string CudaException::GetErrorDescription() const noexcept{
+	return CudaException::TranslateErrorCode(err);
+}
+#endif

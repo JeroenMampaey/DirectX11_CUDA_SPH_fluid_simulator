@@ -2,11 +2,18 @@
 
 #include "win_exception.h"
 
-class Exception : public WinException
-{
+#if __has_include(<cuda.h>)
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
+
+class Exception : public WinException{
         using WinException::WinException;
     public:
         static std::string TranslateErrorCode(HRESULT hr) noexcept;
+#if __has_include(<cuda.h>)
+        static std::string TranslateErrorCode(cudaError_t err) noexcept;
+#endif
 };
 
 class HrException : public Exception
@@ -29,6 +36,21 @@ class DeviceRemovedException : public HrException
     private:
         std::string reason;
 };
+
+#if __has_include(<cuda.h>)
+class CudaException : public Exception{
+    public:
+        CudaException(int line, const char* file, cudaError_t err) noexcept;
+        const char* what() const noexcept override;
+        const char* GetType() const noexcept override;
+        cudaError_t GetErrorCode() const noexcept;
+        std::string GetErrorDescription() const noexcept;
+    private:
+        cudaError_t err;
+};
+
+#define CUDA_THROW_FAILED(cudaCall) if( ( err = (cudaCall) ) != cudaSuccess ) throw CudaException( __LINE__,__FILE__,err)
+#endif
 
 #define GFX_THROW_FAILED(hrcall) if( FAILED( hr = (hrcall) ) ) throw HrException( __LINE__,__FILE__,hr )
 #define CHWND_LAST_EXCEPT() HrException( __LINE__,__FILE__,GetLastError() )

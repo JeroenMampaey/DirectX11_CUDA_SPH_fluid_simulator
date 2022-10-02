@@ -8,14 +8,14 @@
 #define DEFAULT_NUMPOINTS 1500
 #define DEFAULT_NUMBOUNDARIES 3
 
-EntityManager::EntityManager(){
+EntityManager::EntityManager(GraphicsEngine& gfx){
     HANDLE hFile;
     char   ReadBuffer[MAX_BUFFERSIZE] = {0};
 
     hFile = CreateFileA(SLD_PATH_CONCATINATED("simulation2D.txt"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
     if(hFile == INVALID_HANDLE_VALUE){
-        buildDefaultSimulationLayout();
+        buildDefaultSimulationLayout(gfx);
         return;
     }
 
@@ -23,22 +23,24 @@ EntityManager::EntityManager(){
 
     if(FALSE == ReadFile(hFile, ReadBuffer, MAX_BUFFERSIZE-1, static_cast<LPDWORD>(&dwBytesRead), NULL)){
         CloseHandle(hFile);
-        buildDefaultSimulationLayout();
+        buildDefaultSimulationLayout(gfx);
         return;
     }
 
     if (dwBytesRead > 0 && dwBytesRead <= MAX_BUFFERSIZE-1){
         ReadBuffer[dwBytesRead]='\0';
-        buildSimulationLayoutFromFile(ReadBuffer);
+        buildSimulationLayoutFromFile(gfx, ReadBuffer);
     }
     else{
-        buildDefaultSimulationLayout();
+        buildDefaultSimulationLayout(gfx);
     }
 
     CloseHandle(hFile);
 }
 
-void EntityManager::buildDefaultSimulationLayout(){
+void EntityManager::buildDefaultSimulationLayout(GraphicsEngine& gfx){
+    std::vector<Particle> tempParticles;
+
     boundaries.push_back({0, HEIGHT, 0, 0});
     boundaries.push_back({0, 0, WIDTH, 0});
     boundaries.push_back({WIDTH, 0, WIDTH, HEIGHT});
@@ -51,14 +53,23 @@ void EntityManager::buildDefaultSimulationLayout(){
     float x = start_x;
     float y = start_y;
     for(int i=0; i<DEFAULT_NUMPOINTS; i++){
-        particles.push_back({x, y});
+        tempParticles.push_back({x, y, 0.0f, 0.0f});
         y = (x+interval > end_x) ? y+interval : y;
         x = (x+interval > end_x) ? start_x : x+interval;
     }
+
+    pParticles = gfx.createNewGraphicsBoundObject<CudaAccessibleFilledCircleInstanceBuffer>(static_cast<int>(tempParticles.size()), RADIUS);
+
+    Particle* realParticles = (Particle*)pParticles->getMappedAccess();
+    cudaError_t err;
+    CUDA_THROW_FAILED(cudaMemcpy(realParticles, tempParticles.data(), sizeof(Particle)*tempParticles.size(), cudaMemcpyHostToDevice));
+    pParticles->unMap();
 }
 
 //TODO: make this parser more error prone (a wrongfully formatted file can easily crash the program at the moment)
-void EntityManager::buildSimulationLayoutFromFile(char* buffer){
+void EntityManager::buildSimulationLayoutFromFile(GraphicsEngine& gfx, char* buffer){
+    std::vector<Particle> tempParticles;
+
     // Skip the first line which should contain "PARTICLES:\n"
     int index = 10;
     if(buffer[index]=='\r') index++;
@@ -81,7 +92,7 @@ void EntityManager::buildSimulationLayoutFromFile(char* buffer){
         }
         if(buffer[index]=='\r') index++;
         index++;
-        particles.push_back({(float)first_number, (float)second_number});
+        tempParticles.push_back({(float)first_number, (float)second_number, 0.0f, 0.0f});
     }
 
     // Skip "LINES:\n"
@@ -188,10 +199,17 @@ void EntityManager::buildSimulationLayoutFromFile(char* buffer){
         pumps.push_back({(unsigned short)first_number, (unsigned short)second_number, (unsigned short)third_number, (unsigned short)fourth_number});
         pumpVelocities.push_back({(short)fifth_number, (short)sixth_number});
     }
+
+    pParticles = gfx.createNewGraphicsBoundObject<CudaAccessibleFilledCircleInstanceBuffer>(static_cast<int>(tempParticles.size()), RADIUS);
+
+    Particle* realParticles = (Particle*)pParticles->getMappedAccess();
+    cudaError_t err;
+    CUDA_THROW_FAILED(cudaMemcpy(realParticles, tempParticles.data(), sizeof(Particle)*tempParticles.size(), cudaMemcpyHostToDevice));
+    pParticles->unMap();
 }
 
-std::vector<Particle>& EntityManager::getParticles() noexcept{
-    return particles;
+CudaAccessibleFilledCircleInstanceBuffer& EntityManager::getParticles() noexcept{
+    return *pParticles.get();
 }
 
 std::vector<Boundary>& EntityManager::getBoundaries() noexcept{

@@ -8,8 +8,8 @@ class RenderSystem{
         void update(EntityManager& manager) const;
 
     private:
-        GraphicsEngine& gfx;
-        std::unique_ptr<FilledCircleDrawer> particleDrawer;
-        std::unique_ptr<LineDrawer> boundaryDrawer;
-        std::unique_ptr<HollowRectangleDrawer> pumpDrawer;
+        std::unique_ptr<FrameController> pFrameController;
+        std::unique_ptr<FilledCircleInstanceDrawer> pParticleDrawer;
+        std::unique_ptr<LineDrawer> pBoundaryDrawer;
+        std::unique_ptr<HollowRectangleDrawer> pPumpDrawer;
 };
