@@ -2,5 +2,5 @@
 
 Bindable::Bindable(std::shared_ptr<BindableHelper> helper) noexcept
     :
-    GraphicsBoundObject(helper)
+    GraphicsBoundObject(std::move(helper))
 {}

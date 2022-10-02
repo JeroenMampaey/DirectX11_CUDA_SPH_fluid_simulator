@@ -3,7 +3,6 @@
 #include <optional>
 #include <memory>
 #include "graphics_engine.h"
-#include "event.h"
 #include "events/events_includes.h"
 
 class Window
@@ -24,14 +23,14 @@ class Window
         };
 
         Window(const char* name, UINT syncInterval);
-        static HWND initializationHelper(Window* pWnd, const char* name);
+        
         static LRESULT CALLBACK handleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 	    static LRESULT CALLBACK handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	    LRESULT handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
         HWND hWnd;
         std::shared_ptr<EventBus> pEventBus;
-        GraphicsEngine gfx;
+        std::unique_ptr<GraphicsEngine> pGfx;
         std::exception_ptr thrownException = nullptr;
 
     public:

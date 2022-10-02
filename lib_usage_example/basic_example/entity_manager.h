@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "../lib/lib_header.h"
+#include "../../lib/lib_header.h"
 
 class CameraEntity{
     public:
@@ -49,14 +49,13 @@ class SpecificTextFieldEntity{
 
 class EntityManager{
     public:
-        EntityManager(GraphicsEngine& gfx) noexcept;
+        EntityManager() noexcept;
         CameraEntity& getCamera() noexcept;
         std::vector<FilledRectangleEntity>& getFilledRectangles() noexcept;
         std::vector<LineEntity>& getLines() noexcept;
         std::vector<CircleEntity>& getCircles() noexcept;
         std::vector<HollowRectangleEntity>& getHollowRectangles() noexcept;
         SpecificTextFieldEntity& getSpecificTextField() noexcept;
-        CpuAccessibleFilledCircleInstanceBuffer& getCircleCollection() noexcept;
     
     private:
         CameraEntity camera;
@@ -65,5 +64,4 @@ class EntityManager{
         std::vector<CircleEntity> circles;
         std::vector<HollowRectangleEntity> hollowRectangles;
         SpecificTextFieldEntity specificTextField;
-        std::unique_ptr<CpuAccessibleFilledCircleInstanceBuffer> circleCollection;
 };

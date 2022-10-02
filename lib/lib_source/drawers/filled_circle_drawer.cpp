@@ -10,7 +10,7 @@ FilledCircleDrawer::~FilledCircleDrawer() noexcept = default;
 
 FilledCircleDrawer::FilledCircleDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pDrawerHelper)
+    Drawer(std::move(pDrawerHelper))
 {
     GraphicsEngine& gfx = helper->getGraphicsEngine();
 
@@ -88,7 +88,7 @@ void FilledCircleDrawer::drawFilledCircle(float x, float y, float radius) const{
 
 FilledCircleInstanceDrawer::FilledCircleInstanceDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pDrawerHelper)
+    Drawer(std::move(pDrawerHelper))
 {
     GraphicsEngine& gfx = helper->getGraphicsEngine();
 
@@ -126,39 +126,6 @@ FilledCircleInstanceDrawer::FilledCircleInstanceDrawer(std::shared_ptr<DrawerHel
 
 FilledCircleInstanceDrawer::~FilledCircleInstanceDrawer() noexcept = default;
 
-/*std::shared_ptr<FilledCircleInstanceBuffer> FilledCircleInstanceDrawer::createCpuAccessibleBuffer(int numberOfCircles, float radius){
-    std::vector<DirectX::XMFLOAT3> vertices;
-    std::vector<DirectX::XMFLOAT2> texcoords;
-    std::vector<DirectX::XMFLOAT3> instancecoords;
-
-    vertices.push_back({-radius, -radius, 0.0f});
-    vertices.push_back({-radius, radius, 0.0f});
-    vertices.push_back({radius, -radius, 0.0f});
-    vertices.push_back({radius, -radius, 0.0f});
-    vertices.push_back({-radius, radius, 0.0f});
-    vertices.push_back({radius, radius, 0.0f});
-
-    texcoords.push_back({-1.0f, -1.0f});
-    texcoords.push_back({-1.0f, 1.0f});
-    texcoords.push_back({1.0f, -1.0f});
-    texcoords.push_back({1.0f, -1.0f});
-    texcoords.push_back({-1.0f, 1.0f});
-    texcoords.push_back({1.0f, 1.0f});
-
-    for(int i=0; i<numberOfCircles; i++){
-        instancecoords.push_back({0.0f, 0.0f, 0.0f});
-    }
-
-    const void* vertexBuffers[] = {(void*)vertices.data(), (void*)texcoords.data(), (void*)instancecoords.data()};
-    const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3), sizeof(DirectX::XMFLOAT2), sizeof(DirectX::XMFLOAT3)};
-    const UINT cpuAccessFlags[] = {0, 0, D3D11_CPU_ACCESS_WRITE};
-    const size_t numVertices[] = {NON_INDEXED_NUM_VERTICES, NON_INDEXED_NUM_VERTICES, static_cast<size_t>(numberOfCircles)};
-    std::shared_ptr<FilledCircleInstanceBuffer> pBuffer = std::shared_ptr<FilledCircleInstanceBuffer>(new FilledCircleInstanceBuffer(this, bufferUidCounter, std::make_unique<CpuMappableVertexBuffer>(helper->getGraphicsEngine(), vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, 3), numberOfCircles, radius));
-    buffersMap.insert({bufferUidCounter, pBuffer});
-    bufferUidCounter++;
-    return pBuffer;
-}*/
-
 void FilledCircleInstanceDrawer::drawFilledCircleBuffer(FilledCircleInstanceBuffer& buffer){
     GraphicsEngine& gfx = helper->getGraphicsEngine();
 
@@ -186,10 +153,9 @@ void FilledCircleInstanceDrawer::drawFilledCircleBuffer(FilledCircleInstanceBuff
     drawInstanced();
 }
 
-FilledCircleInstanceBuffer::FilledCircleInstanceBuffer(std::shared_ptr<Helper> helper, std::unique_ptr<MappableVertexBuffer> pVBuf, int numberOfCircles, float radius) noexcept
+FilledCircleInstanceBuffer::FilledCircleInstanceBuffer(std::shared_ptr<Helper> pHelper, int numberOfCircles, float radius) noexcept
     :
-    GraphicsBoundObject(helper),
-    pVBuf(std::move(pVBuf)),
+    GraphicsBoundObject(std::move(pHelper)),
     numberOfCircles(numberOfCircles),
     radius(radius)
 {}
@@ -212,12 +178,10 @@ void FilledCircleInstanceBuffer::unMap(){
     }
 }
 
-CpuAccessibleFilledCircleInstanceBuffer::CpuAccessibleFilledCircleInstanceBuffer(std::shared_ptr<Helper> helper, int numberOfCircles, float radius)
+CpuAccessibleFilledCircleInstanceBuffer::CpuAccessibleFilledCircleInstanceBuffer(std::shared_ptr<Helper> pHelper, int numberOfCircles, float radius)
     :
-    FilledCircleInstanceBuffer(helper, initializationHelper(helper->getGraphicsEngine(), numberOfCircles, radius), numberOfCircles, radius)
-{}
-
-std::unique_ptr<MappableVertexBuffer> CpuAccessibleFilledCircleInstanceBuffer::initializationHelper(GraphicsEngine& gfx, int numberOfCircles, float radius){
+    FilledCircleInstanceBuffer(std::move(pHelper), numberOfCircles, radius)
+{
     std::vector<DirectX::XMFLOAT3> vertices;
     std::vector<DirectX::XMFLOAT2> texcoords;
     std::vector<DirectX::XMFLOAT3> instancecoords;
@@ -244,7 +208,7 @@ std::unique_ptr<MappableVertexBuffer> CpuAccessibleFilledCircleInstanceBuffer::i
     const size_t vertexSizes[] = {sizeof(DirectX::XMFLOAT3), sizeof(DirectX::XMFLOAT2), sizeof(DirectX::XMFLOAT3)};
     const UINT cpuAccessFlags[] = {0, 0, D3D11_CPU_ACCESS_WRITE};
     const size_t numVertices[] = {NON_INDEXED_NUM_VERTICES, NON_INDEXED_NUM_VERTICES, static_cast<size_t>(numberOfCircles)};
-    return gfx.createNewGraphicsBoundObject<CpuMappableVertexBuffer>(vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, 3);
+    pVBuf = helper->getGraphicsEngine().createNewGraphicsBoundObject<CpuMappableVertexBuffer>(vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, 3);
 }
 
 template LIBRARY_API std::unique_ptr<FilledCircleDrawer> GraphicsEngine::createNewGraphicsBoundObject(float red, float green, float blue);

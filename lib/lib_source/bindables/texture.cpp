@@ -16,9 +16,9 @@ Texture::Color::Color() noexcept
 	a(0)
 {}
 
-Texture::Texture(std::shared_ptr<BindableHelper> helper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height)
+Texture::Texture(std::shared_ptr<BindableHelper> pHelper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height)
 	:
-	Bindable(helper)
+	Bindable(std::move(pHelper))
 {
     HRESULT hr;
 
@@ -48,6 +48,6 @@ Texture::Texture(std::shared_ptr<BindableHelper> helper, std::unique_ptr<Color[]
     GFX_THROW_FAILED(helper->getDevice().CreateShaderResourceView(pTexture.Get(), &srvDesc, &pTextureView));
 }
 
-void Texture::bind(){
+void Texture::bind() const{
     helper->getContext().PSSetShaderResources(0, 1, pTextureView.GetAddressOf());
 }

@@ -12,8 +12,8 @@ class Texture : public Bindable{
             Color(unsigned char b, unsigned char g, unsigned char r, unsigned char a) noexcept; 
             Color() noexcept; 
         };
-        Texture(std::shared_ptr<BindableHelper> helper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);
-        void bind() override;
+        Texture(std::shared_ptr<BindableHelper> pHelper, std::unique_ptr<Color[]> pBuffer, unsigned int width, unsigned int height);
+        void bind() const override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> pTextureView;
 };

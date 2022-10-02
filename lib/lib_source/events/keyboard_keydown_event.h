@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../event.h"
+#include "event.h"
 #include "../windows_includes.h"
 
 struct LIBRARY_API KeyboardKeydownEvent : public Event{

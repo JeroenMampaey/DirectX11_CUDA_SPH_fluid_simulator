@@ -1,8 +1,8 @@
 #include "indexbuffer.h"
 
-IndexBuffer::IndexBuffer(std::shared_ptr<BindableHelper> helper, const std::vector<unsigned short>& indices)
+IndexBuffer::IndexBuffer(std::shared_ptr<BindableHelper> pHelper, const std::vector<unsigned short>& indices)
 	:
-	Bindable(helper)
+	Bindable(std::move(pHelper))
 {
     HRESULT hr;
     D3D11_BUFFER_DESC ibd = {};
@@ -17,6 +17,6 @@ IndexBuffer::IndexBuffer(std::shared_ptr<BindableHelper> helper, const std::vect
 	GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&ibd, &isd, &pIndexBuffer));
 }
 
-void IndexBuffer::bind(){
+void IndexBuffer::bind() const{
     helper->getContext().IASetIndexBuffer(pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
 }

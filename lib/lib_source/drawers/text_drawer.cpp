@@ -17,7 +17,7 @@ StaticScreenTextDrawer::~StaticScreenTextDrawer() noexcept = default;
 
 DynamicTextDrawer::DynamicTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pDrawerHelper)
+    Drawer(std::move(pDrawerHelper))
 {
     GraphicsEngine& gfx = helper->getGraphicsEngine();
 
@@ -234,7 +234,7 @@ void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down
 
 StaticScreenTextDrawer::StaticScreenTextDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, const std::string& text, float left_down_x, float left_down_y, float char_width, float char_height, float red, float green, float blue)
     :
-    Drawer(pDrawerHelper)
+    Drawer(std::move(pDrawerHelper))
 {
     if(text.size()==0){
         return;

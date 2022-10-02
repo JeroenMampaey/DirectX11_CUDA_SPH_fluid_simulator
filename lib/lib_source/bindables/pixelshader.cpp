@@ -1,8 +1,8 @@
 #include "pixelshader.h"
 
-PixelShader::PixelShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path)
+PixelShader::PixelShader(std::shared_ptr<BindableHelper> pHelper, const std::wstring& path)
     :
-    Bindable(helper)
+    Bindable(std::move(pHelper))
 {
     Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
     HRESULT hr;
@@ -10,6 +10,6 @@ PixelShader::PixelShader(std::shared_ptr<BindableHelper> helper, const std::wstr
 	GFX_THROW_FAILED(helper->getDevice().CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &pPixelShader));
 }
 
-void PixelShader::bind(){
+void PixelShader::bind() const{
 	helper->getContext().PSSetShader(pPixelShader.Get(), nullptr, 0);
 }

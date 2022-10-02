@@ -5,8 +5,7 @@
 App::App()
     :
     wnd(createWindow("Example", SYNCINTERVAL)),
-    entityManager(EntityManager(wnd.getGraphicsEngine())),
-    eventHandlerSystem(EventHandlerSystem(wnd.getEventBus())),
+    entityManager(EntityManager()),
     renderSystem(RenderSystem(wnd.getGraphicsEngine(), entityManager))
 {
     if(RATE_IS_INVALID(wnd.getGraphicsEngine().getRefreshRate())){
@@ -27,7 +26,6 @@ int App::go(){
 }
 
 void App::updateSystems(){
-    eventHandlerSystem.update(entityManager);
     physicsSystem.update(entityManager);
     renderSystem.update(entityManager);
 }

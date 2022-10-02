@@ -11,8 +11,8 @@
 
 class VertexShader : public Bindable{
     public:
-        VertexShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path);
-        void bind() override;
+        VertexShader(std::shared_ptr<BindableHelper> pHelper, const std::wstring& path);
+        void bind() const override;
         ID3DBlob* getBytecode() const noexcept;
     protected:
         Microsoft::WRL::ComPtr<ID3DBlob> pBytecodeBlob;

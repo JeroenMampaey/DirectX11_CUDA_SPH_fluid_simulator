@@ -8,7 +8,7 @@ HollowRectangleDrawer::~HollowRectangleDrawer() noexcept = default;
 
 HollowRectangleDrawer::HollowRectangleDrawer(std::shared_ptr<DrawerHelper> pDrawerHelper, float red, float green, float blue)
     :
-    Drawer(pDrawerHelper)
+    Drawer(std::move(pDrawerHelper))
 {
     GraphicsEngine& gfx = helper->getGraphicsEngine();
     

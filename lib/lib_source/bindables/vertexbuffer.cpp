@@ -1,9 +1,9 @@
 #include "vertexbuffer.h"
 #include <array>
 
-VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
+VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
 	:
-	Bindable(helper),
+	Bindable(std::move(pHelper)),
 	vertexBufferPs(numVertexBuffers),
 	strides(numVertexBuffers),
 	offsets(numVertexBuffers),
@@ -17,7 +17,6 @@ VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> helper, const void* v
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.Usage = cpuAccessFlags[i]==0 ? D3D11_USAGE_DEFAULT : D3D11_USAGE_DYNAMIC;
 		bd.CPUAccessFlags = cpuAccessFlags[i];
-		//bd.CPUAccessFlags = cpuAccessFlags[i] ? D3D11_CPU_ACCESS_WRITE : 0;
 		bd.MiscFlags = 0;
 		bd.ByteWidth = UINT(vertexSizes[i]*numVertices[i]);
 		bd.StructureByteStride = vertexSizes[i];
@@ -32,18 +31,18 @@ VertexBuffer::VertexBuffer(std::shared_ptr<BindableHelper> helper, const void* v
 	}
 }
 
-void VertexBuffer::bind(){
+void VertexBuffer::bind() const{
 	helper->getContext().IASetVertexBuffers(0, vertexBufferPs.size(), preparedBuffers.data(), strides.data(), offsets.data());
 }
 
-ConstantVertexBuffer::ConstantVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers)
+ConstantVertexBuffer::ConstantVertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers)
 	:
-	VertexBuffer(helper, vertexBuffers, vertexSizes, std::vector<UINT>(numVertexBuffers, 0).data(), numVertices, numVertexBuffers)
+	VertexBuffer(std::move(pHelper), vertexBuffers, vertexSizes, std::vector<UINT>(numVertexBuffers, 0).data(), numVertices, numVertexBuffers)
 {}
 
-CpuMappableVertexBuffer::CpuMappableVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
+CpuMappableVertexBuffer::CpuMappableVertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers)
 	:
-	MappableVertexBuffer(helper, vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, numVertexBuffers)
+	MappableVertexBuffer(std::move(pHelper), vertexBuffers, vertexSizes, cpuAccessFlags, numVertices, numVertexBuffers)
 {}
 
 void* CpuMappableVertexBuffer::getMappedAccess(int vertexBufferIndex) const{

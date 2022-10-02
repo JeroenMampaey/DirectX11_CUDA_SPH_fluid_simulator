@@ -4,7 +4,7 @@
 
 Drawer::Drawer(std::shared_ptr<DrawerHelper> helper) noexcept
     :
-    GraphicsBoundObject(helper)
+    GraphicsBoundObject(std::move(helper))
 {}
 
 Drawer::~Drawer() noexcept = default;

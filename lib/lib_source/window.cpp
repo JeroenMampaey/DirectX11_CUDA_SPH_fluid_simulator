@@ -34,15 +34,8 @@ HINSTANCE Window::WindowClass::getInstance() noexcept{
 
 Window::Window(const char* name, UINT syncInterval)
 	:
-	hWnd(initializationHelper(this, name)),
-	gfx(GraphicsEngine(hWnd, syncInterval)),
 	pEventBus(std::make_shared<EventBus>())
 {
-	ShowWindow(hWnd, SW_SHOWDEFAULT);
-	SetWindowTextA(hWnd, "Window setup was succesfull");
-}
-
-HWND Window::initializationHelper(Window* pWnd, const char* name){
 	RECT wr;
 	wr.left = 100;
 	wr.right = WIDTH + wr.left;
@@ -56,13 +49,17 @@ HWND Window::initializationHelper(Window* pWnd, const char* name){
 		0L, WindowClass::getName(),name,
 		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
 		CW_USEDEFAULT,CW_USEDEFAULT,wr.right - wr.left,wr.bottom - wr.top,
-		nullptr,nullptr,WindowClass::getInstance(),pWnd
+		nullptr,nullptr,WindowClass::getInstance(),this
 	);
 	
 	if(hWnd == nullptr){
 		throw CHWND_LAST_EXCEPT();
 	}
-	return hWnd;
+
+	pGfx = std::unique_ptr<GraphicsEngine>(new GraphicsEngine(hWnd, syncInterval));
+
+	ShowWindow(hWnd, SW_SHOWDEFAULT);
+	SetWindowTextA(hWnd, "Window setup was succesfull");
 }
 
 Window::~Window() noexcept{
@@ -134,7 +131,7 @@ std::shared_ptr<EventBus> Window::getEventBus() const noexcept{
 }
 
 GraphicsEngine& Window::getGraphicsEngine() noexcept{
-	return gfx;
+	return *pGfx;
 }
 
 void Window::checkForThrownExceptions() const{

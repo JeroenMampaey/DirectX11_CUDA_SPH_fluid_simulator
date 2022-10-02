@@ -192,37 +192,8 @@ GraphicsEngine::GraphicsEngine(HWND hWnd, UINT syncInterval)
     screenDrawer = createNewGraphicsBoundObject<StaticScreenTextDrawer>(specString, -1.0f, 0.9f, 0.05f, 0.1f, 1.0f, 1.0f, 1.0f);
 }
 
-void GraphicsEngine::beginFrame(float red, float green, float blue) noexcept{
-    pContext->OMSetRenderTargets(1, pTarget.GetAddressOf(), pDSV.Get());
-    const float color[] = {red, green, blue, 1.0f};
-    pContext->ClearRenderTargetView(pTarget.Get(), color);
-    pContext->ClearDepthStencilView(pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-    lastDrawer = typeid(InvalidDrawer);
-}
-
-void GraphicsEngine::endFrame() const{
-    screenDrawer->drawStaticScreenText();
-    HRESULT hr;
-    if(FAILED(hr = pSwap->Present(syncInterval, 0))){
-        if(hr == DXGI_ERROR_DEVICE_REMOVED){
-            throw GFX_DEVICE_REMOVED_EXCEPT(pDevice->GetDeviceRemovedReason());
-        }
-        else{
-            GFX_THROW_FAILED(hr);
-        }
-    }
-}
-
-void GraphicsEngine::setProjection(DirectX::FXMMATRIX proj) noexcept{
-	projection = proj;
-}
-
 DirectX::XMMATRIX GraphicsEngine::getProjection() const noexcept{
 	return projection;
-}
-
-void GraphicsEngine::setView(DirectX::FXMMATRIX v) noexcept{
-    view = v;
 }
 
 DirectX::XMMATRIX GraphicsEngine::getView() const noexcept{

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../event.h"
+#include "event.h"
 
 struct LIBRARY_API MouseMoveEvent : public Event{
     int new_x;

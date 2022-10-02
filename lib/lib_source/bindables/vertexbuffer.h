@@ -6,10 +6,10 @@
 class VertexBuffer : public Bindable{
     public:
         virtual ~VertexBuffer() noexcept = default;
-        void bind() override;
+        void bind() const override;
 
     protected:
-        VertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers);
+        VertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers);
         
         std::vector<Microsoft::WRL::ComPtr<ID3D11Buffer>> vertexBufferPs;
 
@@ -20,7 +20,7 @@ class VertexBuffer : public Bindable{
 
 class ConstantVertexBuffer : public VertexBuffer{
     public:
-        ConstantVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers);
+        ConstantVertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const size_t numVertices[], const int numVertexBuffers);
 };
 
 class MappableVertexBuffer : public VertexBuffer{
@@ -33,7 +33,7 @@ class MappableVertexBuffer : public VertexBuffer{
 
 class CpuMappableVertexBuffer : public MappableVertexBuffer{
     public:
-        CpuMappableVertexBuffer(std::shared_ptr<BindableHelper> helper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers);
+        CpuMappableVertexBuffer(std::shared_ptr<BindableHelper> pHelper, const void* vertexBuffers[], const size_t vertexSizes[], const UINT cpuAccessFlags[], const size_t numVertices[], const int numVertexBuffers);
         void* getMappedAccess(int vertexBufferIndex) const override;
         void unMap(int vertexBufferIndex) const noexcept override;
 };

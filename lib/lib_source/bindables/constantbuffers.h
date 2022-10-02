@@ -5,16 +5,16 @@
 template<typename C>
 class ConstantBuffer : public Bindable{
     public:
-        void update(const C& consts){
+        void update(const C& consts) const{
 			HRESULT hr;
 			D3D11_MAPPED_SUBRESOURCE msr;
 			GFX_THROW_FAILED(helper->getContext().Map(pConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr));
 			memcpy(msr.pData, &consts, sizeof(consts));
 			helper->getContext().Unmap(pConstantBuffer.Get(), 0);
 		}
-        ConstantBuffer(std::shared_ptr<BindableHelper> helper, const C& consts)
+        ConstantBuffer(std::shared_ptr<BindableHelper> pHelper, const C& consts)
 			:
-			Bindable(helper)
+			Bindable(std::move(pHelper))
 		{
 			HRESULT hr;
 			D3D11_BUFFER_DESC cbd;
@@ -29,9 +29,9 @@ class ConstantBuffer : public Bindable{
 			csd.pSysMem = &consts;
 			GFX_THROW_FAILED(helper->getDevice().CreateBuffer(&cbd, &csd, &pConstantBuffer));
 		}
-        ConstantBuffer(std::shared_ptr<BindableHelper> helper)
+        ConstantBuffer(std::shared_ptr<BindableHelper> pHelper)
 			:
-			Bindable(helper)
+			Bindable(std::move(pHelper))
 		{
 			HRESULT hr;
 			D3D11_BUFFER_DESC cbd;
@@ -53,17 +53,17 @@ class VertexConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-		VertexConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot, const C& consts)
+		VertexConstantBuffer(std::shared_ptr<BindableHelper> pHelper, UINT startSlot, const C& consts)
 			:
-			ConstantBuffer<C>(helper, consts),
+			ConstantBuffer<C>(std::move(pHelper), consts),
 			startSlot(startSlot)
 		{}
-		VertexConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot)
+		VertexConstantBuffer(std::shared_ptr<BindableHelper> pHelper, UINT startSlot)
 			:
-			ConstantBuffer<C>(helper),
+			ConstantBuffer<C>(std::move(pHelper)),
 			startSlot(startSlot)
 		{}
-        void bind() override{
+        void bind() const override{
             helper->getContext().VSSetConstantBuffers(startSlot, 1, pConstantBuffer.GetAddressOf());
         }
 	private:
@@ -75,17 +75,17 @@ class PixelConstantBuffer : public ConstantBuffer<C>{
         using ConstantBuffer<C>::pConstantBuffer;
     public:
         using ConstantBuffer<C>::ConstantBuffer;
-		PixelConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot, const C& consts)
+		PixelConstantBuffer(std::shared_ptr<BindableHelper> pHelper, UINT startSlot, const C& consts)
 			:
-			ConstantBuffer<C>(helper, consts),
+			ConstantBuffer<C>(std::move(pHelper), consts),
 			startSlot(startSlot)
 		{}
-		PixelConstantBuffer(std::shared_ptr<BindableHelper> helper, UINT startSlot)
+		PixelConstantBuffer(std::shared_ptr<BindableHelper> pHelper, UINT startSlot)
 			:
-			ConstantBuffer<C>(helper),
+			ConstantBuffer<C>(std::move(pHelper)),
 			startSlot(startSlot)
 		{}
-        void bind() override{
+        void bind() const override{
             helper->getContext().PSSetConstantBuffers(0, 1, pConstantBuffer.GetAddressOf());
         }
 	private:

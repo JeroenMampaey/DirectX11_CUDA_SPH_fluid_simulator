@@ -1,11 +1,11 @@
 #include "topology.h"
 
-Topology::Topology(std::shared_ptr<BindableHelper> helper, D3D11_PRIMITIVE_TOPOLOGY type) 
+Topology::Topology(std::shared_ptr<BindableHelper> pHelper, D3D11_PRIMITIVE_TOPOLOGY type) 
 	:
-	Bindable(helper),
+	Bindable(std::move(pHelper)),
 	type(type)
 {}
 
-void Topology::bind(){
+void Topology::bind() const{
 	helper->getContext().IASetPrimitiveTopology(type);
 }

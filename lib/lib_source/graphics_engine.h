@@ -26,30 +26,27 @@ class GraphicsBoundObject{
         virtual ~GraphicsBoundObject() noexcept = default;
     
     protected:
-        GraphicsBoundObject(std::shared_ptr<T> helper) noexcept : helper(helper) {};
+        GraphicsBoundObject(std::shared_ptr<T> helper) noexcept : helper(std::move(helper)) {};
         std::shared_ptr<T> helper;
 };
 
 class InvalidDrawer{};
 
 class GraphicsEngine{
-        friend class Bindable;
         friend class Helper;
         friend class DrawerHelper;
         friend class BindableHelper;
+        friend class FrameControllerHelper;
+        friend class ViewProjectionControllerHelper;
         friend class Window;
     public:
         LIBRARY_API GraphicsEngine& operator=(const GraphicsEngine& copy) = delete;
         LIBRARY_API GraphicsEngine& operator=(GraphicsEngine&& copy) = delete;
         
         LIBRARY_API ~GraphicsEngine() noexcept;
-        LIBRARY_API void setProjection(DirectX::FXMMATRIX proj) noexcept;
 	    LIBRARY_API DirectX::XMMATRIX getProjection() const noexcept;
-        LIBRARY_API void setView(DirectX::FXMMATRIX v) noexcept;
 	    LIBRARY_API DirectX::XMMATRIX getView() const noexcept;
         LIBRARY_API float getRefreshRate() const noexcept;
-        LIBRARY_API void beginFrame(float red, float green, float blue) noexcept;
-        LIBRARY_API void endFrame() const;
 
 #ifndef READ_FROM_LIB_HEADER
     template<class T, class... Args>
@@ -61,10 +58,10 @@ class GraphicsEngine{
             pHelper = std::static_pointer_cast<typename T::HelperType>(it->second);
         }
         else{
-            pHelper = std::shared_ptr<typename T::HelperType>(new typename T::HelperType(this));
+            pHelper = std::make_shared<typename T::HelperType>(typename T::HelperType(this));
             helpersMap.insert({typeIndex, pHelper});
         }
-        return std::unique_ptr<T>(new T(pHelper, std::forward<Args>(args)...));
+        return std::make_unique<T>(std::move(pHelper), std::forward<Args>(args)...);
     }
 #else
     template<class T, class... Args>
@@ -76,7 +73,7 @@ class GraphicsEngine{
 
         std::unordered_map<std::type_index, std::shared_ptr<Helper>> helpersMap;
 
-        std::unique_ptr<class StaticScreenTextDrawer> screenDrawer;
+        std::unique_ptr<class StaticScreenTextDrawer> screenDrawer = nullptr;
 
         DirectX::XMMATRIX projection;
         DirectX::XMMATRIX view;

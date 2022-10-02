@@ -1,9 +1,9 @@
 #include "vertexshader.h"
 
 
-VertexShader::VertexShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path)
+VertexShader::VertexShader(std::shared_ptr<BindableHelper> pHelper, const std::wstring& path)
 	:
-	Bindable(helper)
+	Bindable(std::move(pHelper))
 {
     HRESULT hr;
 	GFX_THROW_FAILED(D3DReadFileToBlob(path.c_str(), &pBytecodeBlob));
@@ -15,7 +15,7 @@ VertexShader::VertexShader(std::shared_ptr<BindableHelper> helper, const std::ws
 	));
 }
 
-void VertexShader::bind(){
+void VertexShader::bind() const{
 	helper->getContext().VSSetShader(pVertexShader.Get(), nullptr, 0);
 }
 

@@ -1,8 +1,8 @@
 #include "sampler.h"
 
-Sampler::Sampler(std::shared_ptr<BindableHelper> helper, D3D11_FILTER filter)
+Sampler::Sampler(std::shared_ptr<BindableHelper> pHelper, D3D11_FILTER filter)
 	:
-	Bindable(helper)
+	Bindable(std::move(pHelper))
 {
 	HRESULT hr;
 
@@ -15,6 +15,6 @@ Sampler::Sampler(std::shared_ptr<BindableHelper> helper, D3D11_FILTER filter)
     GFX_THROW_FAILED(helper->getDevice().CreateSamplerState(&samplerDesc, &pSampler));
 }
 
-void Sampler::bind(){
+void Sampler::bind() const{
     helper->getContext().PSSetSamplers(0, 1, pSampler.GetAddressOf());
 }

@@ -11,8 +11,8 @@
 
 class PixelShader : public Bindable{
     public:
-        PixelShader(std::shared_ptr<BindableHelper> helper, const std::wstring& path);
-        void bind() override;
+        PixelShader(std::shared_ptr<BindableHelper> pHelper, const std::wstring& path);
+        void bind() const override;
     protected:
         Microsoft::WRL::ComPtr<ID3D11PixelShader> pPixelShader;
 };
