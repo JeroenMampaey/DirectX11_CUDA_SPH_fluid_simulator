@@ -1,5 +1,6 @@
 # Rtx 3060 Home GPU details:
 
+- Ampere architecture
 - 30 SMs
 - 8.6 compute capability:
     - maximally 48 warps per SM
