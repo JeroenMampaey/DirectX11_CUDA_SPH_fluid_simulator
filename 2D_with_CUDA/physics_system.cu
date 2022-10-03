@@ -15,6 +15,9 @@
 #define SHARED_MEM_PER_THREAD 99
 #define WARP_SIZE 32
 
+#define laneId (threadIdx.x % WARP_SIZE)
+#define warpId (threadIdx.x / WARP_SIZE)
+
 __global__ void initializeOldParticles(Particle* particles, CompactParticle* oldParticles, int numParticles);
 __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps);
 
@@ -60,6 +63,7 @@ void PhysicsSystem::update(EntityManager& manager){
     Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &positionCommunicationMemory, &pressureDensityRatioCommunicationMemory, &numParticles, &pumps, &pumpVelocities, &numPumps};
     CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0));
+    CUDA_THROW_FAILED(cudaGetLastError());
     CUDA_THROW_FAILED(cudaDeviceSynchronize());
     manager.getParticles().unMap();
 }
@@ -96,6 +100,8 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
         dim3 blockSize(BLOCK_SIZE);
         void* kernelArgs[] = {&particles, &oldParticles, &numParticles};
         CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(initializeOldParticles, numBlocks, blockSize, kernelArgs, 0, 0));
+        CUDA_THROW_FAILED(cudaGetLastError());
+        CUDA_THROW_FAILED(cudaDeviceSynchronize());
     }
     manager.getParticles().unMap();
 
@@ -142,14 +148,15 @@ __global__ void initializeOldParticles(Particle* particles, CompactParticle* old
 __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps){
     // Initialize shared memory pointers
     extern __shared__ Boundary boundaries_local_pointer[];
-    //Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
-    Pump* pumps_local_pointer = nullptr;
-    CompactParticle* interThreadCommunicationMemory = (CompactParticle*)(&boundaries_local_pointer[numBoundaries]);
-    //PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&interThreadCommunicationMemory[BLOCK_SIZE]);
-    PumpVelocity* pumpvelocities_local_pointer = nullptr;
+    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
+    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numPumps]);
+    CompactParticle* interThreadCommunicationMemory = (CompactParticle*)(&pumpvelocities_local_pointer[numPumps]);
 
     // Get the grid_group because later on device wide synchronization will be necessary
     cooperative_groups::grid_group grid = cooperative_groups::this_grid();
+
+    // Get the thread_block because later on threadblock wide synchronization will be necessary
+    cooperative_groups::thread_block block = cooperative_groups::this_thread_block();
 
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -163,8 +170,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
     }
 
     // Wait until shared memory has been initialized
-    __syncthreads();
-
+    block.sync();
 
     float old_x = 0.0;
     float old_y = 0.0;
@@ -297,50 +303,43 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
             // Find particle neighbours
             for(int blockIterator=-1; blockIterator!=blockIdx.x; blockIterator = ((blockIterator+1) % gridDim.x)){
-                float otherParticleX = my_x;
-                float otherParticleY = my_y;
+                CompactParticle otherParticle = {my_x, my_y};
                 if(blockIterator==-1){
                     blockIterator=blockIdx.x;
                 }
-                else if(threadIdx.x+blockIterator*blockDim.x<numParticles){
-                    //otherParticleX = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].x;
-                    //otherParticleY = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].y;
-                    interThreadCommunicationMemory[threadIdx.x] = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x];
+                else{
+                    if(threadIdx.x+blockIterator*blockDim.x<numParticles){
+                        otherParticle.x = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].x;
+                        otherParticle.y = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].y;
+                    }
+
+                    // Wait before altering the interThreadCommunicationMemory array
+                    block.sync();
                 }
 
-                //interThreadCommunicationMemory[threadIdx.x] = {otherParticleX, otherParticleY};
-                // Wait until all threads in the block have stored the particle positions in shared memory
-                __syncthreads();
+                interThreadCommunicationMemory[threadIdx.x] = otherParticle;
 
-                auto laneId = threadIdx.x % WARP_SIZE;
-                auto warpId = threadIdx.x / WARP_SIZE;
+                // Wait until all threads in the block have stored the particle positions in shared memory
+                block.sync();
 
                 for(int warpIterator=-1; warpIterator!=warpId; warpIterator = ((warpIterator+1) % (blockDim.x/WARP_SIZE))){
                     if(warpIterator==-1){
                         warpIterator = warpId;
                     }
-                    /*else{
-                        otherParticleX = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].x;
-                        otherParticleY = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].y;
-                    }*/
-                    for(int laneIterator=-1, int counter=0; laneIterator!=laneId; laneIterator = ((laneIterator+1) % (WARP_SIZE)), counter++){
+                    else{
+                        otherParticle.x = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].x;
+                        otherParticle.y = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].y;
+                    }
+                    for(int laneIterator=-1; laneIterator!=laneId; laneIterator = ((laneIterator+1) % (WARP_SIZE))){
                         if(laneIterator==-1){
                             laneIterator=laneId;
                         }
-                        /*else{
-                            float tempx = __shfl_sync(0xffffffff, otherParticleX, ((laneId+1) % WARP_SIZE));
-                            float tempy = __shfl_sync(0xffffffff, otherParticleY, ((laneId+1) % WARP_SIZE));
-
-                            otherParticleX = tempx;
-                            otherParticleY = tempy;
-                        }*/
-                        unsigned short i = blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator;
-                        //CompactParticle otherParticle = positionCommunicationMemory[i];
-                        CompactParticle otherParticle = interThreadCommunicationMemory[warpIterator*WARP_SIZE+laneIterator];
-                        otherParticleX = otherParticle.x;
-                        otherParticleY = otherParticle.y;
+                        else{
+                            otherParticle.x = __shfl_sync(0xffffffff, otherParticle.x, ((laneId+1) % WARP_SIZE));
+                            otherParticle.y = __shfl_sync(0xffffffff, otherParticle.y, ((laneId+1) % WARP_SIZE));
+                        }
                         if(thread_id<numParticles && blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator<numParticles){
-                            float dist_squared = (my_x-otherParticleX)*(my_x-otherParticleX)+(my_y-otherParticleY)*(my_y-otherParticleY);
+                            float dist_squared = (my_x-otherParticle.x)*(my_x-otherParticle.x)+(my_y-otherParticle.y)*(my_y-otherParticle.y);
                             if (dist_squared < SMOOTH*SMOOTH) {
                                 // If the other particle is close enough, iterate over the closeby boundaries to achieve two things:
                                 //  - Convert this particle to a ghost particle over the boundary
@@ -355,15 +354,15 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                                     
                                     // Check whether particle crosses this boundary
                                     {
-                                        float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((otherParticleX-line.x1)*line_nx+(otherParticleY-line.y1)*line_ny);
+                                        float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((otherParticle.x-line.x1)*line_nx+(otherParticle.y-line.y1)*line_ny);
                                         if(first_check <= 0.0){
                                             float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
-                                            float second_check2 = (otherParticleX-my_x)*line_nx+(otherParticleY-my_y)*line_ny;
+                                            float second_check2 = (otherParticle.x-my_x)*line_nx+(otherParticle.y-my_y)*line_ny;
                                             float crossing_x = my_x;
                                             float crossing_y = my_y;
                                             if(second_check2 > 0.0){
-                                                crossing_x += (otherParticleX-my_x)*second_check1/second_check2;
-                                                crossing_y += (otherParticleY-my_y)*second_check1/second_check2;
+                                                crossing_x += (otherParticle.x-my_x)*second_check1/second_check2;
+                                                crossing_y += (otherParticle.y-my_y)*second_check1/second_check2;
                                             }
                                             float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                                             float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
@@ -373,9 +372,9 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
                                     // Create a ghost particle over the boundary corresponding to this neighbour
                                     {
-                                        float projection = (line.x1-otherParticleX)*line_nx +(line.y1-otherParticleY)*line_ny;
-                                        float virtual_x = otherParticleX + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
-                                        float virtual_y = otherParticleY + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
+                                        float projection = (line.x1-otherParticle.x)*line_nx +(line.y1-otherParticle.y)*line_ny;
+                                        float virtual_x = otherParticle.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                                        float virtual_y = otherParticle.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
                                         float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
                                         if(first_check > 0) continue;
                                         float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
@@ -526,9 +525,10 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             my_x += vel_x*dt;
             my_y += vel_y*dt;
         }
-    }
 
-    //grid.sync();
+        // Synchronize the grid
+        grid.sync();
+    }
 
     // Store the both position and old positions in global memeory
     if(thread_id < numParticles){

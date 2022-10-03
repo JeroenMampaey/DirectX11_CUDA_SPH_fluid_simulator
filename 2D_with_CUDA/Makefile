@@ -7,7 +7,7 @@ all: ../lib/binaries/2D_with_CUDA_run.exe
 
 ../lib/binaries/2D_with_CUDA_run.exe: ../lib/binaries/graphics.dll main.cpp
 ifdef NVCC_PATH
-	nvcc ${CPP_SOURCES} -l ../lib/binaries/graphics -o ../lib/binaries/2D_with_CUDA_run.exe -D SIMULATION_LAYOUT_DIRECTORY='"${current_dir}../simulation_layout/"' -std=c++17
+	nvcc ${CPP_SOURCES} -l ../lib/binaries/graphics -o ../lib/binaries/2D_with_CUDA_run.exe -D SIMULATION_LAYOUT_DIRECTORY='"${current_dir}../simulation_layout/"' -std=c++17 --ptxas-options=--verbose
 else
 	@powershell '(Write-Host "This program requires the NVCC compiler but it could not be found" -ForegroundColor red)'
 	@powershell '(Write-Host "If you want to be able to run this program, download the NVCC compiler" -ForegroundColor red)'
