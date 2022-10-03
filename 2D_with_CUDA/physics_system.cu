@@ -12,9 +12,11 @@
 #define VEL_LIMIT 800.0
 
 #define BLOCK_SIZE 96
-#define SHARED_MEM_PER_THREAD 101
+#define SHARED_MEM_PER_THREAD 99
+#define WARP_SIZE 32
 
-__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, Particle* oldParticles, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps, float* pressureDensityRatios);
+__global__ void initializeOldParticles(Particle* particles, CompactParticle* oldParticles, int numParticles);
+__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps);
 
 PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     :
@@ -53,11 +55,12 @@ void PhysicsSystem::update(EntityManager& manager){
 
     dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
     dim3 blockSize(BLOCK_SIZE);
-    int sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+SHARED_MEM_PER_THREAD*BLOCK_SIZE;
+    int sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+BLOCK_SIZE*(sizeof(CompactParticle)+SHARED_MEM_PER_THREAD);
     
     Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
-    void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &numParticles, &pumps, &pumpVelocities, &numPumps, &pressureDensityRatios};
+    void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &positionCommunicationMemory, &pressureDensityRatioCommunicationMemory, &numParticles, &pumps, &pumpVelocities, &numPumps};
     CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(updateParticles, numBlocks, blockSize, kernelArgs, sharedMemorySize, 0));
+    CUDA_THROW_FAILED(cudaDeviceSynchronize());
     manager.getParticles().unMap();
 }
 
@@ -69,8 +72,9 @@ void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
     }
 
     if(numParticles > 0){
-        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticles, sizeof(Particle)*numParticles));
-        CUDA_THROW_FAILED(cudaMalloc((void**)&pressureDensityRatios, sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticles, sizeof(CompactParticle)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&positionCommunicationMemory, sizeof(CompactParticle)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&pressureDensityRatioCommunicationMemory, sizeof(float)*numParticles));
     }
 
     if(numPumps > 0){
@@ -88,7 +92,10 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
 
     Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     if(numParticles > 0){
-        CUDA_THROW_FAILED(cudaMemcpy(oldParticles, particles, sizeof(Particle)*numParticles, cudaMemcpyHostToDevice));
+        dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
+        dim3 blockSize(BLOCK_SIZE);
+        void* kernelArgs[] = {&particles, &oldParticles, &numParticles};
+        CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(initializeOldParticles, numBlocks, blockSize, kernelArgs, 0, 0));
     }
     manager.getParticles().unMap();
 
@@ -107,6 +114,14 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
         cudaFree(oldParticles);
     }
 
+    if(positionCommunicationMemory){
+        cudaFree(positionCommunicationMemory);
+    }
+
+    if(pressureDensityRatioCommunicationMemory){
+        cudaFree(pressureDensityRatioCommunicationMemory);
+    }
+
     if(pumps){
         cudaFree(pumps);
     }
@@ -114,17 +129,24 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
     if(pumpVelocities){
         cudaFree(pumpVelocities);
     }
+}
 
-    if(pressureDensityRatios){
-        cudaFree(pressureDensityRatios);
+__global__ void initializeOldParticles(Particle* particles, CompactParticle* oldParticles, int numParticles){
+    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
+    if(thread_id < numParticles){ 
+        oldParticles[thread_id].x = particles[thread_id].x;
+        oldParticles[thread_id].y = particles[thread_id].y;
     }
 }
 
-__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, Particle* oldParticles, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps, float* pressureDensityRatios){
+__global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps){
     // Initialize shared memory pointers
     extern __shared__ Boundary boundaries_local_pointer[];
-    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
-    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numPumps]);
+    //Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
+    Pump* pumps_local_pointer = nullptr;
+    CompactParticle* interThreadCommunicationMemory = (CompactParticle*)(&boundaries_local_pointer[numBoundaries]);
+    //PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&interThreadCommunicationMemory[BLOCK_SIZE]);
+    PumpVelocity* pumpvelocities_local_pointer = nullptr;
 
     // Get the grid_group because later on device wide synchronization will be necessary
     cooperative_groups::grid_group grid = cooperative_groups::this_grid();
@@ -207,17 +229,13 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             old_x = my_x - vel_x*dt;
             old_y = my_y - vel_y*dt;
 
-            // Also update the particle positions in global memory
-            particles[thread_id].x = my_x;
-            particles[thread_id].y = my_y;
+            // Store the new particle positions
+            positionCommunicationMemory[thread_id] = {my_x, my_y};
         }
 
-        // Synchronize the grid
-        grid.sync();
-
-        unsigned char* boundary_neighbour_indexes = (unsigned char*)(&pumpvelocities_local_pointer[numPumps])+threadIdx.x*SHARED_MEM_PER_THREAD;
+        unsigned char* boundary_neighbour_indexes = (unsigned char*)(&interThreadCommunicationMemory[BLOCK_SIZE])+threadIdx.x*SHARED_MEM_PER_THREAD;
         int number_of_boundary_neighbours = 0;
-        unsigned short* particle_neighbour_indexes = NULL;
+        unsigned short* particle_neighbour_indexes = nullptr;
         int number_of_particle_neighbours = 0;
 
         float my_pressure_density_ratio = 0.0;
@@ -263,92 +281,144 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                     }
                 }
             }
+        }
 
+        // Synchronize the grid
+        grid.sync();
+
+        {
             // Initialize the particle neighbours pointer (conversion from a char pointer to short pointer requires alignment)
-            int aligner = (long long)&boundary_neighbour_indexes[number_of_boundary_neighbours] & 1 ? 1 : 0;
-            particle_neighbour_indexes = (unsigned short*)(&boundary_neighbour_indexes[number_of_boundary_neighbours]+aligner);
+            if(thread_id < numParticles){
+                int aligner = (long long)&boundary_neighbour_indexes[number_of_boundary_neighbours] & 1 ? 1 : 0;
+                particle_neighbour_indexes = (unsigned short*)(&boundary_neighbour_indexes[number_of_boundary_neighbours]+aligner);
+            }
 
             float dens = 0.0;
 
             // Find particle neighbours
-            for (unsigned short i=0; i < numParticles; i++) {
-                Particle p2 = particles[i];
-                float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
-                if (dist_squared < SMOOTH*SMOOTH) {
-                    // If the other particle is close enough, iterate over the closeby boundaries to achieve two things:
-                    //  - Convert this particle to a ghost particle over the boundary
-                    //  - Check whether the connection between this particle and the particle of the thread crosses a boundary
-                    //    in which case the particle is not actually a true neighbour
-                    float accumulated_ghost_particle_density = 0.0;
-                    int j=0;
-                    for(; j<number_of_boundary_neighbours; j++){
-                        Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
-                        float line_nx = line.y2-line.y1;
-                        float line_ny = line.x1-line.x2;
-                        
-                        // Check whether particle crosses this boundary
-                        {
-                            float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((p2.x-line.x1)*line_nx+(p2.y-line.y1)*line_ny);
-                            if(first_check <= 0.0){
-                                float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
-                                float second_check2 = (p2.x-my_x)*line_nx+(p2.y-my_y)*line_ny;
-                                float crossing_x = my_x;
-                                float crossing_y = my_y;
-                                if(second_check2 > 0.0){
-                                    crossing_x += (p2.x-my_x)*second_check1/second_check2;
-                                    crossing_y += (p2.y-my_y)*second_check1/second_check2;
-                                }
-                                float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
-                                float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
-                                if(second_check3<=(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4>=0.0) break;
-                            }
-                        }
+            for(int blockIterator=-1; blockIterator!=blockIdx.x; blockIterator = ((blockIterator+1) % gridDim.x)){
+                float otherParticleX = my_x;
+                float otherParticleY = my_y;
+                if(blockIterator==-1){
+                    blockIterator=blockIdx.x;
+                }
+                else if(threadIdx.x+blockIterator*blockDim.x<numParticles){
+                    //otherParticleX = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].x;
+                    //otherParticleY = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x].y;
+                    interThreadCommunicationMemory[threadIdx.x] = positionCommunicationMemory[threadIdx.x+blockIterator*blockDim.x];
+                }
 
-                        // Create a ghost particle over the boundary corresponding to this neighbour
-                        {
-                            float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
-                            float virtual_x = p2.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
-                            float virtual_y = p2.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
-                            float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
-                            if(first_check > 0) continue;
-                            float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
-                            float second_check2 = (virtual_x-my_x)*line_nx+(virtual_y-my_y)*line_ny;
-                            float crossing_x = my_x;
-                            float crossing_y = my_y;
-                            if(second_check2 > 0.0){
-                                crossing_x += (virtual_x-my_x)*second_check1/second_check2;
-                                crossing_y += (virtual_y-my_y)*second_check1/second_check2;
+                //interThreadCommunicationMemory[threadIdx.x] = {otherParticleX, otherParticleY};
+                // Wait until all threads in the block have stored the particle positions in shared memory
+                __syncthreads();
+
+                auto laneId = threadIdx.x % WARP_SIZE;
+                auto warpId = threadIdx.x / WARP_SIZE;
+
+                for(int warpIterator=-1; warpIterator!=warpId; warpIterator = ((warpIterator+1) % (blockDim.x/WARP_SIZE))){
+                    if(warpIterator==-1){
+                        warpIterator = warpId;
+                    }
+                    /*else{
+                        otherParticleX = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].x;
+                        otherParticleY = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].y;
+                    }*/
+                    for(int laneIterator=-1, int counter=0; laneIterator!=laneId; laneIterator = ((laneIterator+1) % (WARP_SIZE)), counter++){
+                        if(laneIterator==-1){
+                            laneIterator=laneId;
+                        }
+                        /*else{
+                            float tempx = __shfl_sync(0xffffffff, otherParticleX, ((laneId+1) % WARP_SIZE));
+                            float tempy = __shfl_sync(0xffffffff, otherParticleY, ((laneId+1) % WARP_SIZE));
+
+                            otherParticleX = tempx;
+                            otherParticleY = tempy;
+                        }*/
+                        unsigned short i = blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator;
+                        //CompactParticle otherParticle = positionCommunicationMemory[i];
+                        CompactParticle otherParticle = interThreadCommunicationMemory[warpIterator*WARP_SIZE+laneIterator];
+                        otherParticleX = otherParticle.x;
+                        otherParticleY = otherParticle.y;
+                        if(thread_id<numParticles && blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator<numParticles){
+                            float dist_squared = (my_x-otherParticleX)*(my_x-otherParticleX)+(my_y-otherParticleY)*(my_y-otherParticleY);
+                            if (dist_squared < SMOOTH*SMOOTH) {
+                                // If the other particle is close enough, iterate over the closeby boundaries to achieve two things:
+                                //  - Convert this particle to a ghost particle over the boundary
+                                //  - Check whether the connection between this particle and the particle of the thread crosses a boundary
+                                //    in which case the particle is not actually a true neighbour
+                                float accumulated_ghost_particle_density = 0.0;
+                                int j=0;
+                                for(; j<number_of_boundary_neighbours; j++){
+                                    Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
+                                    float line_nx = line.y2-line.y1;
+                                    float line_ny = line.x1-line.x2;
+                                    
+                                    // Check whether particle crosses this boundary
+                                    {
+                                        float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((otherParticleX-line.x1)*line_nx+(otherParticleY-line.y1)*line_ny);
+                                        if(first_check <= 0.0){
+                                            float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
+                                            float second_check2 = (otherParticleX-my_x)*line_nx+(otherParticleY-my_y)*line_ny;
+                                            float crossing_x = my_x;
+                                            float crossing_y = my_y;
+                                            if(second_check2 > 0.0){
+                                                crossing_x += (otherParticleX-my_x)*second_check1/second_check2;
+                                                crossing_y += (otherParticleY-my_y)*second_check1/second_check2;
+                                            }
+                                            float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
+                                            float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
+                                            if(second_check3<=(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4>=0.0) break;
+                                        }
+                                    }
+
+                                    // Create a ghost particle over the boundary corresponding to this neighbour
+                                    {
+                                        float projection = (line.x1-otherParticleX)*line_nx +(line.y1-otherParticleY)*line_ny;
+                                        float virtual_x = otherParticleX + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                                        float virtual_y = otherParticleY + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
+                                        float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
+                                        if(first_check > 0) continue;
+                                        float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
+                                        float second_check2 = (virtual_x-my_x)*line_nx+(virtual_y-my_y)*line_ny;
+                                        float crossing_x = my_x;
+                                        float crossing_y = my_y;
+                                        if(second_check2 > 0.0){
+                                            crossing_x += (virtual_x-my_x)*second_check1/second_check2;
+                                            crossing_y += (virtual_y-my_y)*second_check1/second_check2;
+                                        }
+                                        float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
+                                        float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
+                                        if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
+                                        float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
+                                        if(dist_squared > SMOOTH*SMOOTH) continue;
+                                        float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
+                                        accumulated_ghost_particle_density += M_P*q2;
+                                    }
+                                }
+
+                                if(j<number_of_boundary_neighbours) continue;
+                                
+                                // Change the density caused by ghost particles
+                                dens += accumulated_ghost_particle_density;
+
+                                if(blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator==thread_id) continue;
+
+                                // Change the density because of the neighbour particle and also add the particle to the neighbours list
+                                float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
+                                dens += M_P*q2;
+                                particle_neighbour_indexes[number_of_particle_neighbours] = blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator;
+                                number_of_particle_neighbours++;
                             }
-                            float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
-                            float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
-                            if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-                            float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
-                            if(dist_squared > SMOOTH*SMOOTH) continue;
-                            float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
-                            accumulated_ghost_particle_density += M_P*q2;
                         }
                     }
-
-                    if(j<number_of_boundary_neighbours) continue;
-                    
-                    // Change the density caused by ghost particles
-                    dens += accumulated_ghost_particle_density;
-
-                    if(i==thread_id) continue;
-
-                    // Change the density because of the neighbour particle and also add the particle to the neighbours list
-                    float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
-                    dens += M_P*q2;
-                    particle_neighbour_indexes[number_of_particle_neighbours] = i;
-                    number_of_particle_neighbours++;
                 }
             }
-            
+
             // Make sure no division by zero exceptions occur
             if(dens>0.0){
                 // Calculate the pressure_density_ratio
                 my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
-                pressureDensityRatios[thread_id] = my_pressure_density_ratio;
+                pressureDensityRatioCommunicationMemory[thread_id] = my_pressure_density_ratio;
             }
         }
 
@@ -362,17 +432,17 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             float boundaries_vel_y = 0.0;
             for(int i=0; i<number_of_particle_neighbours; i++){
                 unsigned short particle_index = particle_neighbour_indexes[i];
-                Particle p2 = particles[particle_index];
-                float p2_pressure_density_ratio = pressureDensityRatios[particle_index];
-                float press = M_P*(my_pressure_density_ratio + p2_pressure_density_ratio);
+                CompactParticle otherParticle = positionCommunicationMemory[particle_index];
+                float otherParticlePressureDensityRatio = pressureDensityRatioCommunicationMemory[particle_index];
+                float press = M_P*(my_pressure_density_ratio + otherParticlePressureDensityRatio);
 
                 // First calculate displacement of the particle caused by neighbours
                 {
-                    float dist_squared = (my_x-p2.x)*(my_x-p2.x)+(my_y-p2.y)*(my_y-p2.y);
+                    float dist_squared = (my_x-otherParticle.x)*(my_x-otherParticle.x)+(my_y-otherParticle.y)*(my_y-otherParticle.y);
                     float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
                     float displace = (press * q) * dt;
-                    float abx = (my_x - p2.x);
-                    float aby = (my_y - p2.y);
+                    float abx = (my_x - otherParticle.x);
+                    float aby = (my_y - otherParticle.y);
                     vel_x += displace * abx;
                     vel_y += displace * aby;
                 }
@@ -382,9 +452,9 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                     Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
                     float line_nx = (line.y2-line.y1);
                     float line_ny = (line.x1-line.x2);
-                    float projection = (line.x1-p2.x)*line_nx +(line.y1-p2.y)*line_ny;
-                    float virtual_x = p2.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
-                    float virtual_y = p2.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
+                    float projection = (line.x1-otherParticle.x)*line_nx +(line.y1-otherParticle.y)*line_ny;
+                    float virtual_x = otherParticle.x + 2*projection*line_nx/(line_nx*line_nx+line_ny*line_ny);
+                    float virtual_y = otherParticle.y + 2*projection*line_ny/(line_nx*line_nx+line_ny*line_ny);
                     float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((virtual_x-line.x1)*line_nx+(virtual_y-line.y1)*line_ny);
                     if(first_check > 0) continue;
                     float second_check1 = (line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny;
@@ -458,7 +528,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
         }
     }
 
-    grid.sync();
+    //grid.sync();
 
     // Store the both position and old positions in global memeory
     if(thread_id < numParticles){
@@ -468,4 +538,4 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
         particles[thread_id].x = my_x;
         particles[thread_id].y = my_y;
     }
-}
+} 

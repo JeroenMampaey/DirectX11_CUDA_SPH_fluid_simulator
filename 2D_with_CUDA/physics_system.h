@@ -5,6 +5,11 @@
 
 #define UPDATES_PER_RENDER 6
 
+struct CompactParticle{
+    float x;
+    float y;
+};
+
 class PhysicsSystem{
     public:
         PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager);
@@ -15,13 +20,17 @@ class PhysicsSystem{
         void transferToDeviceMemory(EntityManager& manager);
         void destroyDeviceMemory() noexcept;
 
-        float dt;    
+        float dt;
+           
         Boundary* boundaries = nullptr;
         int numBoundaries;
+
+        CompactParticle* oldParticles = nullptr;
+        CompactParticle* positionCommunicationMemory = nullptr;
+        float* pressureDensityRatioCommunicationMemory = nullptr;
         int numParticles;
-        Particle* oldParticles = nullptr;
+
         Pump* pumps = nullptr;
         PumpVelocity* pumpVelocities = nullptr;
         int numPumps;
-        float* pressureDensityRatios = nullptr;
 };
