@@ -228,7 +228,7 @@ void DynamicTextDrawer::drawDynamicText(const std::string& text, float left_down
     );
     pVcbuf->bind();
 
-    bindSharedBinds(typeid(DynamicTextDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 
@@ -441,7 +441,7 @@ StaticScreenTextDrawer::StaticScreenTextDrawer(std::shared_ptr<DrawerHelper> pDr
 }
 
 void StaticScreenTextDrawer::drawStaticScreenText() const{
-    bindSharedBinds(typeid(StaticScreenTextDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 

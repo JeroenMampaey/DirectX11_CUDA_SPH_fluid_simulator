@@ -1,6 +1,6 @@
 #include "app.h"
 
-#define SYNCINTERVAL 4
+#define SYNCINTERVAL 1
 
 App::App()
     :

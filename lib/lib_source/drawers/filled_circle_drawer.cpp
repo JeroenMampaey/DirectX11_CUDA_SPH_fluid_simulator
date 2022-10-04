@@ -82,7 +82,7 @@ void FilledCircleDrawer::drawFilledCircle(float x, float y, float radius) const{
 
     pVcbuf->bind();
 
-    bindSharedBinds(typeid(FilledCircleDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 
@@ -148,7 +148,7 @@ void FilledCircleInstanceDrawer::drawFilledCircleBuffer(FilledCircleInstanceBuff
 
     setInstanceCount(buffer.numberOfCircles);
     
-    bindSharedBinds(typeid(FilledCircleInstanceDrawer));
+    bindSharedBinds();
     drawInstanced();
 }
 

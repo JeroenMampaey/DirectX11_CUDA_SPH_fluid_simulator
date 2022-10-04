@@ -31,7 +31,7 @@ void DrawerHelper::drawInstanced(int numVertices, int numInstances) const{
     pGfx->pContext->DrawInstanced(numVertices, numInstances, 0, 0);
 }
 
-std::type_index DrawerHelper::getLastDrawer() const{
+int DrawerHelper::getLastDrawer() const{
     if(pGfx==nullptr){
         throw std::exception("Tried accessing a GraphicsEngine that was already destroyed from a DrawerHelper");
     }
@@ -39,12 +39,12 @@ std::type_index DrawerHelper::getLastDrawer() const{
     return pGfx->lastDrawer;
 }
 
-void DrawerHelper::setLastDrawer(std::type_index newIndex) const{
+void DrawerHelper::setLastDrawer(int drawerUid) const{
     if(pGfx==nullptr){
         throw std::exception("Tried accessing a GraphicsEngine that was already destroyed from a DrawerHelper");
     }
 
-    pGfx->lastDrawer = newIndex;
+    pGfx->lastDrawer = drawerUid;
 }
 
 DrawerHelper::DrawerHelper(GraphicsEngine* pGfx) noexcept
@@ -82,7 +82,7 @@ void FrameControllerHelper::beginFrame(float red, float green, float blue) const
     const float color[] = {red, green, blue, 1.0f};
     pGfx->pContext->ClearRenderTargetView(pGfx->pTarget.Get(), color);
     pGfx->pContext->ClearDepthStencilView(pGfx->pDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-    pGfx->lastDrawer = typeid(InvalidDrawer);
+    pGfx->lastDrawer = -1;
 }
 
 void FrameControllerHelper::drawFrame() const{

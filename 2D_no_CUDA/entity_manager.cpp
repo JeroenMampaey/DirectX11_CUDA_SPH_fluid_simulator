@@ -56,7 +56,7 @@ Particle::Particle(float x, float y) noexcept
 
 Pump::Pump(float xLow, float xHigh, float yLow, float yHigh, float velocityX, float velocityY) noexcept
     :
-    leftBottom(Point(xLow, xLow)),
+    leftBottom(Point(xLow, yLow)),
     rightTop(Point(xHigh, yHigh)),
     vel(Vector(velocityX, velocityY))
 {}
@@ -238,7 +238,7 @@ void EntityManager::buildSimulationLayoutFromFile(char* buffer){
         sixth_number *= sign;
         if(buffer[index]=='\r') index++;
         index++;
-        pumps.push_back(Pump(first_number, second_number, third_number, fourth_number, fifth_number, sixth_number));
+        pumps.push_back(Pump(first_number, second_number, third_number, fourth_number, ((float)fifth_number)/100.0f, ((float)sixth_number)/100.0f));
     }
 }
 

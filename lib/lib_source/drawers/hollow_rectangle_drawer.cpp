@@ -75,7 +75,7 @@ void HollowRectangleDrawer::drawHollowRectangle(float x, float y, float width, f
 
     pVcbuf->bind();
 
-    bindSharedBinds(typeid(HollowRectangleDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 

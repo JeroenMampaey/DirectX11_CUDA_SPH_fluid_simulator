@@ -4,14 +4,13 @@
 #define PIXEL_PER_METER 100.0f
 #define SMOOTH 20.0f
 #define REST 0.2
-#define STIFF 500000.0
+#define STIFF 8000.0
 #define PI 3.141592
 #define SQRT_PI 1.772453
 #define M_P REST*RADIUS*RADIUS*4
-#define VEL_LIMIT 800.0
+#define VEL_LIMIT 8.0
 
-PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx)
-{
+PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx){
     float refreshRate;
     if(RATE_IS_INVALID(refreshRate = gfx.getRefreshRate())){
         throw std::exception("Refreshrate could not easily be found programmatically.");
@@ -31,8 +30,8 @@ void PhysicsSystem::update(EntityManager& manager) const noexcept{
 
 inline void PhysicsSystem::performNonFluidRelatedPhysics(EntityManager& manager) const noexcept{
     for(Particle& p : manager.getParticles()){
-        p.vel.x = (p.pos.x - p.oldPos.x) / dt;
-        p.vel.y = (p.pos.y - p.oldPos.y) / dt;
+        p.vel.x = (p.pos.x - p.oldPos.x) / (PIXEL_PER_METER*dt);
+        p.vel.y = (p.pos.y - p.oldPos.y) / (PIXEL_PER_METER*dt);
 
         // Update velocities based on whether the particle is in a pump or not
         for(const Pump& pump : manager.getPumps()){
@@ -44,11 +43,11 @@ inline void PhysicsSystem::performNonFluidRelatedPhysics(EntityManager& manager)
         }
         
         // Update positional change of particles caused by gravity
-        p.vel.y -= GRAVITY*PIXEL_PER_METER*dt;
+        p.vel.y -= GRAVITY*dt;
 
         // Update particle positions
-        p.pos.x += p.vel.x*dt;
-        p.pos.y += p.vel.y*dt;
+        p.pos.x += PIXEL_PER_METER*p.vel.x*dt;
+        p.pos.y += PIXEL_PER_METER*p.vel.y*dt;
 
         // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
         for(const Boundary& line : manager.getBoundaries()){
@@ -79,8 +78,8 @@ inline void PhysicsSystem::performNonFluidRelatedPhysics(EntityManager& manager)
         }
 
         // Store the old particle positions
-        p.oldPos.x = p.pos.x - p.vel.x*dt;
-        p.oldPos.y = p.pos.y - p.vel.y*dt;
+        p.oldPos.x = p.pos.x - PIXEL_PER_METER*p.vel.x*dt;
+        p.oldPos.y = p.pos.y - PIXEL_PER_METER*p.vel.y*dt;
         
         p.dens = 0.0f;
         p.vel.x = 0.0f;
@@ -224,8 +223,8 @@ inline void PhysicsSystem::applyEulersEquation(EntityManager& manager) const noe
             p.vel.x *= normalization_constant;
             p.vel.y *= normalization_constant;
         }
-        p.pos.x += p.vel.x * dt;
-        p.pos.y += p.vel.y * dt;
+        p.pos.x += PIXEL_PER_METER*p.vel.x*dt;
+        p.pos.y += PIXEL_PER_METER*p.vel.y*dt;
     }
 }
 

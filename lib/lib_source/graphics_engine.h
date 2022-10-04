@@ -30,8 +30,6 @@ class GraphicsBoundObject{
         std::shared_ptr<T> helper;
 };
 
-class InvalidDrawer{};
-
 class GraphicsEngine{
         friend class Helper;
         friend class DrawerHelper;
@@ -86,5 +84,5 @@ class GraphicsEngine{
 
         UINT syncInterval;
         float refreshRate = -1.0f;
-        std::type_index lastDrawer = typeid(InvalidDrawer);
+        int lastDrawer = -1;
 };

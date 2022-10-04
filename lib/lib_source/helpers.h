@@ -26,8 +26,8 @@ class DrawerHelper : public Helper{
         void drawIndexed(int numIndices) const;
         void drawInstanced(int numVertices, int numInstances) const;
 
-        std::type_index getLastDrawer() const;
-        void setLastDrawer(std::type_index newIndex) const;
+        int getLastDrawer() const;
+        void setLastDrawer(int drawerUid) const;
 
         // Warning: Nobody except a GraphicsEngine should be constructing an object of this type.
         // This constructor has only been made public to allow maximum efficiency of std::make_shared.

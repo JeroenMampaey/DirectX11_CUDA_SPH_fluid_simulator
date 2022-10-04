@@ -69,7 +69,7 @@ void LineDrawer::drawLine(float x1, float y1, float x2, float y2) const{
 
     pVcbuf->bind();
 
-    bindSharedBinds(typeid(LineDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 

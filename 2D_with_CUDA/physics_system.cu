@@ -5,11 +5,11 @@
 #define PIXEL_PER_METER 100.0f
 #define SMOOTH 20.0f
 #define REST 0.2
-#define STIFF 500000.0
+#define STIFF 8000.0
 #define PI 3.141592
 #define SQRT_PI 1.772453
 #define M_P REST*RADIUS*RADIUS*4
-#define VEL_LIMIT 800.0
+#define VEL_LIMIT 8.0
 
 #define BLOCK_SIZE 96
 #define SHARED_MEM_PER_THREAD 99
@@ -185,8 +185,8 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
     for(int e=0; e<UPDATES_PER_RENDER; e++){
         if(thread_id < numParticles){
-            float vel_x = (my_x - old_x) / dt;
-            float vel_y = (my_y - old_y) / dt;
+            float vel_x = (my_x - old_x) / (PIXEL_PER_METER*dt);
+            float vel_y = (my_y - old_y) / (PIXEL_PER_METER*dt);
 
             // Update velocities based on whether the particle is in a pump or not
             for(int i = 0; i < numPumps; i++){
@@ -198,11 +198,11 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             }
 
             // Update positional change of particles caused by gravity
-            vel_y -= GRAVITY*PIXEL_PER_METER*dt;
+            vel_y -= GRAVITY*dt;
 
             // Update particle positions
-            my_x += vel_x*dt;
-            my_y += vel_y*dt;
+            my_x += PIXEL_PER_METER*vel_x*dt;
+            my_y += PIXEL_PER_METER*vel_y*dt;
 
 
             // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
@@ -232,8 +232,8 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             }
 
             // Store the old particle positions
-            old_x = my_x - vel_x*dt;
-            old_y = my_y - vel_y*dt;
+            old_x = my_x - PIXEL_PER_METER*vel_x*dt;
+            old_y = my_y - PIXEL_PER_METER*vel_y*dt;
 
             // Store the new particle positions
             positionCommunicationMemory[thread_id] = {my_x, my_y};
@@ -522,8 +522,8 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                 vel_y *= multiplier;
             }
 
-            my_x += vel_x*dt;
-            my_y += vel_y*dt;
+            my_x += PIXEL_PER_METER*vel_x*dt;
+            my_y += PIXEL_PER_METER*vel_y*dt;
         }
 
         // Synchronize the grid

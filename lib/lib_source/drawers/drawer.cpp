@@ -2,9 +2,12 @@
 #include "../bindables/bindables_includes.h"
 #include "../helpers.h"
 
+int Drawer::drawerUidCounter = 0;
+
 Drawer::Drawer(std::shared_ptr<DrawerHelper> helper) noexcept
     :
-    GraphicsBoundObject(std::move(helper))
+    GraphicsBoundObject(std::move(helper)),
+    drawerUid(++drawerUidCounter)
 {}
 
 Drawer::~Drawer() noexcept = default;
@@ -26,12 +29,12 @@ void Drawer::setVertexCount(int vertexCount) noexcept{
     this->vertexCount = vertexCount;
 }
 
-void Drawer::bindSharedBinds(std::type_index typeIndex) const{
-    if(helper->getLastDrawer()!=typeIndex){
+void Drawer::bindSharedBinds() const{
+    if(helper->getLastDrawer()!=drawerUid){
         for(auto& bind : sharedBinds){
             bind->bind();
         }
-        helper->setLastDrawer(typeIndex);
+        helper->setLastDrawer(drawerUid);
     }
 }
 

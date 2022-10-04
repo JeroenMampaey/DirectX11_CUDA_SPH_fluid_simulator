@@ -72,7 +72,7 @@ void FilledRectangleDrawer::drawFilledRectangle(float x, float y, float width, f
 
     pVcbuf->bind();
 
-    bindSharedBinds(typeid(FilledRectangleDrawer));
+    bindSharedBinds();
     drawIndexed();
 }
 

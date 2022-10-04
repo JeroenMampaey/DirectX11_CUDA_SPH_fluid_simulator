@@ -58,6 +58,10 @@ void EntityManager::buildDefaultSimulationLayout(GraphicsEngine& gfx){
         x = (x+interval > end_x) ? start_x : x+interval;
     }
 
+    if(tempParticles.size()>MAX_POSSIBLE_PARTICLES){
+        throw std::exception(("2D_with_CUDA simulations can support only up to "+std::to_string(MAX_POSSIBLE_PARTICLES)+" particles, not more.").c_str());
+    }
+
     pParticles = gfx.createNewGraphicsBoundObject<CudaAccessibleFilledCircleInstanceBuffer>(static_cast<int>(tempParticles.size()), RADIUS);
 
     Particle* realParticles = (Particle*)pParticles->getMappedAccess();
@@ -197,7 +201,11 @@ void EntityManager::buildSimulationLayoutFromFile(GraphicsEngine& gfx, char* buf
         if(buffer[index]=='\r') index++;
         index++;
         pumps.push_back({(unsigned short)first_number, (unsigned short)second_number, (unsigned short)third_number, (unsigned short)fourth_number});
-        pumpVelocities.push_back({(short)fifth_number, (short)sixth_number});
+        pumpVelocities.push_back({(short)(((float)fifth_number)/100.0f), (short)(((float)sixth_number)/100.0f)});
+    }
+
+    if(tempParticles.size()>MAX_POSSIBLE_PARTICLES){
+        throw std::exception(("2D_with_CUDA simulations can support only up to "+std::to_string(MAX_POSSIBLE_PARTICLES)+" particles, not more.").c_str());
     }
 
     pParticles = gfx.createNewGraphicsBoundObject<CudaAccessibleFilledCircleInstanceBuffer>(static_cast<int>(tempParticles.size()), RADIUS);

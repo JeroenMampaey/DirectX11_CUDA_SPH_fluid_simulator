@@ -17,13 +17,16 @@ class Drawer : public GraphicsBoundObject<DrawerHelper>{
         void setIndexCount(int indexCount) noexcept;
         void setInstanceCount(int instanceCount) noexcept;
         void setVertexCount(int vertexCount) noexcept;
-        void bindSharedBinds(std::type_index) const;
+        void bindSharedBinds() const;
         void drawIndexed() const;
         void drawInstanced() const; 
 
     private:
+        int drawerUid;
         std::vector<std::unique_ptr<Bindable>> sharedBinds;
         int indexCount = -1;
         int vertexCount = -1;
         int instanceCount = -1;
+
+        static int drawerUidCounter;
 };
