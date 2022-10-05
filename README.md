@@ -31,13 +31,13 @@ Folder that contains code for a non-GPU accelerated 2D SPH simulator.
 
 ## [2D_with_CUDA](./2D_with_CUDA/)
 
-Folder that contains code for a CUDA accelerated 2D SPH simulator. This code is optimized specifically for a 8.6 compute capability NVIDIA GPU (because I make assumptions about the size of the shared memory) and can handle 768 particles per SM.
+Folder that contains code for a CUDA accelerated 2D SPH simulator. The code is optimized specifically for an Rtx 3060 Laptop GPU but should run on any NVIDIA GPU that supports [Cooperative Groups](https://developer.nvidia.com/blog/cooperative-groups/) though shared memory constraints can possibly limit the maximum number of simulated particles.
 
 # Todo
 
 - Improving simulation file format and making the file reader error prone
 - Allowing custom window sizes in the graphics library
 - Adding surface forces to the SPH fluid simulator
-- Allowing the GPU-accelerated SPH simulator to handle more than just 768 particles per SM, make the code less dependent of shared memory
+- Allowing the GPU-accelerated SPH simulator to handle way more particles by removing the high dependency on shared memory
 - Making a GPU and non-GPU accelerated 3D SPH simulator
 

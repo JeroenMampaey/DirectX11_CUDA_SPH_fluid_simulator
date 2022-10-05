@@ -1,4 +1,4 @@
-# Rtx 3060 Home GPU details:
+# Rtx 3060 Laptop GPU details:
 
 - Ampere architecture
 - 30 SMs
