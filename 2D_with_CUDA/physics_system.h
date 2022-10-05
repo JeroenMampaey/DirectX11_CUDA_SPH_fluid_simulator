@@ -33,4 +33,6 @@ class PhysicsSystem{
         Pump* pumps = nullptr;
         PumpVelocity* pumpVelocities = nullptr;
         int numPumps;
+
+        int sharedMemorySize;
 };

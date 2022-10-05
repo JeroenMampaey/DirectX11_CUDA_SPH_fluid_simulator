@@ -33,19 +33,34 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     }
     dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
 
-    // First check whether grid sync is possible by querying the device attribute
+    // First get the current cuda device
     cudaError_t err;
     int dev = 0;
+    CUDA_THROW_FAILED(cudaGetDevice(&dev));
+
+    // Check whether grid sync is possible by querying the device attribute
     int supportsCoopLaunch = 0;
     CUDA_THROW_FAILED(cudaDeviceGetAttribute(&supportsCoopLaunch, cudaDevAttrCooperativeLaunch, dev));
     if(supportsCoopLaunch!=1){
         throw std::exception("Cooperative Launch is not supported on the GPU, which is neccesary for the program");
     }
 
-    // Next allocate memory on the GPU necessary for the kernel
+    // Check the device properties to calculate the maximum amount of allowed particles
+    sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+BLOCK_SIZE*(sizeof(CompactParticle)+SHARED_MEM_PER_THREAD);
+    cudaDeviceProp prop;
+    CUDA_THROW_FAILED(cudaGetDeviceProperties(&prop, dev));
+    int maxNumberOfBlocksPerSm = ((prop.sharedMemPerMultiprocessor-1000)/sharedMemorySize); // spare 1000 bytes of shared memory per block just to be safe
+    int maxNumberOfParticlesPerSm = maxNumberOfBlocksPerSm*BLOCK_SIZE;
+    int maxNumberOfParticles = maxNumberOfParticlesPerSm*prop.multiProcessorCount;
+
+    if(numParticles > maxNumberOfParticles){
+        throw std::exception("Too many particles are being used, GPU shared memory constraints don't allow usage of this many particles.");
+    }
+
+    // Allocate memory on the GPU necessary for the kernel
     allocateDeviceMemory(manager);
 
-    // Then transfer the information from the entitymanager to the GPU
+    // Transfer the information from the entitymanager to the GPU
     transferToDeviceMemory(manager);
 }
 
@@ -58,7 +73,6 @@ void PhysicsSystem::update(EntityManager& manager){
 
     dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
     dim3 blockSize(BLOCK_SIZE);
-    int sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+BLOCK_SIZE*(sizeof(CompactParticle)+SHARED_MEM_PER_THREAD);
     
     Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     void* kernelArgs[] = {&dt, &boundaries, &numBoundaries, &particles, &oldParticles, &positionCommunicationMemory, &pressureDensityRatioCommunicationMemory, &numParticles, &pumps, &pumpVelocities, &numPumps};

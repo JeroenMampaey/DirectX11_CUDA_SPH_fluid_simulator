@@ -16,8 +16,6 @@
 
 #define Particle DirectX::XMFLOAT4
 
-#define MAX_POSSIBLE_PARTICLES 23040
-
 struct Boundary{
     unsigned short x1;
     unsigned short y1;
