@@ -6,13 +6,23 @@
 #include <cmath>
 #include "exceptions.h"
 
+#pragma comment(lib,"xmllite.lib")
+#pragma comment(lib,"Shlwapi.lib")
+#include "xmllite.h"
+#include "Shlwapi.h"
+#include <tchar.h>
+#include <wchar.h>
+#include <stdexcept>
+
 #ifndef SIMULATION_LAYOUT_DIRECTORY
 #define SIMULATION_LAYOUT_DIRECTORY "../../simulation_layout/"
 #endif
 
 #define SLD_PATH_CONCATINATED(original) SIMULATION_LAYOUT_DIRECTORY original
 
-#define RADIUS 7.5f
+#define RADIUS 3.0f
+#define PI 3.141592
+#define SQRT_PI 1.772453
 
 #define Particle DirectX::XMFLOAT4
 
@@ -31,8 +41,8 @@ struct Pump{
 };
 
 struct PumpVelocity{
-    short velX;
-    short velY;
+    float velX;
+    float velY;
 };
 
 class EntityManager{
@@ -46,7 +56,8 @@ class EntityManager{
     
     private:
         void buildDefaultSimulationLayout(GraphicsEngine& gfx);
-        void buildSimulationLayoutFromFile(GraphicsEngine& gfx, char* buffer);
+        bool readAttributeDouble(IXmlReader* pReader, const WCHAR* attributeName, double* readDouble) noexcept;
+        bool readAttributeInteger(IXmlReader* pReader, const WCHAR* attributeName, int* readInt) noexcept;
 
         std::vector<Boundary> boundaries;
         std::vector<Pump> pumps;

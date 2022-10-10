@@ -3,13 +3,14 @@
 #include <vector>
 #include "../lib/lib_header.h"
 
-#define DEFAULT_PUMP_VELOCITY 200.0f
+#define DEFAULT_PUMP_VELOCITY 2.0f
+#define PARTICLE_ZONE_RADIUS 30.0f
 
-class Particle{
+class ParticleZone{
     public:
         float x;
         float y;
-        Particle(float x, float y);
+        ParticleZone(float x, float y);
 };
 
 class Boundary{
@@ -35,11 +36,11 @@ class Pump{
 
 class EntityManager{
     public:
-        std::vector<Particle>& getParticles() noexcept;
+        std::vector<ParticleZone>& getParticleZones() noexcept;
         std::vector<Boundary>& getBoundaries() noexcept;
         std::vector<Pump>& getPumps() noexcept;
     private:
-        std::vector<Particle> particles;
+        std::vector<ParticleZone> particleZones;
         std::vector<Boundary> boundaries;
         std::vector<Pump> pumps;
 };

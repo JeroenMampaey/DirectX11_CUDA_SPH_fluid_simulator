@@ -1,6 +1,6 @@
 #include "entity_manager.h"
 
-Particle::Particle(float x, float y)
+ParticleZone::ParticleZone(float x, float y)
     :
     x(x),
     y(y)
@@ -34,8 +34,8 @@ Pump::Pump(float x1, float y1, float x2, float y2)
     vel_y(0.0f)
 {}
 
-std::vector<Particle>& EntityManager::getParticles() noexcept{
-    return particles;
+std::vector<ParticleZone>& EntityManager::getParticleZones() noexcept{
+    return particleZones;
 }
 
 std::vector<Boundary>& EntityManager::getBoundaries() noexcept{

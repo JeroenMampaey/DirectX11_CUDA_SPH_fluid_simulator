@@ -3,12 +3,10 @@
 
 #define GRAVITY 9.8f
 #define PIXEL_PER_METER 100.0f
-#define SMOOTH 20.0f
-#define REST 0.2
-#define STIFF 8000.0
-#define PI 3.141592
-#define SQRT_PI 1.772453
-#define M_P REST*RADIUS*RADIUS*4
+#define SMOOTH (3.0f*RADIUS)
+#define REST 1
+#define STIFF 50000.0
+#define M_P (REST*RADIUS*RADIUS*PI)
 #define VEL_LIMIT 8.0
 
 #define BLOCK_SIZE 96
@@ -69,6 +67,10 @@ PhysicsSystem::~PhysicsSystem() noexcept{
 }
 
 void PhysicsSystem::update(EntityManager& manager){
+    if(numParticles==0){
+        return;
+    }
+    
     cudaError_t err;
 
     dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
@@ -108,16 +110,16 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
         CUDA_THROW_FAILED(cudaMemcpy(boundaries, manager.getBoundaries().data(), sizeof(Boundary)*numBoundaries, cudaMemcpyHostToDevice));
     }
 
-    Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
     if(numParticles > 0){
+        Particle* particles = (Particle*)manager.getParticles().getMappedAccess();
         dim3 numBlocks((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE);
         dim3 blockSize(BLOCK_SIZE);
         void* kernelArgs[] = {&particles, &oldParticles, &numParticles};
         CUDA_THROW_FAILED(cudaLaunchCooperativeKernel(initializeOldParticles, numBlocks, blockSize, kernelArgs, 0, 0));
         CUDA_THROW_FAILED(cudaGetLastError());
         CUDA_THROW_FAILED(cudaDeviceSynchronize());
+        manager.getParticles().unMap();
     }
-    manager.getParticles().unMap();
 
     if(numPumps > 0){
         CUDA_THROW_FAILED(cudaMemcpy(pumps, manager.getPumps().data(), sizeof(Pump)*numPumps, cudaMemcpyHostToDevice));
@@ -313,7 +315,8 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                 particle_neighbour_indexes = (unsigned short*)(&boundary_neighbour_indexes[number_of_boundary_neighbours]+aligner);
             }
 
-            float dens = 0.0;
+            const float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( 0 / (SMOOTH*SMOOTH/4)));
+            float dens = M_P*q2;
 
             // Find particle neighbours
             for(int blockIterator=-1; blockIterator!=blockIdx.x; blockIterator = ((blockIterator+1) % gridDim.x)){

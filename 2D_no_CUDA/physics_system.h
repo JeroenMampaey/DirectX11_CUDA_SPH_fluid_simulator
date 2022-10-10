@@ -2,7 +2,7 @@
 
 #include "entity_manager.h"
 
-#define UPDATES_PER_RENDER 6
+#define UPDATES_PER_RENDER 8
 
 class PhysicsSystem{
     public:

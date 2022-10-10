@@ -2,12 +2,10 @@
 
 #define GRAVITY 9.8f
 #define PIXEL_PER_METER 100.0f
-#define SMOOTH 20.0f
-#define REST 0.2
-#define STIFF 8000.0
-#define PI 3.141592
-#define SQRT_PI 1.772453
-#define M_P REST*RADIUS*RADIUS*4
+#define SMOOTH (3.0f*RADIUS)
+#define REST 1
+#define STIFF 50000.0
+#define M_P (REST*RADIUS*RADIUS*PI)
 #define VEL_LIMIT 8.0
 
 PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx){
@@ -81,7 +79,8 @@ inline void PhysicsSystem::performNonFluidRelatedPhysics(EntityManager& manager)
         p.oldPos.x = p.pos.x - PIXEL_PER_METER*p.vel.x*dt;
         p.oldPos.y = p.pos.y - PIXEL_PER_METER*p.vel.y*dt;
         
-        p.dens = 0.0f;
+        const float kernel = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( 0 / (SMOOTH*SMOOTH/4)));
+        p.dens = M_P*kernel;
         p.vel.x = 0.0f;
         p.vel.y = 0.0f;
         p.neighbours.clear();

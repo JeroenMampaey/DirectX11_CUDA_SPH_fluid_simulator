@@ -1,6 +1,12 @@
 #include "event_handler_system.h"
 #include "render_system.h"
 
+#pragma comment(lib,"xmllite.lib")
+#pragma comment(lib,"Shlwapi.lib")
+#include "xmllite.h"
+#include "Shlwapi.h"
+#include <tchar.h>
+
 EventHandlerSystem::EventHandlerSystem(std::shared_ptr<EventBus> windowEventBus, EntityManager& entityManager) noexcept
     :
     entityManager(entityManager)
@@ -57,10 +63,10 @@ void EventHandlerSystem::handleEvent(const Event& event){
 
 void EventHandlerSystem::doNothing() {}
 
-void EventHandlerSystem::addParticle() {
+void EventHandlerSystem::addParticleZone() {
     for(int i=0; i<3; i++){
         for(int j=0; j<3; j++){
-            entityManager.getParticles().push_back(Particle((float)mouseX+2.5f*i*RADIUS, (float)mouseY+2.5f*j*RADIUS));
+            entityManager.getParticleZones().push_back(ParticleZone((float)mouseX, (float)mouseY));
         }
     }
 }
@@ -114,55 +120,78 @@ void EventHandlerSystem::moveBoxVelocityDown(){
 }
 
 void EventHandlerSystem::store(){
-    std::string file_content = "PARTICLES:\n";
-    for(Particle& particle : entityManager.getParticles()){
-        file_content += std::to_string((int)particle.x) + " " + std::to_string((int)particle.y) + "\n";
+    Microsoft::WRL::ComPtr<IStream> pOutFileStream;
+    Microsoft::WRL::ComPtr<IXmlWriter> pWriter;
+
+    if(FAILED(SHCreateStreamOnFileA(SLD_PATH_CONCATINATED("simulation2D.txt"), STGM_CREATE | STGM_WRITE, &pOutFileStream))){
+        throw std::exception("Could not create a stream for the simulation2D.txt file");
     }
-    file_content += "LINES:\n";
+    
+    if(FAILED(CreateXmlWriter(__uuidof(IXmlWriter), (void**) &pWriter, NULL))){
+        throw std::exception("Could not create an XML writer for the simulation2D.txt file");
+    }
+
+    if(FAILED(pWriter->SetOutput(pOutFileStream.Get()))){
+        throw std::exception("Could not bind the XML writer for the simulation2D.txt file");
+    }
+
+    if(FAILED(pWriter->SetProperty(XmlWriterProperty_Indent, TRUE))){
+        throw std::exception("Could not set the indent property for writing the simulation2D.txt file");
+    }
+
+    if(FAILED(pWriter->WriteStartDocument(XmlStandalone_Omit)) || FAILED(pWriter->WriteStartElement(NULL, L"Layout", NULL)) || FAILED(pWriter->WriteAttributeString(NULL, L"particleZoneRadius", NULL, std::to_wstring(PARTICLE_ZONE_RADIUS).c_str()))){
+        throw std::exception("Difficulty writing the simulation2D.txt file");
+    }
+
+    for(ParticleZone& particleZone : entityManager.getParticleZones()){
+        if(FAILED(pWriter->WriteStartElement(NULL, L"ParticleZone", NULL))
+            || FAILED(pWriter->WriteAttributeString(NULL, L"x", NULL, std::to_wstring((int)particleZone.x).c_str()))
+            || FAILED(pWriter->WriteAttributeString(NULL, L"y", NULL, std::to_wstring((int)particleZone.y).c_str()))
+            || FAILED(pWriter->WriteEndElement())
+        ){
+            throw std::exception("Difficulty writing the simulation2D.txt file");
+        }
+    }
+
     for(Boundary& boundary : entityManager.getBoundaries()){
         if(boundary.x2!=boundary.x1 || boundary.y2!=boundary.y1){
-            file_content += std::to_string((int)boundary.x1) + " " + std::to_string((int)boundary.y1) + " " + std::to_string((int)boundary.x2) + " " + std::to_string((int)boundary.y2) + "\n";
+            if(FAILED(pWriter->WriteStartElement(NULL, L"Boundary", NULL))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"x1", NULL, std::to_wstring((int)boundary.x1).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"y1", NULL, std::to_wstring((int)boundary.y1).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"x2", NULL, std::to_wstring((int)boundary.x2).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"y2", NULL, std::to_wstring((int)boundary.y2).c_str()))
+                || FAILED(pWriter->WriteEndElement())
+            ){
+                throw std::exception("Difficulty writing the simulation2D.txt file");
+            }
         }
     }
-    file_content += "PUMPS:\n";
+
     for(Pump& pump : entityManager.getPumps()){
         if(pump.x1!=pump.x2 && pump.y1!=pump.y2){
-            int first_x = (int)min(pump.x1, pump.x2);
-            int second_x = (int)max(pump.x1, pump.x2);
-            int first_y = (int)min(pump.y1, pump.y2);
-            int second_y = (int)max(pump.y1, pump.y2);
-            file_content += std::to_string(first_x) + " " + std::to_string(second_x) + " " + std::to_string(first_y) + " " + std::to_string(second_y) + " " + std::to_string((int)pump.vel_x) + " " + std::to_string((int)pump.vel_y) + "\n";
+            if(FAILED(pWriter->WriteStartElement(NULL, L"Pump", NULL))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"xLow", NULL, std::to_wstring((int)min(pump.x1, pump.x2)).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"xHigh", NULL, std::to_wstring((int)max(pump.x1, pump.x2)).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"yLow", NULL, std::to_wstring((int)min(pump.y1, pump.y2)).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"yHigh", NULL, std::to_wstring((int)max(pump.y1, pump.y2)).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"velX", NULL, std::to_wstring(pump.vel_x).c_str()))
+                || FAILED(pWriter->WriteAttributeString(NULL, L"velY", NULL, std::to_wstring(pump.vel_y).c_str()))
+                || FAILED(pWriter->WriteEndElement())
+            ){
+                throw std::exception("Difficulty writing the simulation2D.txt file");
+            }
         }
     }
 
-    // Since nothing is really going on on the screen, it does not really matter that this is the UI thread, 
-    // else you would want to do this asynchronously
-    HANDLE hFile;
-    const char* dataBuffer = file_content.c_str();
-    DWORD dwBytesToWrite = file_content.size();
-    DWORD dwBytesWritten = 0;
-    hFile = CreateFileA(SLD_PATH_CONCATINATED("simulation2D.txt"), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (hFile == INVALID_HANDLE_VALUE)
-    {
-        throw std::exception("File handle for '" SLD_PATH_CONCATINATED("simulation2D.txt") "' was found invalid while attempting to store the simulation");
+    if(FAILED(pWriter->WriteFullEndElement()) || FAILED(pWriter->WriteEndDocument())){
+        throw std::exception("Difficulty writing the simulation2D.txt file");
     }
 
-    BOOL bErrorFlag = WriteFile(hFile, dataBuffer, dwBytesToWrite, &dwBytesWritten, NULL);
-
-    if (FALSE == bErrorFlag)
-    {
-        throw std::exception("Writing to '" SLD_PATH_CONCATINATED("simulation2D.txt") "' failed while attempting to store the simulation");
+    if(FAILED(pWriter->Flush())){
+        throw std::exception("Difficulty flushing the simulation2D.txt file");
     }
 
-    if (dwBytesWritten != dwBytesToWrite)
-    {
-        throw std::exception("Not all data managed to be written to '" SLD_PATH_CONCATINATED("simulation2D.txt") "' while attempting to store the simulation");
-    }
-
-    CloseHandle(hFile);
-
-    entityManager.getParticles().clear();
+    entityManager.getParticleZones().clear();
     entityManager.getBoundaries().clear();
     entityManager.getPumps().clear();
 }

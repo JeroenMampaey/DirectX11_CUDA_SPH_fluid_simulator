@@ -144,7 +144,9 @@ void FilledCircleInstanceDrawer::drawFilledCircleBuffer(FilledCircleInstanceBuff
 
     pVcbuf->bind();
 
-    buffer.pVBuf->bind();
+    if(buffer.numberOfCircles>0){
+        buffer.pVBuf->bind();
+    }
 
     setInstanceCount(buffer.numberOfCircles);
     
@@ -159,6 +161,10 @@ FilledCircleInstanceBuffer<T>::~FilledCircleInstanceBuffer() noexcept = default;
 
 template<class T>
 T* FilledCircleInstanceBuffer<T>::getMappedAccess(){
+    if(numberOfCircles==0){
+        throw std::exception("Tried getting mapped access to a FilledCircleInstanceBuffer that is empty");
+    }
+
     if(!isMapped){
         mappedBuffer = static_cast<T*>(pVBuf->getMappedAccess(2));
         isMapped = true;
@@ -179,6 +185,10 @@ CpuAccessibleFilledCircleInstanceBuffer::CpuAccessibleFilledCircleInstanceBuffer
     :
     FilledCircleInstanceBuffer(std::move(pHelper), numberOfCircles, radius)
 {
+    if(numberOfCircles==0){
+        return;
+    }
+
     std::vector<DirectX::XMFLOAT3> vertices;
     std::vector<DirectX::XMFLOAT2> texcoords;
     std::vector<DirectX::XMFLOAT3> instancecoords;
@@ -212,6 +222,10 @@ CudaAccessibleFilledCircleInstanceBuffer::CudaAccessibleFilledCircleInstanceBuff
     :
     FilledCircleInstanceBuffer(std::move(pHelper), numberOfCircles, radius)
 {
+    if(numberOfCircles==0){
+        return;
+    }
+    
     std::vector<DirectX::XMFLOAT3> vertices;
     std::vector<DirectX::XMFLOAT2> texcoords;
     std::vector<DirectX::XMFLOAT4> instancecoords;

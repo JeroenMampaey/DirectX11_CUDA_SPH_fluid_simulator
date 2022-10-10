@@ -1,5 +1,7 @@
 #include "render_system.h"
 
+#define PUMP_VELOCITY_SCALER 100.0f
+
 RenderSystem::RenderSystem(GraphicsEngine& gfx){
     pFrameController = gfx.createNewGraphicsBoundObject<FrameController>(0.6f, 0.8f, 1.0f);
     pParticleDrawer = gfx.createNewGraphicsBoundObject<FilledCircleDrawer>(0.2f, 0.2f, 1.0f);
@@ -16,8 +18,8 @@ RenderSystem::RenderSystem(GraphicsEngine& gfx){
 
 void RenderSystem::update(EntityManager& manager) const{
     pFrameController->beginFrame();
-    for(Particle& particle : manager.getParticles()){
-        pParticleDrawer->drawFilledCircle(particle.x, particle.y, RADIUS);
+    for(ParticleZone& particleZone : manager.getParticleZones()){
+        pParticleDrawer->drawFilledCircle(particleZone.x, particleZone.y, PARTICLE_ZONE_RADIUS);
     }
     for(Boundary& boundary : manager.getBoundaries()){
         pBoundaryDrawer->drawLine(boundary.x1, boundary.y1, boundary.x2, boundary.y2);
@@ -29,7 +31,7 @@ void RenderSystem::update(EntityManager& manager) const{
     }
     for(Pump& pump : manager.getPumps()){
         pPumpDrawer->drawHollowRectangle(pump.x1+(pump.x2-pump.x1)/2.0f, pump.y1+(pump.y2-pump.y1)/2.0f, pump.x2-pump.x1, pump.y2-pump.y1);
-        pPumpVelocityDrawer->drawLine(pump.x1+(pump.x2-pump.x1)/2.0f, pump.y1+(pump.y2-pump.y1)/2.0f, pump.x1+(pump.x2-pump.x1)/2+pump.vel_x, pump.y1+(pump.y2-pump.y1)/2+pump.vel_y);
+        pPumpVelocityDrawer->drawLine(pump.x1+(pump.x2-pump.x1)/2.0f, pump.y1+(pump.y2-pump.y1)/2.0f, pump.x1+(pump.x2-pump.x1)/2+PUMP_VELOCITY_SCALER*pump.vel_x, pump.y1+(pump.y2-pump.y1)/2+PUMP_VELOCITY_SCALER*pump.vel_y);
     }
     pFrameController->drawFrame();
 }

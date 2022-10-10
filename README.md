@@ -35,7 +35,6 @@ Folder that contains code for a CUDA accelerated 2D SPH simulator. The code is o
 
 # Todo
 
-- Improving simulation file format and making the file reader error prone
 - Allowing custom window sizes in the graphics library
 - Adding surface forces to the SPH fluid simulator
 - Allowing the GPU-accelerated SPH simulator to handle way more particles by removing the high dependency on shared memory

@@ -20,7 +20,7 @@ class EventHandlerSystem : public EventListener{
         int currentState = 0;
 
         void doNothing();
-        void addParticle();
+        void addParticleZone();
         void startLine();
         void moveLine();
         void startBox();
@@ -66,7 +66,7 @@ class EventHandlerSystem : public EventListener{
             &EventHandlerSystem::doNothing,
             &EventHandlerSystem::doNothing,
             &EventHandlerSystem::doNothing,
-            &EventHandlerSystem::addParticle,
+            &EventHandlerSystem::addParticleZone,
 
             &EventHandlerSystem::doNothing,
             &EventHandlerSystem::startLine,
