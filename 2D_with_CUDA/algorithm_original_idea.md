@@ -17,8 +17,7 @@ We use the exact algorithm from the [2D_no_CUDA](../2D_no_CUDA/) code but conver
 ## Constraints
 
 Each threadblock will hold all the boundaries and pumps in shared memory requiring 8 bytes per boundary (x1,y1,x2,y2) and 12 bytes per 
-pump (x1,y1,x2,y2,velx,vely), assuming at most 100 boundaries and 15 pumps this results in ~1 KB per threadblock. Each thread on it's own will allocate indexes to nearby boundaries in shared memory (1 byte per index) and indexes to neighbouring particles (2 bytes per index). Experimentally a particle usually has less than 35 neighbours and normally these particles are the one's that are not near to boundaries (particles near to boundaries always have less neighbours) thus if each thread could use 95 bytes and split these bytes between neighbour indexes and boundary indexes dynamically, this should be more than enough. Thus here I calculate number of threadblocks and warps per threadblock 
-(ignoring register constraints since that's difficult to factor in):
+pump (x1,y1,x2,y2,velx,vely), assuming at most 100 boundaries and 15 pumps this results in ~1 KB per threadblock. Each thread on it's own will allocate indexes to nearby boundaries in shared memory (1 byte per index) and indexes to neighbouring particles (2 bytes per index). Experimentally a particle usually has less than 35 neighbours and normally these particles are the one's that are not near to boundaries (particles near to boundaries always have less neighbours) thus if each thread could use 95 bytes and split these bytes between neighbour indexes and boundary indexes dynamically, this should be more than enough. Thus here I calculate number of threadblocks and warps per threadblock (ignoring register constraints since that's difficult to factor in):
 
 Assuming k threadblocks per SM and m warps per threadblock the shared memory constraint gives us the following:
 

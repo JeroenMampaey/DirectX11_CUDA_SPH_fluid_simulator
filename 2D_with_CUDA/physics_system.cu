@@ -10,11 +10,25 @@
 #define VEL_LIMIT 8.0
 
 #define BLOCK_SIZE 96
-#define SHARED_MEM_PER_THREAD 99
 #define WARP_SIZE 32
 
 #define laneId (threadIdx.x % WARP_SIZE)
 #define warpId (threadIdx.x / WARP_SIZE)
+
+#define MAX_BOUNDARIES 100
+#define MAX_PUMPS 15
+
+#define MAX_PARTICLE_NEIGHBOURS 40
+#define MAX_BOUNDARY_NEIGHBOURS 7
+
+struct SharedMem{
+    Boundary boundaries[MAX_BOUNDARIES];
+    Pump pumps[MAX_PUMPS];
+    PumpVelocity pumpVelocities[MAX_PUMPS];
+    CompactParticle interThreadCommunicationMemory[BLOCK_SIZE];
+    unsigned short particleNeighboursIndices[BLOCK_SIZE*MAX_PARTICLE_NEIGHBOURS];
+    unsigned char boundaryNeighbourIndices[BLOCK_SIZE*MAX_BOUNDARY_NEIGHBOURS];
+};
 
 __global__ void initializeOldParticles(Particle* particles, CompactParticle* oldParticles, int numParticles);
 __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps);
@@ -44,7 +58,7 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     }
 
     // Check the device properties to calculate the maximum amount of allowed particles
-    sharedMemorySize = numBoundaries*sizeof(Boundary)+numPumps*(sizeof(Pump)+sizeof(PumpVelocity))+BLOCK_SIZE*(sizeof(CompactParticle)+SHARED_MEM_PER_THREAD);
+    sharedMemorySize = sizeof(SharedMem);
     cudaDeviceProp prop;
     CUDA_THROW_FAILED(cudaGetDeviceProperties(&prop, dev));
     int maxNumberOfBlocksPerSm = ((prop.sharedMemPerMultiprocessor-1000)/sharedMemorySize); // spare 1000 bytes of shared memory per block just to be safe
@@ -163,10 +177,7 @@ __global__ void initializeOldParticles(Particle* particles, CompactParticle* old
 
 __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundaries, Particle* particles, CompactParticle* oldParticles, CompactParticle* positionCommunicationMemory, float* pressureDensityRatioCommunicationMemory, int numParticles, Pump* pumps, PumpVelocity* pumpVelocities, int numPumps){
     // Initialize shared memory pointers
-    extern __shared__ Boundary boundaries_local_pointer[];
-    Pump* pumps_local_pointer = (Pump*)(&boundaries_local_pointer[numBoundaries]);
-    PumpVelocity* pumpvelocities_local_pointer = (PumpVelocity*)(&pumps_local_pointer[numPumps]);
-    CompactParticle* interThreadCommunicationMemory = (CompactParticle*)(&pumpvelocities_local_pointer[numPumps]);
+    extern __shared__ SharedMem sharedMemPtr[];
 
     // Get the grid_group because later on device wide synchronization will be necessary
     cooperative_groups::grid_group grid = cooperative_groups::this_grid();
@@ -177,12 +188,12 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
 
     for(int i=threadIdx.x; i<numBoundaries; i+=blockDim.x){
-        boundaries_local_pointer[i] = boundaries[i];
+        sharedMemPtr->boundaries[i] = boundaries[i];
     }
 
     for(int i=threadIdx.x; i<numPumps; i+=blockDim.x){
-        pumps_local_pointer[i] = pumps[i];
-        pumpvelocities_local_pointer[i] = pumpVelocities[i];
+        sharedMemPtr->pumps[i] = pumps[i];
+        sharedMemPtr->pumpVelocities[i] = pumpVelocities[i];
     }
 
     // Wait until shared memory has been initialized
@@ -206,9 +217,9 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
             // Update velocities based on whether the particle is in a pump or not
             for(int i = 0; i < numPumps; i++){
-                if(my_x >= pumps_local_pointer[i].xLow && my_x <= pumps_local_pointer[i].xHigh && my_y >= pumps_local_pointer[i].yLow && my_y <= pumps_local_pointer[i].yHigh){
-                    vel_x = pumpvelocities_local_pointer[i].velX;
-                    vel_y = pumpvelocities_local_pointer[i].velY;
+                if(my_x >= sharedMemPtr->pumps[i].xLow && my_x <= sharedMemPtr->pumps[i].xHigh && my_y >= sharedMemPtr->pumps[i].yLow && my_y <= sharedMemPtr->pumps[i].yHigh){
+                    vel_x = sharedMemPtr->pumpVelocities[i].velX;
+                    vel_y = sharedMemPtr->pumpVelocities[i].velY;
                     break;
                 }
             }
@@ -223,7 +234,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
             // Update positional change of particles caused by boundaries (make sure particles cannot pass boundaries)
             for(int i=0; i<numBoundaries; i++){
-                Boundary line = boundaries_local_pointer[i];
+                Boundary line = sharedMemPtr->boundaries[i];
                 float line_nx = line.y2-line.y1;
                 float line_ny = line.x1-line.x2;
                 float first_check = ((my_x-line.x1)*line_nx+(my_y-line.y1)*line_ny)*((old_x-line.x1)*line_nx+(old_y-line.y1)*line_ny);
@@ -255,9 +266,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             positionCommunicationMemory[thread_id] = {my_x, my_y};
         }
 
-        unsigned char* boundary_neighbour_indexes = (unsigned char*)(&interThreadCommunicationMemory[BLOCK_SIZE])+threadIdx.x*SHARED_MEM_PER_THREAD;
         int number_of_boundary_neighbours = 0;
-        unsigned short* particle_neighbour_indexes = nullptr;
         int number_of_particle_neighbours = 0;
 
         float my_pressure_density_ratio = 0.0;
@@ -268,7 +277,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
         if(thread_id < numParticles){
             // Look for boundaries near the particle
             for(unsigned char i=0; i<numBoundaries; i++){
-                Boundary line = boundaries_local_pointer[i];
+                Boundary line = sharedMemPtr->boundaries[i];
                 float line_nx = line.y2-line.y1;
                 float line_ny = line.x1-line.x2;
                 float multiplier = rsqrt(line_nx*line_nx+line_ny*line_ny);
@@ -282,21 +291,21 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                     float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                     if(projection <= SMOOTH && second_check3 <= (line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4 >= 0){
                         // Particle is hovering above this boundary and distance from boundary is less than SMOOTH
-                        boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
+                        sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+number_of_boundary_neighbours] = i;
                         number_of_boundary_neighbours++;
                         boundary_average_nx += line_nx;
                         boundary_average_ny += line_ny;
                     }
                     else if(((line.x1-my_x)*(line.x1-my_x) + (line.y1-my_y)*(line.y1-my_y)) < SMOOTH*SMOOTH && ((line.x1-my_x)*line_nx+(line.y1-my_y)*line_ny) > 0){
                         // Particle is close enough to one endpoint of the boundary
-                        boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
+                        sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+number_of_boundary_neighbours] = i;
                         number_of_boundary_neighbours++;
                         boundary_average_nx += line_nx;
                         boundary_average_ny += line_ny;
                     }
                     else if(((line.x2-my_x)*(line.x2-my_x) + (line.y2-my_y)*(line.y2-my_y)) < SMOOTH*SMOOTH && ((line.x2-my_x)*line_nx+(line.y2-my_y)*line_ny) > 0){
                         // Particle is close enough to another endpoint of the boundary
-                        boundary_neighbour_indexes[number_of_boundary_neighbours] = i;
+                        sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+number_of_boundary_neighbours] = i;
                         number_of_boundary_neighbours++;
                         boundary_average_nx += line_nx;
                         boundary_average_ny += line_ny;
@@ -309,12 +318,6 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
         grid.sync();
 
         {
-            // Initialize the particle neighbours pointer (conversion from a char pointer to short pointer requires alignment)
-            if(thread_id < numParticles){
-                int aligner = (long long)&boundary_neighbour_indexes[number_of_boundary_neighbours] & 1 ? 1 : 0;
-                particle_neighbour_indexes = (unsigned short*)(&boundary_neighbour_indexes[number_of_boundary_neighbours]+aligner);
-            }
-
             const float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( 0 / (SMOOTH*SMOOTH/4)));
             float dens = M_P*q2;
 
@@ -334,7 +337,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                     block.sync();
                 }
 
-                interThreadCommunicationMemory[threadIdx.x] = otherParticle;
+                sharedMemPtr->interThreadCommunicationMemory[threadIdx.x] = otherParticle;
 
                 // Wait until all threads in the block have stored the particle positions in shared memory
                 block.sync();
@@ -344,8 +347,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                         warpIterator = warpId;
                     }
                     else{
-                        otherParticle.x = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].x;
-                        otherParticle.y = interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator].y;
+                        otherParticle = sharedMemPtr->interThreadCommunicationMemory[laneId+WARP_SIZE*warpIterator];
                     }
                     for(int laneIterator=-1; laneIterator!=laneId; laneIterator = ((laneIterator+1) % (WARP_SIZE))){
                         if(laneIterator==-1){
@@ -365,7 +367,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                                 float accumulated_ghost_particle_density = 0.0;
                                 int j=0;
                                 for(; j<number_of_boundary_neighbours; j++){
-                                    Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
+                                    Boundary line = sharedMemPtr->boundaries[sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+j]];
                                     float line_nx = line.y2-line.y1;
                                     float line_ny = line.x1-line.x2;
                                     
@@ -422,7 +424,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
                                 // Change the density because of the neighbour particle and also add the particle to the neighbours list
                                 float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
                                 dens += M_P*q2;
-                                particle_neighbour_indexes[number_of_particle_neighbours] = blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator;
+                                sharedMemPtr->particleNeighboursIndices[threadIdx.x*MAX_PARTICLE_NEIGHBOURS+number_of_particle_neighbours] = blockIterator*blockDim.x+warpIterator*WARP_SIZE+laneIterator;
                                 number_of_particle_neighbours++;
                             }
                         }
@@ -431,7 +433,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             }
 
             // Make sure no division by zero exceptions occur
-            if(dens>0.0){
+            if(thread_id<numParticles && dens>0.0){
                 // Calculate the pressure_density_ratio
                 my_pressure_density_ratio = STIFF*(dens-REST)/(dens*dens);
                 pressureDensityRatioCommunicationMemory[thread_id] = my_pressure_density_ratio;
@@ -447,7 +449,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
             float boundaries_vel_x = 0.0;
             float boundaries_vel_y = 0.0;
             for(int i=0; i<number_of_particle_neighbours; i++){
-                unsigned short particle_index = particle_neighbour_indexes[i];
+                unsigned short particle_index = sharedMemPtr->particleNeighboursIndices[MAX_PARTICLE_NEIGHBOURS*threadIdx.x+i];
                 CompactParticle otherParticle = positionCommunicationMemory[particle_index];
                 float otherParticlePressureDensityRatio = pressureDensityRatioCommunicationMemory[particle_index];
                 float press = M_P*(my_pressure_density_ratio + otherParticlePressureDensityRatio);
@@ -465,7 +467,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
                 // Next calculate displacement of the particle caused by boundaries
                 for(int j=0; j<number_of_boundary_neighbours; j++){
-                    Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
+                    Boundary line = sharedMemPtr->boundaries[sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+j]];
                     float line_nx = (line.y2-line.y1);
                     float line_ny = (line.x1-line.x2);
                     float projection = (line.x1-otherParticle.x)*line_nx +(line.y1-otherParticle.y)*line_ny;
@@ -497,7 +499,7 @@ __global__ void updateParticles(float dt, Boundary* boundaries, int numBoundarie
 
             // Also include ghost particles made by the particle itself
             for(int j=0; j<number_of_boundary_neighbours; j++){
-                Boundary line = boundaries_local_pointer[boundary_neighbour_indexes[j]];
+                Boundary line = sharedMemPtr->boundaries[sharedMemPtr->boundaryNeighbourIndices[MAX_BOUNDARY_NEIGHBOURS*threadIdx.x+j]];
                 float line_nx = (line.y2-line.y1);
                 float line_ny = (line.x1-line.x2);
                 float projection = (line.x1-my_x)*line_nx +(line.y1-my_y)*line_ny;
