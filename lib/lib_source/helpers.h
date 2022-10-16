@@ -21,7 +21,6 @@ class Helper{
 };
 
 class DrawerHelper : public Helper{
-        friend class GraphicsEngine;
     public:
         void drawIndexed(int numIndices) const;
         void drawInstanced(int numVertices, int numInstances) const;
@@ -35,7 +34,6 @@ class DrawerHelper : public Helper{
 };
 
 class BindableHelper : public Helper{
-        friend class GraphicsEngine;
     public:
         ID3D11DeviceContext& getContext();
         ID3D11Device& getDevice();
