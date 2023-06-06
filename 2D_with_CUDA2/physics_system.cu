@@ -166,7 +166,6 @@ void PhysicsSystem::update(EntityManager& manager){
     /* TODO: DURATION TESTING
     auto start = std::chrono::high_resolution_clock::now();
     */
-    auto start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<UPDATES_PER_RENDER; i++){
         updateRegularPhysics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(dt, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], oldParticleXValues[currentParticlesIndex], oldParticleYValues[currentParticlesIndex], numParticles, numBoundaries, numPumps);
         /* TODO: interesting optimization
@@ -225,10 +224,6 @@ void PhysicsSystem::update(EntityManager& manager){
     CUDA_THROW_FAILED(cudaGetLastError());
     CUDA_THROW_FAILED(cudaDeviceSynchronize());
     manager.getParticles().unMap();
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    std::string exceptionString = "Timing in microseconds: "+std::to_string(duration.count());
-    throw std::exception(exceptionString.c_str());
     /*  TODO: DURATION TESTING
     //CUDA_THROW_FAILED(cudaGetLastError());
     //CUDA_THROW_FAILED(cudaDeviceSynchronize());
@@ -338,6 +333,8 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
     if(maxBlockIterator){
         cudaFree(maxBlockIterator);
     }
+
+    // TODO
 }
 
 __global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, unsigned short* staticIndexes){
@@ -356,8 +353,10 @@ __global__ void initializeParticles(Particle* graphicsParticles, float* particle
 __global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles){
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
     if(thread_id < numParticles){ 
-        __stcg((float*)(graphicsParticles+thread_id), __ldcg(particleXValues+thread_id));
-        __stcg((float*)(graphicsParticles+thread_id)+1, __ldcg(particleYValues+thread_id));
+        //__stcg((float*)(graphicsParticles+thread_id), __ldcg(particleXValues+thread_id));
+        graphicsParticles[thread_id].x = particleXValues[thread_id];
+        //__stcg((float*)(graphicsParticles+thread_id)+1, __ldcg(particleYValues+thread_id));
+        graphicsParticles[thread_id].y = particleYValues[thread_id];
     }
 }
 
