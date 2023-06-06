@@ -25,10 +25,10 @@ class PhysicsSystem{
         // boundaries is constant memory and thus declared in the .cu file
         int numBoundaries;
 
-        float* particleXValues = nullptr;
-        float* particleYValues = nullptr;
-        float* oldParticleXValues = nullptr;
-        float* oldParticleYValues = nullptr;
+        float* particleXValues[2] = {nullptr, nullptr};
+        float* particleYValues[2] = {nullptr, nullptr};
+        float* oldParticleXValues[2] = {nullptr, nullptr};
+        float* oldParticleYValues[2] = {nullptr, nullptr};
         float* particlePressureDensityRatios = nullptr;
         int numParticles;
 
@@ -45,4 +45,14 @@ class PhysicsSystem{
         int* maxBlockIterator = nullptr;
 
         int sharedMemorySize;
+
+        int currentParticlesIndex = 0;
+        unsigned short* staticIndexes = nullptr;
+        unsigned short* permutedIndexes = nullptr; 
+
+        void* sortingTempStorage = nullptr;
+        size_t sortingTempStorageBytes;
+        /* TODO: interesting optimization
+        int sortCounter;
+        */
 };

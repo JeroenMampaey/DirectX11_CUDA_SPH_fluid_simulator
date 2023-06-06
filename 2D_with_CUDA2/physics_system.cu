@@ -1,6 +1,6 @@
 #include "physics_system.h"
 #include <cooperative_groups.h>
-#include <thrust/sort.h>
+//#include <thrust/sort.h>
 #include <float.h>
 #include <limits.h>
 /* TODO: DURATION TESTING
@@ -8,13 +8,16 @@
 */
 #include <chrono>
 
+#define THRUST_IGNORE_CUB_VERSION_CHECK
+#include <cub/cub.cuh>
+
 #define GRAVITY 9.8f
 #define PIXEL_PER_METER 100.0f
 #define SMOOTH (3.0f*RADIUS)
 #define REST 1
 #define STIFF 50000.0
 #define M_P (REST*RADIUS*RADIUS*PI)
-#define VEL_LIMIT 8.0
+#define VEL_LIMIT 8.0f
 
 #define BLOCK_SIZE 64
 #define WARP_SIZE 32
@@ -32,6 +35,11 @@
 #define MAX_NEARBY_PARTICLES 60
 #define MAX_NEARBY_BOUNDARIES 7
 
+/* TODO: interesting optimization
+#define BLOCK_DELTA (5*SMOOTH)
+*/
+#define BLOCK_DELTA SMOOTH
+
 /* TODO: kernel testing
 __device__ int someMax[1] = {-1};
 */
@@ -47,7 +55,7 @@ struct SharedMem1{
     unsigned char nearbyBoundaryIndices[BLOCK_SIZE*MAX_NEARBY_BOUNDARIES];
 };
 
-__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles);
+__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, unsigned short* staticIndexes);
 __global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles);
 __global__ void updateRegularPhysics(float dt, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, int numBoundaries, int numPumps);
 __global__ void updateDensityField(float dt, 
@@ -73,6 +81,23 @@ __global__ void updateParticlesByDensityField(float dt,
     unsigned short* nearbyParticleIndices,
     int* minBlockIterator,
     int* maxBlockIterator);
+__global__ void permuteArrays(unsigned short* permutedIndices, 
+    float* ogParticleYValues, 
+    float* newParticleYValues, 
+    float* ogOldParticleXValues, 
+    float* newOldParticleXValues, 
+    float* ogOldParticleYValues, 
+    float* newOldParticleYValues, 
+    int numParticles)
+{
+    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
+    if(thread_id < numParticles){
+        unsigned short permutedIndex = permutedIndices[thread_id];
+        newParticleYValues[thread_id] = ogParticleYValues[permutedIndex];
+        newOldParticleXValues[thread_id] = ogOldParticleXValues[permutedIndex];
+        newOldParticleYValues[thread_id] = ogOldParticleYValues[permutedIndex];
+    }
+}
 
 
 PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
@@ -86,6 +111,10 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
         throw std::exception("Refreshrate could not easily be found programmatically.");
     }
     dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
+
+    /* TODO: interesting optimization
+    sortCounter = (int)((BLOCK_DELTA-SMOOTH)/(2*VEL_LIMIT*PIXEL_PER_METER*dt));
+    */
 
     // First get the current cuda device
     cudaError_t err;
@@ -137,13 +166,31 @@ void PhysicsSystem::update(EntityManager& manager){
     /* TODO: DURATION TESTING
     auto start = std::chrono::high_resolution_clock::now();
     */
-
+    auto start = std::chrono::high_resolution_clock::now();
     for(int i=0; i<UPDATES_PER_RENDER; i++){
-        updateRegularPhysics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(dt, particleXValues, particleYValues, oldParticleXValues, oldParticleYValues, numParticles, numBoundaries, numPumps);
-        thrust::sort_by_key(thrust::device, particleXValues, particleXValues+numParticles, thrust::make_zip_iterator(thrust::make_tuple(particleYValues, oldParticleXValues, oldParticleYValues)));
+        updateRegularPhysics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(dt, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], oldParticleXValues[currentParticlesIndex], oldParticleYValues[currentParticlesIndex], numParticles, numBoundaries, numPumps);
+        /* TODO: interesting optimization
+        sortCounter += 1;
+        if(2*PIXEL_PER_METER*VEL_LIMIT*dt*sortCounter>=(BLOCK_DELTA-SMOOTH)){
+            sortCounter = 0;
+            thrust::sort_by_key(thrust::device, particleXValues, particleXValues+numParticles, thrust::make_zip_iterator(thrust::make_tuple(particleYValues, oldParticleXValues, oldParticleYValues)));
+        }
+        */
+        cub::DeviceRadixSort::SortPairs<float, unsigned short>(sortingTempStorage, sortingTempStorageBytes,
+            particleXValues[currentParticlesIndex], particleXValues[1-currentParticlesIndex], staticIndexes, permutedIndexes, numParticles);
+        permuteArrays<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(permutedIndexes, 
+            particleYValues[currentParticlesIndex], 
+            particleYValues[1-currentParticlesIndex], 
+            oldParticleXValues[currentParticlesIndex], 
+            oldParticleXValues[1-currentParticlesIndex],
+            oldParticleYValues[currentParticlesIndex],
+            oldParticleYValues[1-currentParticlesIndex], 
+            numParticles);
+        currentParticlesIndex = 1-currentParticlesIndex;
+        //thrust::sort_by_key(thrust::device, particleXValues, particleXValues+numParticles, thrust::make_zip_iterator(thrust::make_tuple(particleYValues, oldParticleXValues, oldParticleYValues)));
         updateDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
-            particleXValues,
-            particleYValues,
+            particleXValues[currentParticlesIndex],
+            particleYValues[currentParticlesIndex],
             particlePressureDensityRatios,
             numParticles, 
             numBoundaries,
@@ -154,8 +201,8 @@ void PhysicsSystem::update(EntityManager& manager){
             minBlockIterator,
             maxBlockIterator);
         updateParticlesByDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
-            particleXValues, 
-            particleYValues, 
+            particleXValues[currentParticlesIndex], 
+            particleYValues[currentParticlesIndex], 
             particlePressureDensityRatios,
             numParticles,
             numNearbyBoundaries,
@@ -174,11 +221,14 @@ void PhysicsSystem::update(EntityManager& manager){
         */
     }
     Particle* graphicsParticles = (Particle*)manager.getParticles().getMappedAccess();
-    copyParticlesToGraphics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(graphicsParticles, particleXValues, particleYValues, numParticles);
+    copyParticlesToGraphics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(graphicsParticles, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], numParticles);
     CUDA_THROW_FAILED(cudaGetLastError());
     CUDA_THROW_FAILED(cudaDeviceSynchronize());
     manager.getParticles().unMap();
-
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::string exceptionString = "Timing in microseconds: "+std::to_string(duration.count());
+    throw std::exception(exceptionString.c_str());
     /*  TODO: DURATION TESTING
     //CUDA_THROW_FAILED(cudaGetLastError());
     //CUDA_THROW_FAILED(cudaDeviceSynchronize());
@@ -186,18 +236,22 @@ void PhysicsSystem::update(EntityManager& manager){
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     std::string exceptionString = "Timing in microseconds: "+std::to_string(duration.count());
     throw std::exception(exceptionString.c_str());
-    */
+    */ 
 }
 
 void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
     cudaError_t err;
 
     if(numParticles > 0){
-        CUDA_THROW_FAILED(cudaMalloc((void**)&particleXValues, sizeof(float)*numParticles));
-        CUDA_THROW_FAILED(cudaMalloc((void**)&particleYValues, sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&particleXValues[0], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&particleYValues[0], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&particleXValues[1], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&particleYValues[1], sizeof(float)*numParticles));
 
-        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleXValues, sizeof(float)*numParticles));
-        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleYValues, sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleXValues[0], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleYValues[0], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleXValues[1], sizeof(float)*numParticles));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&oldParticleYValues[1], sizeof(float)*numParticles));
 
         CUDA_THROW_FAILED(cudaMalloc((void**)&particlePressureDensityRatios, sizeof(float)*numParticles));
 
@@ -209,6 +263,13 @@ void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
 
         CUDA_THROW_FAILED(cudaMalloc((void**)&minBlockIterator, sizeof(int)*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
         CUDA_THROW_FAILED(cudaMalloc((void**)&maxBlockIterator, sizeof(int)*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
+
+        CUDA_THROW_FAILED(cudaMalloc((void**)&staticIndexes, sizeof(unsigned short)*(numParticles)));
+        CUDA_THROW_FAILED(cudaMalloc((void**)&permutedIndexes, sizeof(unsigned short)*(numParticles)));
+
+        cub::DeviceRadixSort::SortPairs(sortingTempStorage, sortingTempStorageBytes,
+            particleXValues[0], particleXValues[1], staticIndexes, permutedIndexes, numParticles);
+        CUDA_THROW_FAILED(cudaMalloc((void**)&sortingTempStorage, sortingTempStorageBytes));
     }
 }
 
@@ -221,7 +282,7 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
 
     if(numParticles > 0){
         Particle* graphicsParticles = (Particle*)manager.getParticles().getMappedAccess();
-        initializeParticles<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(graphicsParticles, particleXValues, particleYValues, oldParticleXValues, oldParticleYValues, numParticles);
+        initializeParticles<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(graphicsParticles, particleXValues[0], particleYValues[0], oldParticleXValues[0], oldParticleYValues[0], numParticles, staticIndexes);
         CUDA_THROW_FAILED(cudaGetLastError());
         CUDA_THROW_FAILED(cudaDeviceSynchronize());
         manager.getParticles().unMap();
@@ -279,7 +340,7 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
     }
 }
 
-__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles){
+__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, unsigned short* staticIndexes){
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
     if(thread_id < numParticles){ 
         particleXValues[thread_id] = graphicsParticles[thread_id].x;
@@ -287,14 +348,16 @@ __global__ void initializeParticles(Particle* graphicsParticles, float* particle
 
         oldParticleXValues[thread_id] = graphicsParticles[thread_id].x;
         oldParticleYValues[thread_id] = graphicsParticles[thread_id].y;
+
+        staticIndexes[thread_id] = thread_id;
     }
 }
 
 __global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles){
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
     if(thread_id < numParticles){ 
-        graphicsParticles[thread_id].x = particleXValues[thread_id];
-        graphicsParticles[thread_id].y = particleYValues[thread_id];
+        __stcg((float*)(graphicsParticles+thread_id), __ldcg(particleXValues+thread_id));
+        __stcg((float*)(graphicsParticles+thread_id)+1, __ldcg(particleYValues+thread_id));
     }
 }
 
@@ -596,7 +659,7 @@ __global__ void updateDensityField(float dt,
         
         __syncthreads();
         
-        if(maxXValue>(maxXValueTB+SMOOTH)){
+        if(maxXValue>(maxXValueTB+BLOCK_DELTA)){
             blockIterator++;
             break;
         }
@@ -638,7 +701,7 @@ __global__ void updateDensityField(float dt,
         
         __syncthreads();
         
-        if(minXValue<(minXValueTB-SMOOTH)){
+        if(minXValue<(minXValueTB-BLOCK_DELTA)){
             blockIterator--;
             break;
         }
