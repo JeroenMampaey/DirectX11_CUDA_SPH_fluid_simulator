@@ -16,7 +16,7 @@
 #define M_P (REST*RADIUS*RADIUS*PI)
 #define VEL_LIMIT 8.0
 
-#define BLOCK_SIZE 96
+#define BLOCK_SIZE 64
 #define WARP_SIZE 32
 
 #define laneId (threadIdx.x % WARP_SIZE)
@@ -810,9 +810,9 @@ __global__ void updateParticlesByDensityField(float dt,
         float particlePressureDensityRatio = 0.0;
 
         if(threadIdx.x+blockIterator*blockDim.x<numParticles){
-            particleX = particleXValues[threadIdx.x+blockIterator*blockDim.x];
-            particleY = particleYValues[threadIdx.x+blockIterator*blockDim.x];
-            particlePressureDensityRatio = particlePressureDensityRatios[threadIdx.x+blockIterator*blockDim.x];
+            particleX = __ldcg(particleXValues+threadIdx.x+blockIterator*blockDim.x);
+            particleY = __ldcg(particleYValues+threadIdx.x+blockIterator*blockDim.x);
+            particlePressureDensityRatio = __ldcg(particlePressureDensityRatios+threadIdx.x+blockIterator*blockDim.x);
         }
 
         sharedMemPtr->particleXValues[threadIdx.x] = particleX;
@@ -863,9 +863,9 @@ __global__ void updateParticlesByDensityField(float dt,
         float particlePressureDensityRatio = 0.0;
 
         if(threadIdx.x+blockIterator*blockDim.x<numParticles){
-            particleX = particleXValues[threadIdx.x+blockIterator*blockDim.x];
-            particleY = particleYValues[threadIdx.x+blockIterator*blockDim.x];
-            particlePressureDensityRatio = particlePressureDensityRatios[threadIdx.x+blockIterator*blockDim.x];
+            particleX = __ldcg(particleXValues+threadIdx.x+blockIterator*blockDim.x);
+            particleY = __ldcg(particleYValues+threadIdx.x+blockIterator*blockDim.x);
+            particlePressureDensityRatio = __ldcg(particlePressureDensityRatios+threadIdx.x+blockIterator*blockDim.x);
         }
 
         sharedMemPtr->particleXValues[threadIdx.x] = particleX;
@@ -920,6 +920,7 @@ __global__ void updateParticlesByDensityField(float dt,
         float boundary_average_nx = 0.0;
         float boundary_average_ny = 0.0;
 
+        //TODO: calculate this in addGhostBoundaryParticles
         for(int i=0; i<numNearbyBoundariesReg; i++){
             Boundary line = boundaries[sharedMemPtr->nearbyBoundaryIndices[BLOCK_SIZE*i+threadIdx.x]];
             float line_nx = line.y2-line.y1;

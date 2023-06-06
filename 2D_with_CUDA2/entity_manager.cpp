@@ -236,7 +236,7 @@ void EntityManager::buildDefaultSimulationLayout(GraphicsEngine& gfx){
     boundaries.push_back({WIDTH, 0, WIDTH, HEIGHT});
 
     for(float y = RADIUS; y<0.8f*HEIGHT; y+=SQRT_PI*RADIUS){
-        for(float x = RADIUS; x<0.5f*WIDTH; x+=SQRT_PI*RADIUS){
+        for(float x = RADIUS; x<0.7f*WIDTH; x+=SQRT_PI*RADIUS){
             tempParticles.push_back({x, y, 0.0f, 0.0f});
         }
     }
