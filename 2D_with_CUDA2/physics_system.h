@@ -41,9 +41,6 @@ class PhysicsSystem{
         unsigned char* numNearbyParticles = nullptr;
         unsigned short* nearbyParticleIndices = nullptr;
 
-        int* minBlockIterator = nullptr;
-        int* maxBlockIterator = nullptr;
-
         int sharedMemorySize;
 
         int currentParticlesIndex = 0;
@@ -52,7 +49,4 @@ class PhysicsSystem{
 
         void* sortingTempStorage = nullptr;
         size_t sortingTempStorageBytes;
-        /* TODO: interesting optimization
-        int sortCounter;
-        */
 };

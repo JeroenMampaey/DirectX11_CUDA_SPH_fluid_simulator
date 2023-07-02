@@ -1,12 +1,7 @@
 #include "physics_system.h"
 #include <cooperative_groups.h>
-//#include <thrust/sort.h>
 #include <float.h>
 #include <limits.h>
-/* TODO: DURATION TESTING
-#include <chrono>
-*/
-#include <chrono>
 
 #define THRUST_IGNORE_CUB_VERSION_CHECK
 #include <cub/cub.cuh>
@@ -35,15 +30,6 @@
 #define MAX_NEARBY_PARTICLES 60
 #define MAX_NEARBY_BOUNDARIES 7
 
-/* TODO: interesting optimization
-#define BLOCK_DELTA (5*SMOOTH)
-*/
-#define BLOCK_DELTA SMOOTH
-
-/* TODO: kernel testing
-__device__ int someMax[1] = {-1};
-*/
-
 __constant__ Boundary boundaries[MAX_BOUNDARIES];
 __constant__ Pump pumps[MAX_PUMPS];
 __constant__ PumpVelocity pumpVelocities[MAX_PUMPS];
@@ -55,9 +41,14 @@ struct SharedMem1{
     unsigned char nearbyBoundaryIndices[BLOCK_SIZE*MAX_NEARBY_BOUNDARIES];
 };
 
-__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, unsigned short* staticIndexes);
-__global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles);
-__global__ void updateRegularPhysics(float dt, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, int numBoundaries, int numPumps);
+__global__ void updateRegularPhysics(float dt,
+    float* particleXValues,
+    float* particleYValues,
+    float* oldParticleXValues,
+    float* oldParticleYValues,
+    int numParticles,
+    int numBoundaries,
+    int numPumps);
 __global__ void updateDensityField(float dt, 
     float* particleXValues, 
     float* particleYValues, 
@@ -67,9 +58,7 @@ __global__ void updateDensityField(float dt,
     unsigned char* numNearbyBoundaries,
     unsigned char* nearbyBoundaryIndices,
     unsigned char* numNearbyParticles,
-    unsigned short* nearbyParticleIndices,
-    int* minBlockIterator,
-    int* maxBlockIterator);
+    unsigned short* nearbyParticleIndices);
 __global__ void updateParticlesByDensityField(float dt, 
     float* particleXValues, 
     float* particleYValues, 
@@ -81,6 +70,44 @@ __global__ void updateParticlesByDensityField(float dt,
     unsigned short* nearbyParticleIndices,
     int* minBlockIterator,
     int* maxBlockIterator);
+__global__ void updateParticlesByDensityField2(float dt, 
+    float* particleXValues, 
+    float* particleYValues, 
+    float* particlePressureDensityRatios,
+    int numParticles,
+    unsigned char* numNearbyBoundaries,
+    unsigned char* nearbyBoundaryIndices,
+    unsigned char* numNearbyParticles,
+    unsigned short* nearbyParticleIndices);
+
+__global__ void initializeParticles(Particle* graphicsParticles,
+    float* particleXValues,
+    float* particleYValues,
+    float* oldParticleXValues,
+    float* oldParticleYValues,
+    int numParticles,
+    unsigned short* staticIndexes)
+{
+    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
+    if(thread_id < numParticles){ 
+        particleXValues[thread_id] = graphicsParticles[thread_id].x;
+        particleYValues[thread_id] = graphicsParticles[thread_id].y;
+
+        oldParticleXValues[thread_id] = graphicsParticles[thread_id].x;
+        oldParticleYValues[thread_id] = graphicsParticles[thread_id].y;
+
+        staticIndexes[thread_id] = thread_id;
+    }
+}
+
+__global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles){
+    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
+    if(thread_id < numParticles){ 
+        graphicsParticles[thread_id].x = particleXValues[thread_id];
+        graphicsParticles[thread_id].y = particleYValues[thread_id];
+    }
+}
+
 __global__ void permuteArrays(unsigned short* permutedIndices, 
     float* ogParticleYValues, 
     float* newParticleYValues, 
@@ -99,7 +126,6 @@ __global__ void permuteArrays(unsigned short* permutedIndices,
     }
 }
 
-
 PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     :
     numBoundaries(manager.getBoundaries().size()),
@@ -111,10 +137,6 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
         throw std::exception("Refreshrate could not easily be found programmatically.");
     }
     dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
-
-    /* TODO: interesting optimization
-    sortCounter = (int)((BLOCK_DELTA-SMOOTH)/(2*VEL_LIMIT*PIXEL_PER_METER*dt));
-    */
 
     // First get the current cuda device
     cudaError_t err;
@@ -163,30 +185,24 @@ void PhysicsSystem::update(EntityManager& manager){
     
     cudaError_t err;
 
-    /* TODO: DURATION TESTING
-    auto start = std::chrono::high_resolution_clock::now();
-    */
     for(int i=0; i<UPDATES_PER_RENDER; i++){
         updateRegularPhysics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(dt, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], oldParticleXValues[currentParticlesIndex], oldParticleYValues[currentParticlesIndex], numParticles, numBoundaries, numPumps);
-        /* TODO: interesting optimization
-        sortCounter += 1;
-        if(2*PIXEL_PER_METER*VEL_LIMIT*dt*sortCounter>=(BLOCK_DELTA-SMOOTH)){
-            sortCounter = 0;
-            thrust::sort_by_key(thrust::device, particleXValues, particleXValues+numParticles, thrust::make_zip_iterator(thrust::make_tuple(particleYValues, oldParticleXValues, oldParticleYValues)));
-        }
-        */
-        cub::DeviceRadixSort::SortPairs<float, unsigned short>(sortingTempStorage, sortingTempStorageBytes,
-            particleXValues[currentParticlesIndex], particleXValues[1-currentParticlesIndex], staticIndexes, permutedIndexes, numParticles);
+        cub::DeviceRadixSort::SortPairs<float, unsigned short>(sortingTempStorage,
+            sortingTempStorageBytes,
+            particleXValues[currentParticlesIndex],
+            particleXValues[1-currentParticlesIndex],
+            staticIndexes,
+            permutedIndexes,
+            numParticles);
         permuteArrays<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(permutedIndexes, 
             particleYValues[currentParticlesIndex], 
-            particleYValues[1-currentParticlesIndex], 
+            particleYValues[1-currentParticlesIndex],
             oldParticleXValues[currentParticlesIndex], 
             oldParticleXValues[1-currentParticlesIndex],
             oldParticleYValues[currentParticlesIndex],
             oldParticleYValues[1-currentParticlesIndex], 
             numParticles);
         currentParticlesIndex = 1-currentParticlesIndex;
-        //thrust::sort_by_key(thrust::device, particleXValues, particleXValues+numParticles, thrust::make_zip_iterator(thrust::make_tuple(particleYValues, oldParticleXValues, oldParticleYValues)));
         updateDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
             particleXValues[currentParticlesIndex],
             particleYValues[currentParticlesIndex],
@@ -196,10 +212,8 @@ void PhysicsSystem::update(EntityManager& manager){
             numNearbyBoundaries,
             nearbyBoundaryIndices,
             numNearbyParticles,
-            nearbyParticleIndices,
-            minBlockIterator,
-            maxBlockIterator);
-        updateParticlesByDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
+            nearbyParticleIndices);
+        updateParticlesByDensityField2<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
             particleXValues[currentParticlesIndex], 
             particleYValues[currentParticlesIndex], 
             particlePressureDensityRatios,
@@ -207,31 +221,13 @@ void PhysicsSystem::update(EntityManager& manager){
             numNearbyBoundaries,
             nearbyBoundaryIndices,
             numNearbyParticles,
-            nearbyParticleIndices,
-            minBlockIterator,
-            maxBlockIterator);
-        /* TODO: kernel testing
-        int someMaxHost[1] = {0};
-        cudaMemcpyFromSymbol(someMaxHost, someMax, sizeof(int), 0, cudaMemcpyDeviceToHost);
-        if(someMaxHost[0]!=-1){
-            std::string exceptionString = "Some max: "+std::to_string(someMaxHost[0]);
-            throw std::exception(exceptionString.c_str());
-        }
-        */
+            nearbyParticleIndices);
     }
     Particle* graphicsParticles = (Particle*)manager.getParticles().getMappedAccess();
     copyParticlesToGraphics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(graphicsParticles, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], numParticles);
     CUDA_THROW_FAILED(cudaGetLastError());
     CUDA_THROW_FAILED(cudaDeviceSynchronize());
     manager.getParticles().unMap();
-    /*  TODO: DURATION TESTING
-    //CUDA_THROW_FAILED(cudaGetLastError());
-    //CUDA_THROW_FAILED(cudaDeviceSynchronize());
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    std::string exceptionString = "Timing in microseconds: "+std::to_string(duration.count());
-    throw std::exception(exceptionString.c_str());
-    */ 
 }
 
 void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
@@ -255,9 +251,6 @@ void PhysicsSystem::allocateDeviceMemory(EntityManager& manager){
 
         CUDA_THROW_FAILED(cudaMalloc((void**)&nearbyBoundaryIndices, sizeof(unsigned char)*MAX_NEARBY_BOUNDARIES*BLOCK_SIZE*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
         CUDA_THROW_FAILED(cudaMalloc((void**)&nearbyParticleIndices, sizeof(unsigned short)*MAX_NEARBY_PARTICLES*BLOCK_SIZE*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
-
-        CUDA_THROW_FAILED(cudaMalloc((void**)&minBlockIterator, sizeof(int)*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
-        CUDA_THROW_FAILED(cudaMalloc((void**)&maxBlockIterator, sizeof(int)*((numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE)));
 
         CUDA_THROW_FAILED(cudaMalloc((void**)&staticIndexes, sizeof(unsigned short)*(numParticles)));
         CUDA_THROW_FAILED(cudaMalloc((void**)&permutedIndexes, sizeof(unsigned short)*(numParticles)));
@@ -326,41 +319,18 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
         cudaFree(nearbyParticleIndices);
     }
 
-    if(minBlockIterator){
-        cudaFree(minBlockIterator);
-    }
-
-    if(maxBlockIterator){
-        cudaFree(maxBlockIterator);
-    }
-
     // TODO
 }
 
-__global__ void initializeParticles(Particle* graphicsParticles, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, unsigned short* staticIndexes){
-    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
-    if(thread_id < numParticles){ 
-        particleXValues[thread_id] = graphicsParticles[thread_id].x;
-        particleYValues[thread_id] = graphicsParticles[thread_id].y;
-
-        oldParticleXValues[thread_id] = graphicsParticles[thread_id].x;
-        oldParticleYValues[thread_id] = graphicsParticles[thread_id].y;
-
-        staticIndexes[thread_id] = thread_id;
-    }
-}
-
-__global__ void copyParticlesToGraphics(Particle* graphicsParticles, float* particleXValues, float* particleYValues, int numParticles){
-    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
-    if(thread_id < numParticles){ 
-        //__stcg((float*)(graphicsParticles+thread_id), __ldcg(particleXValues+thread_id));
-        graphicsParticles[thread_id].x = particleXValues[thread_id];
-        //__stcg((float*)(graphicsParticles+thread_id)+1, __ldcg(particleYValues+thread_id));
-        graphicsParticles[thread_id].y = particleYValues[thread_id];
-    }
-}
-
-__global__ void updateRegularPhysics(float dt, float* particleXValues, float* particleYValues, float* oldParticleXValues, float* oldParticleYValues, int numParticles, int numBoundaries, int numPumps){
+__global__ void updateRegularPhysics(float dt,
+    float* particleXValues,
+    float* particleYValues,
+    float* oldParticleXValues,
+    float* oldParticleYValues,
+    int numParticles,
+    int numBoundaries,
+    int numPumps)
+{
     int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
     if(thread_id < numParticles){
         float old_x = oldParticleXValues[thread_id];
@@ -543,9 +513,7 @@ __global__ void updateDensityField(float dt,
     unsigned char* numNearbyBoundaries,
     unsigned char* nearbyBoundaryIndices,
     unsigned char* numNearbyParticles,
-    unsigned short* nearbyParticleIndices,
-    int* minBlockIterator,
-    int* maxBlockIterator)
+    unsigned short* nearbyParticleIndices)
 {
     // Initialize shared memory pointers
     extern __shared__ SharedMem1 sharedMemPtr[];
@@ -658,13 +626,10 @@ __global__ void updateDensityField(float dt,
         
         __syncthreads();
         
-        if(maxXValue>(maxXValueTB+BLOCK_DELTA)){
+        if(maxXValue>(maxXValueTB+SMOOTH)){
             blockIterator++;
             break;
         }
-    }
-    if(threadIdx.x==0){
-        maxBlockIterator[blockIdx.x] = blockIterator;
     }
     
     blockIterator=blockIdx.x-1;
@@ -700,21 +665,14 @@ __global__ void updateDensityField(float dt,
         
         __syncthreads();
         
-        if(minXValue<(minXValueTB-BLOCK_DELTA)){
+        if(minXValue<(minXValueTB-SMOOTH)){
             blockIterator--;
             break;
         }
     }
-    if(threadIdx.x==0){
-        minBlockIterator[blockIdx.x] = blockIterator;
-    }
 
     if(thread_id<numParticles){
         numNearbyParticles[thread_id] = numNearbyParticlesReg;
-
-        /* TODO: kernel testing
-        atomicMax(maxNeighbours, numNearbyParticlesReg);
-        */
         
         if(dens>0.0){
             // Calculate the pressure_density_ratio
@@ -732,8 +690,8 @@ __forceinline__ __device__ void addGhostBoundaryParticles(float dt,
     float particleY,
     float press,
     unsigned char numNearbyBoundariesReg,
-    float& boundaries_vel_x,
-    float& boundaries_vel_y)
+    float& vel_x,
+    float& vel_y)
 {
     for(int j=0; j<numNearbyBoundariesReg; j++){
         Boundary line = boundaries[sharedMemPtr->nearbyBoundaryIndices[BLOCK_SIZE*j+threadIdx.x]];
@@ -761,8 +719,13 @@ __forceinline__ __device__ void addGhostBoundaryParticles(float dt,
         float displace = (press * q) * dt;
         float abx = (my_x - virtual_x);
         float aby = (my_y - virtual_y);
-        boundaries_vel_x += displace * abx;
-        boundaries_vel_y += displace * aby;
+        float boundaries_vel_x = displace * abx;
+        float boundaries_vel_y = displace * aby;
+        // Particles cannot get attracted to boundaries
+        if(line_nx*boundaries_vel_x+line_ny*boundaries_vel_y <=0.0){
+            vel_x += boundaries_vel_x;
+            vel_y += boundaries_vel_y;
+        }
     }
 }
 
@@ -801,8 +764,6 @@ __global__ void updateParticlesByDensityField(float dt,
 
     float vel_x = 0.0;
     float vel_y = 0.0;
-    float boundaries_vel_x = 0.0;
-    float boundaries_vel_y = 0.0;
 
     if(thread_id<numParticles){
         my_x = particleXValues[thread_id];
@@ -818,8 +779,8 @@ __global__ void updateParticlesByDensityField(float dt,
             my_y,
             M_P*2.0*myPressureDensityRatio,
             numNearbyBoundariesReg,
-            boundaries_vel_x,
-            boundaries_vel_y);
+            vel_x,
+            vel_y);
     }
 
     sharedMemPtr->particleXValues[threadIdx.x] = my_x;
@@ -856,8 +817,8 @@ __global__ void updateParticlesByDensityField(float dt,
             particleY,
             press,
             numNearbyBoundariesReg,
-            boundaries_vel_x,
-            boundaries_vel_y);
+            vel_x,
+            vel_y);
         
         nearbyParticlesIterator++;
         nextNearbyParticleIndex = (numNearbyParticlesReg>nearbyParticlesIterator) ? nearbyParticleIndices[BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_PARTICLES+nearbyParticlesIterator)+threadIdx.x] : USHRT_MAX;
@@ -908,8 +869,8 @@ __global__ void updateParticlesByDensityField(float dt,
                 particleY,
                 press,
                 numNearbyBoundariesReg,
-                boundaries_vel_x,
-                boundaries_vel_y);
+                vel_x,
+                vel_y);
             
             nearbyParticlesIterator++;
             nextNearbyParticleIndex = (numNearbyParticlesReg>nearbyParticlesIterator) ? nearbyParticleIndices[BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_PARTICLES+nearbyParticlesIterator)+threadIdx.x] : USHRT_MAX;
@@ -961,8 +922,8 @@ __global__ void updateParticlesByDensityField(float dt,
                 particleY,
                 press,
                 numNearbyBoundariesReg,
-                boundaries_vel_x,
-                boundaries_vel_y);
+                vel_x,
+                vel_y);
             
             nearbyParticlesIterator++;
             nextNearbyParticleIndex = (numNearbyParticlesReg>nearbyParticlesIterator) ? nearbyParticleIndices[BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_PARTICLES+nearbyParticlesIterator)+threadIdx.x] : USHRT_MAX;
@@ -971,37 +932,109 @@ __global__ void updateParticlesByDensityField(float dt,
         __syncthreads();
     }
 
+    if(thread_id < numParticles){
+        // Put a velocity limit on the particles too allow the system to work still somewhat normally 
+        // if some unforeseen behaviour would occur
+        if(vel_x*vel_x+vel_y*vel_y > VEL_LIMIT*VEL_LIMIT){
+            float multiplier = VEL_LIMIT/sqrt(vel_x*vel_x+vel_y*vel_y);
+            vel_x *= multiplier;
+            vel_y *= multiplier;
+        }
 
-    /* TODO: kernel testing
-    if(nearbyParticlesIterator!=numNearbyParticlesReg){
-        atomicMax(someMax, numNearbyParticlesReg-nearbyParticlesIterator);
+        my_x += PIXEL_PER_METER*vel_x*dt;
+        my_y += PIXEL_PER_METER*vel_y*dt;
+
+        particleXValues[thread_id] = my_x;
+        particleYValues[thread_id] = my_y;
     }
-    */
+}
+
+__global__ void updateParticlesByDensityField2(float dt, 
+    float* particleXValues, 
+    float* particleYValues, 
+    float* particlePressureDensityRatios,
+    int numParticles,
+    unsigned char* numNearbyBoundaries,
+    unsigned char* nearbyBoundaryIndices,
+    unsigned char* numNearbyParticles,
+    unsigned short* nearbyParticleIndices)
+{
+    // Initialize shared memory pointers
+    extern __shared__ SharedMem1 sharedMemPtr[];
+
+    int thread_id = threadIdx.x + blockIdx.x * blockDim.x;
+
+    unsigned char numNearbyBoundariesReg = 0;
+    unsigned char numNearbyParticlesReg = 0;
+
+    if(thread_id<numParticles){
+        numNearbyBoundariesReg = numNearbyBoundaries[thread_id];
+        numNearbyParticlesReg = numNearbyParticles[thread_id];
+    }
+
+    for(int i=0; i<numNearbyBoundariesReg; i++){
+        sharedMemPtr->nearbyBoundaryIndices[BLOCK_SIZE*i+threadIdx.x] = nearbyBoundaryIndices[BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_BOUNDARIES+i)+threadIdx.x];
+    }
+
+    float my_x = 0.0;
+    float my_y = 0.0;
+    float myPressureDensityRatio = 0.0;
+
+    float vel_x = 0.0;
+    float vel_y = 0.0;
+
+    if(thread_id<numParticles){
+        my_x = particleXValues[thread_id];
+        my_y = particleYValues[thread_id];
+        myPressureDensityRatio = particlePressureDensityRatios[thread_id];
+
+        addGhostBoundaryParticles(dt, 
+            thread_id,
+            sharedMemPtr,
+            my_x,
+            my_y,
+            my_x,
+            my_y,
+            M_P*2.0*myPressureDensityRatio,
+            numNearbyBoundariesReg,
+            vel_x,
+            vel_y);
+    }
+
+    int nearbyParticlesIterator = 0;
+    while(numNearbyParticlesReg>nearbyParticlesIterator){
+        unsigned short nextNearbyParticleIndex = __ldcg(nearbyParticleIndices+BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_PARTICLES+nearbyParticlesIterator)+threadIdx.x);
+        nearbyParticlesIterator++;
+        float particleX = particleXValues[nextNearbyParticleIndex];
+        float particleY = particleYValues[nextNearbyParticleIndex];
+        float particlePressureDensityRatio = particlePressureDensityRatios[nextNearbyParticleIndex];
+        float press = M_P*(myPressureDensityRatio + particlePressureDensityRatio);
+
+        // First calculate displacement of the particle caused by neighbours
+        {
+            float dist_squared = (my_x-particleX)*(my_x-particleX)+(my_y-particleY)*(my_y-particleY);
+            float q = (float)(2.0*exp( -dist_squared / (SMOOTH*SMOOTH/4)) / (SMOOTH*SMOOTH*SMOOTH*SMOOTH/16) / PI);
+            float displace = (press * q) * dt;
+            float abx = (my_x - particleX);
+            float aby = (my_y - particleY);
+            vel_x += displace * abx;
+            vel_y += displace * aby;
+        }
+
+        addGhostBoundaryParticles(dt, 
+            thread_id,
+            sharedMemPtr,
+            my_x,
+            my_y,
+            particleX,
+            particleY,
+            press,
+            numNearbyBoundariesReg,
+            vel_x,
+            vel_y);
+    }
 
     if(thread_id < numParticles){
-        float boundary_average_nx = 0.0;
-        float boundary_average_ny = 0.0;
-
-        //TODO: calculate this in addGhostBoundaryParticles
-        for(int i=0; i<numNearbyBoundariesReg; i++){
-            Boundary line = boundaries[sharedMemPtr->nearbyBoundaryIndices[BLOCK_SIZE*i+threadIdx.x]];
-            float line_nx = line.y2-line.y1;
-            float line_ny = line.x1-line.x2;
-            float multiplier = rsqrt(line_nx*line_nx+line_ny*line_ny);
-            line_nx *= multiplier;
-            line_ny *= multiplier;
-            boundary_average_nx += line_nx;
-            boundary_average_ny += line_ny;
-        }
-
-        if(boundary_average_nx*boundaries_vel_x+boundary_average_ny*boundaries_vel_y <=0.0){
-            vel_x += boundaries_vel_x;
-            vel_y += boundaries_vel_y;
-        }
-
-        vel_x += boundaries_vel_x;
-        vel_y += boundaries_vel_y;
-
         // Put a velocity limit on the particles too allow the system to work still somewhat normally 
         // if some unforeseen behaviour would occur
         if(vel_x*vel_x+vel_y*vel_y > VEL_LIMIT*VEL_LIMIT){
