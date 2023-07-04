@@ -31,7 +31,7 @@ Folder that contains code for a non-GPU accelerated 2D SPH simulator.
 
 ## [2D_with_CUDA](./2D_with_CUDA/)
 
-Folder that contains code for a CUDA accelerated 2D SPH simulator. The code is optimized specifically for an Rtx 3060 Laptop GPU but should run on any NVIDIA GPU that supports [Cooperative Groups](https://developer.nvidia.com/blog/cooperative-groups/) though shared memory constraints can possibly limit the maximum number of simulated particles.
+Folder that contains code for a CUDA accelerated 2D SPH simulator.
 
 # Todo
 
