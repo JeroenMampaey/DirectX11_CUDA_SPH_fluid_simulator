@@ -2,13 +2,17 @@
 #include <cooperative_groups.h>
 #include <float.h>
 #include <limits.h>
+#include <cmath>
 
 #define THRUST_IGNORE_CUB_VERSION_CHECK
 #include <cub/cub.cuh>
 
 #define GRAVITY 9.8f
 #define PIXEL_PER_METER 100.0f
-#define SMOOTH (3.0f*RADIUS)
+// Manually found heuristic (far from perfect)
+// Idea: -RADIUS big <-> SMOOTH scales with RADIUS (because smooth atleast needs to be bigger than the RADIUS)
+//       -RADIUS small <-> SMOOTH should still be reasonably big, ideally SMOOTH should be constant but that is computationally too difficult
+#define SMOOTH ((2.6f+(30.0f)/((RADIUS+0.63f)*(RADIUS+0.63f)))*RADIUS)
 #define REST 1
 #define STIFF 50000.0
 #define M_P (REST*RADIUS*RADIUS*PI)
@@ -23,10 +27,8 @@
 #define MAX_BOUNDARIES 100
 #define MAX_PUMPS 15
 
-#define MAX_NEARBY_PARTICLES 60
+#define MAX_NEARBY_PARTICLES 128
 #define MAX_NEARBY_BOUNDARIES 7
-
-#define UPDATES_PER_RENDER_CONSTANT 1.0f
 
 __constant__ Boundary boundaries[MAX_BOUNDARIES];
 __constant__ Pump pumps[MAX_PUMPS];
@@ -134,13 +136,25 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     if(RATE_IS_INVALID(refreshRate = gfx.getRefreshRate())){
         throw std::exception("Refreshrate could not easily be found programmatically.");
     }
-    updatesPerRender = ((11+(int)(RADIUS/UPDATES_PER_RENDER_CONSTANT))/((int)(RADIUS/UPDATES_PER_RENDER_CONSTANT)))*((143+(int)refreshRate)/((int)refreshRate));
+    // Manually found heuristic
+    // Idea: time interval should scale approximately linearly with the SMOOTH length
+    updatesPerRender = (int)ceil((1+2*ceil(13.812f/SMOOTH))*(144.0f/refreshRate));
     dt = 1.0f/(updatesPerRender*refreshRate);
 
     // First get the current cuda device
     cudaError_t err;
     int dev = 0;
     CUDA_THROW_FAILED(cudaGetDevice(&dev));
+
+    // Check for MAX_NEARBY_PARTICLES
+    // Manually found heuristic
+    // Idea: each particle in rest will have neighbours in a SMOOTH*SMOOTH*PI size circle around the particle
+    //       which means in rest these are (SMOOTH*SMOOTH*PI)/(RADIUS*RADIUS*PI) = (SMOOTH/RADIUS)^2 particles
+    //       at worst this might be 2 times more particles (2 times seems to work atleast)
+    if(2*(SMOOTH/RADIUS)*(SMOOTH/RADIUS) >= MAX_NEARBY_PARTICLES){
+        std::string exceptionString = "For this particle RADIUS value, MAX_NEARBY_PARTICLES might be too small, the value needs to be configure to be bigger than " + std::to_string(2*(SMOOTH/RADIUS)*(SMOOTH/RADIUS)) + ".";
+        throw std::exception(exceptionString.c_str());
+    }
 
     // Check for MAX_BOUNDARIES and MAX_PUMPS
     if(numBoundaries>MAX_BOUNDARIES){
@@ -434,9 +448,9 @@ __forceinline__ __device__ void iterateSharedMemParticles(
                     float dist_squared = (my_x-particleX)*(my_x-particleX)+(my_y-particleY)*(my_y-particleY);
                     if (dist_squared < SMOOTH*SMOOTH) {
                         // If the other particle is close enough, iterate over the closeby boundaries to achieve two things:
-                        //  - Convert this particle to a ghost particle over the boundary
                         //  - Check whether the connection between this particle and the particle of the thread crosses a boundary
                         //    in which case the particle is not actually a true neighbour
+                        //  - Convert this particle to a ghost particle over the boundary
                         float accumulated_ghost_particle_density = 0.0;
                         int j=0;
                         for(; j<numNearbyBoundariesReg; j++){
@@ -480,9 +494,9 @@ __forceinline__ __device__ void iterateSharedMemParticles(
                                 float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                                 float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                                 if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-                                float dist_squared = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
-                                if(dist_squared > SMOOTH*SMOOTH) continue;
-                                float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared / (SMOOTH*SMOOTH/4)));
+                                float dist_squared2 = (virtual_x-my_x)*(virtual_x-my_x)+(virtual_y-my_y)*(virtual_y-my_y);
+                                if(dist_squared2 > SMOOTH*SMOOTH) continue;
+                                float q2 = (float)((1.0 / ((SMOOTH/2)*SQRT_PI))*(1.0 / ((SMOOTH/2)*SQRT_PI))*exp( -dist_squared2 / (SMOOTH*SMOOTH/4)));
                                 accumulated_ghost_particle_density += M_P*q2;
                             }
                         }

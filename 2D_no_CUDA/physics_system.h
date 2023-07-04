@@ -2,8 +2,6 @@
 
 #include "entity_manager.h"
 
-#define UPDATES_PER_RENDER 8
-
 class PhysicsSystem{
     public:
         PhysicsSystem(GraphicsEngine& gfx);
@@ -17,5 +15,6 @@ class PhysicsSystem{
 
         inline void addGhostParticleHelper(Particle& p, const Boundary& line, const Particle& neighbor_particle) const noexcept;
 
+        int updatesPerRender;
         float dt;
 };

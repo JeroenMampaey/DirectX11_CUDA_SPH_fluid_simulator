@@ -2,7 +2,10 @@
 
 #define GRAVITY 9.8f
 #define PIXEL_PER_METER 100.0f
-#define SMOOTH (3.0f*RADIUS)
+// Manually found heuristic (far from perfect)
+// Idea: -RADIUS big <-> SMOOTH scales with RADIUS (because smooth atleast needs to be bigger than the RADIUS)
+//       -RADIUS small <-> SMOOTH should still be reasonably big, ideally SMOOTH should be constant but that is computationally too difficult
+#define SMOOTH ((2.6f+(30.0f)/((RADIUS+0.63f)*(RADIUS+0.63f)))*RADIUS)
 #define REST 1
 #define STIFF 50000.0
 #define M_P (REST*RADIUS*RADIUS*PI)
@@ -13,11 +16,14 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx){
     if(RATE_IS_INVALID(refreshRate = gfx.getRefreshRate())){
         throw std::exception("Refreshrate could not easily be found programmatically.");
     }
-    dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
+    // Manually found heuristic
+    // Idea: time interval should scale approximately linearly with the SMOOTH length
+    updatesPerRender = (int)ceil((1+2*ceil(13.812f/SMOOTH))*(144.0f/refreshRate));
+    dt = 1.0f/(updatesPerRender*refreshRate);
 }
 
 void PhysicsSystem::update(EntityManager& manager) const noexcept{
-    for(int i=0; i<UPDATES_PER_RENDER; i++){
+    for(int i=0; i<updatesPerRender; i++){
         performNonFluidRelatedPhysics(manager);
         updateDensityFieldCausedByNeighbours(manager);
         updateDensityFieldCausedByGhostParticles(manager);
@@ -68,8 +74,8 @@ inline void PhysicsSystem::performNonFluidRelatedPhysics(EntityManager& manager)
             // Check if the crossing point is actually in the boundary (and not next to the boundary)
             if(second_check3>line.lengthSquared || second_check4<0.0) continue;
             // Put particle back above the crossing point
-            p.pos.x = crossing_x - RADIUS*line.normal.x;
-            p.pos.y = crossing_y - RADIUS*line.normal.y;
+            p.pos.x = crossing_x - RADIUS*(SQRT_PI/2.0f)*line.normal.x;
+            p.pos.y = crossing_y - RADIUS*(SQRT_PI/2.0f)*line.normal.y;
             p.vel.x = 0.0;
             p.vel.y = 0.0;
             break;

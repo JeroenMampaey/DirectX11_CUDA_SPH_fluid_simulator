@@ -272,7 +272,7 @@ void EntityManager::buildDefaultSimulationLayout(){
     boundaries.push_back({WIDTH, 0, WIDTH, HEIGHT});
 
     for(float y = RADIUS; y<0.5f*HEIGHT; y+=SQRT_PI*RADIUS){
-        for(float x = RADIUS; x<0.33f*WIDTH; x+=SQRT_PI*RADIUS){
+        for(float x = RADIUS; x<0.4f*WIDTH; x+=SQRT_PI*RADIUS){
             particles.push_back(Particle(x, y));
         }
     }
