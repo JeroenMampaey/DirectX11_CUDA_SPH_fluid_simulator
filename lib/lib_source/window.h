@@ -28,10 +28,10 @@ class Window
 	    static LRESULT CALLBACK handleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
 
 	    LRESULT handleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-        HWND hWnd;
         std::shared_ptr<EventBus> pEventBus;
         std::unique_ptr<GraphicsEngine> pGfx;
         std::exception_ptr thrownException = nullptr;
+        HWND hWnd;
 
     public:
 	    LIBRARY_API ~Window() noexcept;

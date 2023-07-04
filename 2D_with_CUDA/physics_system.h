@@ -3,8 +3,6 @@
 #include "entity_manager.h"
 #include "exceptions.h"
 
-#define UPDATES_PER_RENDER 6
-
 struct CompactParticle{
     float x;
     float y;
@@ -20,19 +18,34 @@ class PhysicsSystem{
         void transferToDeviceMemory(EntityManager& manager);
         void destroyDeviceMemory() noexcept;
 
+        int updatesPerRender;
         float dt;
-           
-        Boundary* boundaries = nullptr;
+        
+        // boundaries is constant memory and thus declared in the .cu file
         int numBoundaries;
 
-        CompactParticle* oldParticles = nullptr;
-        CompactParticle* positionCommunicationMemory = nullptr;
-        float* pressureDensityRatioCommunicationMemory = nullptr;
+        float* particleXValues[2] = {nullptr, nullptr};
+        float* particleYValues[2] = {nullptr, nullptr};
+        float* oldParticleXValues[2] = {nullptr, nullptr};
+        float* oldParticleYValues[2] = {nullptr, nullptr};
+        float* particlePressureDensityRatios = nullptr;
         int numParticles;
 
-        Pump* pumps = nullptr;
-        PumpVelocity* pumpVelocities = nullptr;
+        // pumps and pumpvelocities is constant memory and thus declared in the .cu file
         int numPumps;
 
+        unsigned char* numNearbyBoundaries = nullptr;
+        unsigned char* nearbyBoundaryIndices = nullptr;
+
+        unsigned char* numNearbyParticles = nullptr;
+        unsigned short* nearbyParticleIndices = nullptr;
+
         int sharedMemorySize;
+
+        int currentParticlesIndex = 0;
+        unsigned short* staticIndexes = nullptr;
+        unsigned short* permutedIndexes = nullptr; 
+
+        void* sortingTempStorage = nullptr;
+        size_t sortingTempStorageBytes;
 };
