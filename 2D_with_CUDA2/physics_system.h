@@ -3,8 +3,6 @@
 #include "entity_manager.h"
 #include "exceptions.h"
 
-#define UPDATES_PER_RENDER 6
-
 struct CompactParticle{
     float x;
     float y;
@@ -20,6 +18,7 @@ class PhysicsSystem{
         void transferToDeviceMemory(EntityManager& manager);
         void destroyDeviceMemory() noexcept;
 
+        int updatesPerRender;
         float dt;
         
         // boundaries is constant memory and thus declared in the .cu file

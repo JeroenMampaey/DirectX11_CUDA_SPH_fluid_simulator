@@ -23,12 +23,10 @@
 #define MAX_BOUNDARIES 100
 #define MAX_PUMPS 15
 
-// TODO
-#define MAX_PARTICLE_NEIGHBOURS 40
-#define MAX_BOUNDARY_NEIGHBOURS 7
-
 #define MAX_NEARBY_PARTICLES 60
 #define MAX_NEARBY_BOUNDARIES 7
+
+#define UPDATES_PER_RENDER_CONSTANT 1.0f
 
 __constant__ Boundary boundaries[MAX_BOUNDARIES];
 __constant__ Pump pumps[MAX_PUMPS];
@@ -60,8 +58,8 @@ __global__ void updateDensityField(float dt,
     unsigned char* numNearbyParticles,
     unsigned short* nearbyParticleIndices);
 __global__ void updateParticlesByDensityField(float dt, 
-    float* particleXValues, 
-    float* particleYValues, 
+    float* particleXValues,
+    float* particleYValues,
     float* particlePressureDensityRatios,
     int numParticles,
     unsigned char* numNearbyBoundaries,
@@ -136,36 +134,22 @@ PhysicsSystem::PhysicsSystem(GraphicsEngine& gfx, EntityManager& manager)
     if(RATE_IS_INVALID(refreshRate = gfx.getRefreshRate())){
         throw std::exception("Refreshrate could not easily be found programmatically.");
     }
-    dt = 1.0f/(UPDATES_PER_RENDER*refreshRate);
+    updatesPerRender = ((11+(int)(RADIUS/UPDATES_PER_RENDER_CONSTANT))/((int)(RADIUS/UPDATES_PER_RENDER_CONSTANT)))*((143+(int)refreshRate)/((int)refreshRate));
+    dt = 1.0f/(updatesPerRender*refreshRate);
 
     // First get the current cuda device
     cudaError_t err;
     int dev = 0;
     CUDA_THROW_FAILED(cudaGetDevice(&dev));
 
-    // Check whether grid sync is possible by querying the device attribute
-    // TODO
-    //int supportsCoopLaunch = 0;
-    //CUDA_THROW_FAILED(cudaDeviceGetAttribute(&supportsCoopLaunch, cudaDevAttrCooperativeLaunch, dev));
-    //if(supportsCoopLaunch!=1){
-    //    throw std::exception("Cooperative Launch is not supported on the GPU, which is neccesary for the program");
-    //}
+    // Check for MAX_BOUNDARIES and MAX_PUMPS
+    if(numBoundaries>MAX_BOUNDARIES){
+        throw std::exception("Too many boundaries are being used, statically allocated space in constant memory doesn't allow this many boundaries.");
+    }
 
-    // Check the device properties to calculate the maximum amount of allowed particles
-    // TODO
-    //sharedMemorySize = sizeof(SharedMem);
-    //cudaDeviceProp prop;
-    //CUDA_THROW_FAILED(cudaGetDeviceProperties(&prop, dev));
-    //int maxNumberOfBlocksPerSm = ((prop.sharedMemPerMultiprocessor-1000)/sharedMemorySize); // spare 1000 bytes of shared memory per block just to be safe
-    //int maxNumberOfParticlesPerSm = maxNumberOfBlocksPerSm*BLOCK_SIZE;
-    //int maxNumberOfParticles = maxNumberOfParticlesPerSm*prop.multiProcessorCount;
-
-    // TODO
-    //if(numParticles > maxNumberOfParticles){
-    //    throw std::exception("Too many particles are being used, GPU shared memory constraints don't allow usage of this many particles.");
-    //}
-
-    //TODO: also check for MAX_BOUNDARIES and MAX_PUMPS
+    if(numPumps>MAX_PUMPS){
+        throw std::exception("Too many pumps are being used, statically allocated space in constant memory doesn't allow this many boundaries.");
+    }
 
     // Allocate memory on the GPU necessary for the kernel
     allocateDeviceMemory(manager);
@@ -185,7 +169,7 @@ void PhysicsSystem::update(EntityManager& manager){
     
     cudaError_t err;
 
-    for(int i=0; i<UPDATES_PER_RENDER; i++){
+    for(int i=0; i<updatesPerRender; i++){
         updateRegularPhysics<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(dt, particleXValues[currentParticlesIndex], particleYValues[currentParticlesIndex], oldParticleXValues[currentParticlesIndex], oldParticleYValues[currentParticlesIndex], numParticles, numBoundaries, numPumps);
         cub::DeviceRadixSort::SortPairs<float, unsigned short>(sortingTempStorage,
             sortingTempStorageBytes,
@@ -194,7 +178,7 @@ void PhysicsSystem::update(EntityManager& manager){
             staticIndexes,
             permutedIndexes,
             numParticles);
-        permuteArrays<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(permutedIndexes, 
+        permuteArrays<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE>>>(permutedIndexes,
             particleYValues[currentParticlesIndex], 
             particleYValues[1-currentParticlesIndex],
             oldParticleXValues[currentParticlesIndex], 
@@ -203,7 +187,7 @@ void PhysicsSystem::update(EntityManager& manager){
             oldParticleYValues[1-currentParticlesIndex], 
             numParticles);
         currentParticlesIndex = 1-currentParticlesIndex;
-        updateDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
+        updateDensityField<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt,
             particleXValues[currentParticlesIndex],
             particleYValues[currentParticlesIndex],
             particlePressureDensityRatios,
@@ -213,9 +197,9 @@ void PhysicsSystem::update(EntityManager& manager){
             nearbyBoundaryIndices,
             numNearbyParticles,
             nearbyParticleIndices);
-        updateParticlesByDensityField2<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt, 
-            particleXValues[currentParticlesIndex], 
-            particleYValues[currentParticlesIndex], 
+        updateParticlesByDensityField2<<<(numParticles + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE,sizeof(SharedMem1)>>>(dt,
+            particleXValues[currentParticlesIndex],
+            particleYValues[currentParticlesIndex],
             particlePressureDensityRatios,
             numParticles,
             numNearbyBoundaries,
@@ -283,20 +267,31 @@ void PhysicsSystem::transferToDeviceMemory(EntityManager& manager){
 }
 
 void PhysicsSystem::destroyDeviceMemory() noexcept{
-    if(particleXValues){
-        cudaFree(particleXValues);
+    if(particleXValues[0]){
+        cudaFree(particleXValues[0]);
+    }
+    if(particleXValues[1]){
+        cudaFree(particleXValues[1]);
+    }
+    if(particleYValues[0]){
+        cudaFree(particleYValues[0]);
+    }
+    if(particleYValues[1]){
+        cudaFree(particleYValues[1]);
     }
 
-    if(particleYValues){
-        cudaFree(particleYValues);
-    }
 
-    if(oldParticleXValues){
-        cudaFree(oldParticleXValues);
+    if(oldParticleXValues[0]){
+        cudaFree(oldParticleXValues[0]);
     }
-
-    if(oldParticleYValues){
-        cudaFree(oldParticleYValues);
+    if(oldParticleYValues[0]){
+        cudaFree(oldParticleYValues[0]);
+    }
+    if(oldParticleXValues[1]){
+        cudaFree(oldParticleXValues[1]);
+    }
+    if(oldParticleYValues[1]){
+        cudaFree(oldParticleYValues[1]);
     }
 
     if(particlePressureDensityRatios){
@@ -306,20 +301,27 @@ void PhysicsSystem::destroyDeviceMemory() noexcept{
     if(numNearbyBoundaries){
         cudaFree(numNearbyBoundaries);
     }
-
-    if(nearbyBoundaryIndices){
-        cudaFree(nearbyBoundaryIndices);
-    }
-
     if(numNearbyParticles){
         cudaFree(numNearbyParticles);
     }
 
+    if(nearbyBoundaryIndices){
+        cudaFree(nearbyBoundaryIndices);
+    }
     if(nearbyParticleIndices){
         cudaFree(nearbyParticleIndices);
     }
 
-    // TODO
+    if(staticIndexes){
+        cudaFree(staticIndexes);
+    }
+    if(permutedIndexes){
+        cudaFree(permutedIndexes);
+    }
+
+    if(sortingTempStorage){
+        cudaFree(sortingTempStorage);
+    }
 }
 
 __global__ void updateRegularPhysics(float dt,
@@ -377,8 +379,8 @@ __global__ void updateRegularPhysics(float dt,
             float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
             float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
             if(second_check3>(line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) || second_check4<0.0) continue;
-            my_x = crossing_x - RADIUS*line_nx/sqrt(line_nx*line_nx+line_ny*line_ny);
-            my_y = crossing_y - RADIUS*line_ny/sqrt(line_nx*line_nx+line_ny*line_ny);
+            my_x = crossing_x - RADIUS*(SQRT_PI/2.0f)*line_nx/sqrt(line_nx*line_nx+line_ny*line_ny);
+            my_y = crossing_y - RADIUS*(SQRT_PI/2.0f)*line_ny/sqrt(line_nx*line_nx+line_ny*line_ny);
             vel_x = 0.0;
             vel_y = 0.0;
             break;
@@ -543,7 +545,7 @@ __global__ void updateDensityField(float dt,
                 float second_check3 = (crossing_x-line.x1)*(crossing_x-line.x1)+(crossing_y-line.y1)*(crossing_y-line.y1);
                 float second_check4 = (crossing_x-line.x1)*(line.x2-line.x1)+(crossing_y-line.y1)*(line.y2-line.y1);
                 if(projection <= SMOOTH && second_check3 <= (line.x2-line.x1)*(line.x2-line.x1)+(line.y2-line.y1)*(line.y2-line.y1) && second_check4 >= 0){
-                    // Particle is hovering above this boundary and distance from boundary is less than 
+                    // Particle is hovering above this boundary and distance from boundary is less than SMOOTH
                     sharedMemPtr->nearbyBoundaryIndices[BLOCK_SIZE*numNearbyBoundariesReg+threadIdx.x] = i;
                     nearbyBoundaryIndices[BLOCK_SIZE*(blockIdx.x*MAX_NEARBY_BOUNDARIES+numNearbyBoundariesReg)+threadIdx.x] = i;
                     numNearbyBoundariesReg++;
