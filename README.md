@@ -37,6 +37,5 @@ Folder that contains code for a CUDA accelerated 2D SPH simulator. The code is o
 
 - Allowing custom window sizes in the graphics library
 - Adding surface forces to the SPH fluid simulator
-- Allowing the GPU-accelerated SPH simulator to handle way more particles by removing the high dependency on shared memory
 - Making a GPU and non-GPU accelerated 3D SPH simulator
 

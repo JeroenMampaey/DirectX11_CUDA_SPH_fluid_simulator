@@ -20,7 +20,7 @@
 
 #define SLD_PATH_CONCATINATED(original) SIMULATION_LAYOUT_DIRECTORY original
 
-#define RADIUS 3.0f
+#define RADIUS 2.0f
 #define PI 3.141592
 #define SQRT_PI 1.772453
 
